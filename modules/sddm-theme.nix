@@ -108,7 +108,7 @@ in
 
       settings = {
         General = {
-          GreeterEnvironment = "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/,QT_QUICK_CONTROLS_STYLE=org.kde.desktop";
+          GreeterEnvironment = "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/";
         };
       };
     };
