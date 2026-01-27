@@ -42,9 +42,6 @@ in
         pkgs.zsh-autosuggestions
         pkgs.zsh-completions
         pkgs.zsh-fast-syntax-highlighting
-        pkgs.zsh-fzf-tab
-        pkgs.zsh-fzf-history-search
-        pkgs.zsh-history-substring-search
       ];
 
       files = {
@@ -78,14 +75,6 @@ in
 
           source ${pkgs.zsh-autosuggestions}/share/zsh-autosuggestions/zsh-autosuggestions.zsh
           source ${pkgs.zsh-fast-syntax-highlighting}/share/zsh/plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh
-          source ${pkgs.zsh-fzf-tab}/share/zsh-fzf-tab/fzf-tab.zsh
-          source ${pkgs.zsh-history-substring-search}/share/zsh-history-substring-search/zsh-history-substring-search.zsh
-          source ${pkgs.zsh-fzf-history-search}/share/zsh-fzf-history-search/zsh-fzf-history-search.zsh
-
-          bindkey '^[[A' history-substring-search-up
-          bindkey '^[[B' history-substring-search-down
-          bindkey -M vicmd 'k' history-substring-search-up
-          bindkey -M vicmd 'j' history-substring-search-down
 
           export ZHM_STYLE_CURSOR_SELECT="fg:${c.base00},bg:${c.base08}"
           export ZHM_STYLE_CURSOR_INSERT="fg:${c.base00},bg:${c.base0B}"
