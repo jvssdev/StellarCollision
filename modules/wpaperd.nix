@@ -9,7 +9,6 @@ let
     mkOption
     mkIf
     types
-    getExe
     ;
   cfg = config.cfg.wpaperd;
 in
@@ -27,9 +26,11 @@ in
     hj = {
       packages = [ cfg.package ];
 
+      xdg.config.files."wpaperd/wallpapers".source = ../assets/Wallpapers;
+
       xdg.config.files."wpaperd/config.toml".text = ''
         [any]
-        path = "${../assets/Wallpapers}"
+        path = "${config.hj.directory}/.config/wpaperd/wallpapers"
         sorting = "random"
         duration = "10m"
       '';
@@ -44,7 +45,7 @@ in
         path = [ cfg.package ];
 
         serviceConfig = {
-          ExecStart = "${getExe cfg.package}";
+          ExecStart = "${cfg.package}/bin/wpaperd";
           Type = "simple";
           Restart = "on-failure";
           RestartSec = 5;
