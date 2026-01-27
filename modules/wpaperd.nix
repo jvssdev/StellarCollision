@@ -9,9 +9,13 @@ let
     mkOption
     mkIf
     types
-    getExe
     ;
   cfg = config.cfg.wpaperd;
+  wallpapers = builtins.path {
+    path = ../assets/Wallpapers;
+    name = "wallpapers";
+    filter = _: _: true;
+  };
 in
 {
   options.cfg.wpaperd = {
@@ -28,30 +32,9 @@ in
 
       xdg.config.files."wpaperd/config.toml".text = ''
         [any]
-        path = "${../assets/Wallpapers}"
-        sorting = "random"
+        path = "${wallpapers}"
         duration = "10m"
       '';
-    };
-    systemd.services.wpaperd = {
-      description = "wpaperd wallpaper daemon";
-
-      wantedBy = [ "graphical-session.target" ];
-      after = [ "graphical-session.target" ];
-      partOf = [ "graphical-session.target" ];
-
-      path = [ cfg.package ];
-
-      serviceConfig = {
-        ExecStart = "${getExe cfg.package}";
-        Restart = "on-failure";
-        RestartSec = 5;
-        PassEnvironment = [
-          "WAYLAND_DISPLAY"
-          "XDG_RUNTIME_DIR"
-          "DISPLAY"
-        ];
-      };
     };
   };
 }
