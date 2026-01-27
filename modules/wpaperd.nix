@@ -12,7 +12,6 @@ let
     getExe
     ;
   cfg = config.cfg.wpaperd;
-  defaultPath = "/home/${config.cfg.vars.username}/Pictures/Wallpapers";
 in
 {
   options.cfg.wpaperd = {
@@ -26,12 +25,6 @@ in
       default = pkgs.wpaperd;
       description = "The wpaperd package to use.";
     };
-    wallpaperPath = mkOption {
-      type = types.path;
-      default = defaultPath;
-      description = "Path to the wallpapers directory.";
-      example = ../assests/Wallpapers;
-    };
   };
 
   config = mkIf cfg.enable {
@@ -40,7 +33,7 @@ in
 
       xdg.config.files."wpaperd/config.toml".text = ''
         [any]
-        path = "${toString cfg.wallpaperPath}"
+        path = "${../assests/Wallpapers}"
         sorting = "random"
         duration = "10m"
       '';
