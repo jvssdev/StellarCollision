@@ -19,7 +19,6 @@ in
     package = mkOption {
       type = types.package;
       default = pkgs.wpaperd;
-      description = "The wpaperd package to use.";
     };
   };
 
@@ -38,16 +37,21 @@ in
 
       systemd.services.wpaperd = {
         description = "wpaperd wallpaper daemon";
-        wantedBy = [ "default.target" ];
+
+        wantedBy = [ "graphical-session.target" ];
         after = [ "graphical-session.target" ];
+        partOf = [ "graphical-session.target" ];
 
         path = [ cfg.package ];
 
         serviceConfig = {
           ExecStart = "${getExe cfg.package}";
-          Type = "simple";
           Restart = "on-failure";
           RestartSec = 5;
+          PassEnvironment = [
+            "WAYLAND_DISPLAY"
+            "XDG_RUNTIME_DIR"
+          ];
         };
       };
     };
