@@ -9,7 +9,6 @@ let
     types
     mkOption
     mkIf
-    getExe
     ;
   inherit (config.cfg.fonts.monospace) name;
   cfg = config.cfg.dunst;
@@ -32,11 +31,8 @@ in
 
   config = mkIf cfg.enable {
     hj = {
-      packages = [
-        cfg.package
-      ];
+      packages = [ cfg.package ];
 
-      # Configuração do Dunst
       xdg.config.files."dunst/dunstrc" = {
         generator = lib.generators.toINI { };
         value = {
@@ -44,9 +40,9 @@ in
             monitor = 0;
             follow = "mouse";
             width = 400;
-            height = "(0, 200)";
+            height = 300;
             origin = "top-right";
-            offset = "(8, 8)";
+            offset = "8x8";
             notification_limit = 0;
             progress_bar = true;
             progress_bar_height = 10;
@@ -131,23 +127,6 @@ in
           };
         };
       };
-
-      xdg.config.files."systemd/user/dunst.service".text = ''
-        [Unit]
-        Description=Dunst notification daemon
-        After=graphical-session-pre.target
-        PartOf=graphical-session.target
-
-        [Service]
-        Type=dbus
-        BusName=org.freedesktop.Notifications
-        ExecStart=${getExe cfg.package}
-        Restart=always
-        RestartSec=3
-
-        [Install]
-        WantedBy=graphical-session.target
-      '';
     };
   };
 }

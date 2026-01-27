@@ -21,6 +21,7 @@
     qt.enable = true;
     dunst.enable = true;
     fuzzel.enable = true;
+    btop.enable = true;
     zathura.enable = true;
     keepassxc.enable = true;
     gammastep.enable = true;
