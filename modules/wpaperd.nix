@@ -51,6 +51,7 @@ in
           PassEnvironment = [
             "WAYLAND_DISPLAY"
             "XDG_RUNTIME_DIR"
+            "DISPLAY"
           ];
         };
       };
