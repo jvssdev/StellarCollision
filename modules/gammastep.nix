@@ -12,14 +12,13 @@ let
     getExe
     ;
   cfg = config.cfg.gammastep;
-
 in
 {
   options.cfg.gammastep = {
     enable = mkOption {
       type = types.bool;
       default = false;
-      description = "Enable gammastep as a user service with tray.";
+      description = "Enable gammastep with tray.";
     };
     package = mkOption {
       type = types.package;
@@ -29,27 +28,22 @@ in
     temperatureDay = mkOption {
       type = types.int;
       default = 5500;
-      description = "Daytime color temperature.";
     };
     temperatureNight = mkOption {
       type = types.int;
       default = 3500;
-      description = "Nighttime color temperature.";
     };
     dawnTime = mkOption {
       type = types.str;
       default = "6:00-7:45";
-      description = "Dawn transition time (manual mode).";
     };
     duskTime = mkOption {
       type = types.str;
       default = "18:35-20:45";
-      description = "Dusk transition time (manual mode).";
     };
     tray = mkOption {
       type = types.bool;
       default = true;
-      description = "Show tray icon (uses gammastep-indicator).";
     };
   };
 
@@ -68,19 +62,23 @@ in
         dusk-time = ${cfg.duskTime}
       '';
 
-      xdg.config.files."systemd/user/gammastep.service".text = ''
-        [Unit]
-        Description=Gammastep color temperature adjuster
-        PartOf=graphical-session.target
+      systemd.enable = true;
 
-        [Service]
-        ExecStart=${getExe cfg.package}${if cfg.tray then "-indicator" else ""}
-        Restart=always
-        RestartSec=3
+      systemd.services.gammastep = {
+        description = "Gammastep color temperature adjuster";
+        wantedBy = [ "graphical-session.target" ]; # ou "default.target" se preferir
+        partOf = [ "graphical-session.target" ];
+        after = [ "graphical-session.target" ];
 
-        [Install]
-        WantedBy=graphical-session.target
-      '';
+        serviceConfig = {
+          ExecStart = "${getExe cfg.package} ${if cfg.tray then "-indicator" else ""}";
+          Restart = "always";
+          RestartSec = 3;
+        };
+
+        restartTriggers = [ config.hj.xdg.config.files."gammastep/config.ini".source ];
+        restartIfChanged = true;
+      };
     };
   };
 }
