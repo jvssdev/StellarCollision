@@ -39,14 +39,12 @@ let
       };
       "LoginScreen.LoginArea.Avatar" = {
         shape = "circle";
-        active-size = 140;
+        active-size = 120;
         border-radius = 1;
         active-border-size = 2;
         active-border-color = "${c.base0D}";
       };
       "LoginScreen.LoginArea.LoginButton" = {
-        font-size = 22;
-        icon-size = 30;
         content-color = "${c.base05}";
         active-content-color = "${c.base06}";
         background-color = "${c.base00}";
@@ -58,11 +56,7 @@ let
       };
 
       "LoginScreen.LoginArea.PasswordInput" = {
-        width = 460;
-        height = 60;
-        font-size = 22;
         display-icon = true;
-        icon-size = 30;
         content-color = "${c.base05}";
         background-color = "${c.base00}";
         background-opacity = 0.7;
@@ -76,10 +70,8 @@ let
         font-size = 36;
         icon-size = 72;
         color = "${c.base06}";
-        spacing = 1;
       };
       "LoginScreen.LoginArea.Username" = {
-        font-size = 40;
         color = "${c.base00}";
         margin = 5;
       };
@@ -89,17 +81,12 @@ let
         warning-color = "${c.base0A}";
         error-color = "${c.base08}";
       };
-      "LoginScreen.MenuArea.Buttons" = {
-        size = 60;
-      };
       "LoginScreen.MenuArea.Keyboard" = {
-        display = false;
+        display = true;
       };
       "LoginScreen.MenuArea.Layout" = {
         index = 2;
         position = "bottom-center";
-        font-size = 20;
-        icon-size = 32;
         content-color = "${c.base05}";
         active-content-color = "${c.base06}";
         background-color = "${c.base00}";
@@ -108,12 +95,6 @@ let
         border-color = "${c.base0D}";
       };
       "LoginScreen.MenuArea.Popups" = {
-        max-height = 600;
-        item-height = 60;
-        item-spacing = 1;
-        padding = 2;
-        font-size = 22;
-        icon-size = 24;
         content-color = "${c.base05}";
         active-content-color = "${c.base06}";
         background-color = "${c.base00}";
@@ -126,9 +107,7 @@ let
       };
       "LoginScreen.MenuArea.Power" = {
         index = 0;
-        popup-width = 200;
         position = "bottom-center";
-        icon-size = 32;
         content-color = "${c.base05}";
         active-content-color = "${c.base06}";
         background-color = "${c.base00}";
@@ -139,10 +118,6 @@ let
       "LoginScreen.MenuArea.Session" = {
         index = 1;
         position = "bottom-center";
-        button-width = 300;
-        popup-width = 300;
-        font-size = 25;
-        icon-size = 32;
         content-color = "${c.base05}";
         active-content-color = "${c.base06}";
         background-color = "${c.base00}";
