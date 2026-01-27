@@ -16,6 +16,7 @@ let
     getExe
     getExe'
     ;
+  inherit (builtins) substring;
 in
 {
   options.cfg.quickshell = {
@@ -73,7 +74,7 @@ in
             id: root
             property bool shown: false
             property int focusedIndex: -1
-            property color backgroundColor: "#80${c.base00}"
+            property color backgroundColor: "#80${substring 1 6 c.base00}"
             property color buttonColor: "transparent"
             property color buttonHoverColor: "${c.base0D}"
             default property list<PowerButton> buttons
@@ -143,7 +144,7 @@ in
                                     Layout.preferredWidth: 180
                                     Layout.preferredHeight: 180
                                     color: ma.containsMouse || (index == root.focusedIndex) ? root.buttonHoverColor : root.buttonColor
-                                    radius: theme.radius
+                                    radius: 10
                                     border.color: "${c.base03}"
                                     border.width: 2
                                     MouseArea {
@@ -167,7 +168,7 @@ in
                                         }
                                         Text {
                                             text: modelData.text
-                                            font.pixelSize: theme.fontPixelSize
+                                            font.pixelSize: 12
                                             color: "${c.base07}"
                                             Layout.alignment: Qt.AlignHCenter
                                         }
@@ -211,7 +212,7 @@ in
                                       anchors.fill: parent
                                       anchors.margins: 2
                                       color: model.isUrgent ? "${c.base0D}" : (model.isActive ? "${c.base0D}" : (model.isOccupied ? "${c.base02}" : "transparent"))
-                                      radius: theme.radius
+                                      radius: 10
                                       Text {
                                           text: model.tagId
                                           color: (model.isActive || model.isUrgent) ? "${c.base00}" : "${c.base05}"
