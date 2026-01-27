@@ -39,120 +39,20 @@ let
       };
       "LoginScreen.LoginArea.Avatar" = {
         shape = "circle";
-        active-size = 120;
+        active-size = 140;
         border-radius = 1;
         active-border-size = 2;
         active-border-color = "${c.base0D}";
       };
       "LoginScreen.LoginArea.LoginButton" = {
+        font-size = 22;
+        icon-size = 30;
         content-color = "${c.base05}";
         active-content-color = "${c.base06}";
-        background-color = "${c.base00}";
-        background-opacity = 0.7;
-        active-background-color = "${c.base0D}";
-        active-background-opacity = 0.7;
-        border-size = 2;
-        border-color = "${c.base0D}";
-      };
-
-      "LoginScreen.LoginArea.PasswordInput" = {
-        display-icon = true;
-        content-color = "${c.base05}";
-        background-color = "${c.base00}";
-        background-opacity = 0.7;
-        border-size = 2;
-        border-color = "${c.base0D}";
-        margin-top = 20;
-      };
-
-      "LoginScreen.LoginArea.Spinner" = {
-        text = "Logging in";
-        font-size = 36;
-        icon-size = 72;
-        color = "${c.base06}";
-      };
-      "LoginScreen.LoginArea.Username" = {
-        color = "${c.base00}";
-        margin = 5;
-      };
-      "LoginScreen.LoginArea.WarningMessage" = {
-        font-size = 22;
-        normal-color = "${c.base06}";
-        warning-color = "${c.base0A}";
-        error-color = "${c.base08}";
+        background-color = "${c.base01}";
       };
       "LoginScreen.MenuArea.Keyboard" = {
         display = true;
-      };
-      "LoginScreen.MenuArea.Layout" = {
-        index = 2;
-        position = "bottom-center";
-        content-color = "${c.base05}";
-        active-content-color = "${c.base06}";
-        background-color = "${c.base00}";
-        background-opacity = 0.7;
-        border-size = 2;
-        border-color = "${c.base0D}";
-      };
-      "LoginScreen.MenuArea.Popups" = {
-        content-color = "${c.base05}";
-        active-content-color = "${c.base06}";
-        background-color = "${c.base00}";
-        background-opacity = 0.7;
-        active-option-background-color = "${c.base02}";
-        active-option-background-opacity = 0.7;
-        border-size = 2;
-        border-color = "${c.base0D}";
-        display-scrollbar = true;
-      };
-      "LoginScreen.MenuArea.Power" = {
-        index = 0;
-        position = "bottom-center";
-        content-color = "${c.base05}";
-        active-content-color = "${c.base06}";
-        background-color = "${c.base00}";
-        background-opacity = 0.7;
-        border-size = 2;
-        border-color = "${c.base0D}";
-      };
-      "LoginScreen.MenuArea.Session" = {
-        index = 1;
-        position = "bottom-center";
-        content-color = "${c.base05}";
-        active-content-color = "${c.base06}";
-        background-color = "${c.base00}";
-        background-opacity = 0.7;
-        active-background-opacity = 0.7;
-        border-size = 2;
-        border-color = "${c.base0D}";
-      };
-      "LockScreen" = {
-        background = "${background-derivation.name}";
-        blur = 50;
-      };
-      "LockScreen.Clock" = {
-        position = "center";
-        align = "center";
-        format = "hh:mm:ss";
-        color = "${c.base01}";
-        font-size = 92;
-      };
-      "LockScreen.Date" = {
-        margin-top = 1;
-        format = "dd/MM/yyyy";
-        locale = "pt_BR";
-        color = "${c.base0D}";
-        font-size = 32;
-      };
-      "LockScreen.Message" = {
-        text = "Press any key";
-        font-size = 32;
-        color = "${c.base0D}";
-        icon-size = 44;
-        paint-icon = true;
-      };
-      "Tooltips" = {
-        enable = false;
       };
     };
   };
@@ -211,7 +111,7 @@ in
 
       settings = {
         General = {
-          GreeterEnvironment = "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/";
+          GreeterEnvironment = "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/,QT_QUICK_CONTROLS_STYLE=org.kde.desktop";
         };
       };
     };
