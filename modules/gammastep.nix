@@ -9,7 +9,6 @@ let
     mkOption
     mkIf
     types
-    getExe
     ;
   cfg = config.cfg.gammastep;
 in
@@ -18,7 +17,7 @@ in
     enable = mkOption {
       type = types.bool;
       default = false;
-      description = "Enable gammastep with tray.";
+      description = "Enable gammastep as a user service with tray.";
     };
     package = mkOption {
       type = types.package;
@@ -28,22 +27,27 @@ in
     temperatureDay = mkOption {
       type = types.int;
       default = 5500;
+      description = "Daytime color temperature.";
     };
     temperatureNight = mkOption {
       type = types.int;
       default = 3500;
+      description = "Nighttime color temperature.";
     };
     dawnTime = mkOption {
       type = types.str;
       default = "6:00-7:45";
+      description = "Dawn transition time (manual mode).";
     };
     duskTime = mkOption {
       type = types.str;
       default = "18:35-20:45";
+      description = "Dusk transition time (manual mode).";
     };
     tray = mkOption {
       type = types.bool;
       default = true;
+      description = "Show tray icon (uses gammastep-indicator).";
     };
   };
 
@@ -61,24 +65,6 @@ in
         dawn-time = ${cfg.dawnTime}
         dusk-time = ${cfg.duskTime}
       '';
-
-      systemd.enable = true;
-
-      systemd.services.gammastep = {
-        description = "Gammastep color temperature adjuster";
-        wantedBy = [ "graphical-session.target" ]; # ou "default.target" se preferir
-        partOf = [ "graphical-session.target" ];
-        after = [ "graphical-session.target" ];
-
-        serviceConfig = {
-          ExecStart = "${getExe cfg.package} ${if cfg.tray then "-indicator" else ""}";
-          Restart = "always";
-          RestartSec = 3;
-        };
-
-        restartTriggers = [ config.hj.xdg.config.files."gammastep/config.ini".source ];
-        restartIfChanged = true;
-      };
     };
   };
 }
