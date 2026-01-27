@@ -16,7 +16,7 @@ let
   c = config.cfg.theme.colors;
   inherit (inputs) silentSDDM;
 
-  wallpaper = ../assests/Wallpapers/nord_valley.png;
+  wallpaper = ../assets/Wallpapers/nord_valley.png;
 
   background-derivation = pkgs.runCommand "bg.jpg" { } ''
     cp ${wallpaper} $out

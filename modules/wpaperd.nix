@@ -33,7 +33,7 @@ in
 
       xdg.config.files."wpaperd/config.toml".text = ''
         [any]
-        path = "${../assests/Wallpapers}"
+        path = "${../assets/Wallpapers}"
         sorting = "random"
         duration = "10m"
       '';

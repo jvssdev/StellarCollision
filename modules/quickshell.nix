@@ -45,7 +45,7 @@ in
       ];
     };
     hj.xdg.config.files = {
-      "quickshell/icons".source = ../assests/icons;
+      "quickshell/icons".source = ../assets/icons;
 
       "quickshell/PowerButton.qml".text = ''
         import QtQuick
@@ -812,7 +812,7 @@ in
         }
       '';
 
-      "quickshell/wallpaper.png".source = ../assests/Wallpapers/a6116535-4a72-453e-83c9-ea97b8597d8c.png;
+      "quickshell/wallpaper.png".source = ../assets/Wallpapers/a6116535-4a72-453e-83c9-ea97b8597d8c.png;
 
       "quickshell/pam/password.conf".text = ''
         auth required pam_unix.so
