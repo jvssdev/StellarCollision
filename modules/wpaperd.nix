@@ -15,11 +15,7 @@ let
 in
 {
   options.cfg.wpaperd = {
-    enable = mkOption {
-      type = types.bool;
-      default = false;
-      description = "Enable wpaperd as a user service.";
-    };
+    enable = lib.mkEnableOption "wpaperd";
     package = mkOption {
       type = types.package;
       default = pkgs.wpaperd;
@@ -45,10 +41,13 @@ in
         wantedBy = [ "default.target" ];
         after = [ "graphical-session.target" ];
 
+        path = [ cfg.package ];
+
         serviceConfig = {
           ExecStart = "${getExe cfg.package}";
-          Restart = "always";
-          RestartSec = 3;
+          Type = "simple";
+          Restart = "on-failure";
+          RestartSec = 5;
         };
       };
     };
