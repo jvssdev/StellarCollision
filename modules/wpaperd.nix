@@ -15,6 +15,7 @@ let
   wallpapers = builtins.path {
     path = ../assets/Wallpapers;
     name = "wallpapers";
+    filter = _: _: true;
   };
 in
 {
