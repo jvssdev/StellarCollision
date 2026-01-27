@@ -12,6 +12,10 @@ let
     getExe
     ;
   cfg = config.cfg.wpaperd;
+  wallpapers = builtins.path {
+    path = ../assets/Wallpapers;
+    name = "wallpapers";
+  };
 in
 {
   options.cfg.wpaperd = {
@@ -28,8 +32,7 @@ in
 
       xdg.config.files."wpaperd/config.toml".text = ''
         [any]
-        path = "${../assets/Wallpapers}"
-        sorting = "random"
+        path = "${wallpapers}"
         duration = "10m"
       '';
 
