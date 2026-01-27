@@ -14,6 +14,12 @@ let
     ;
   cfg = config.cfg.sddm;
   c = config.cfg.theme.colors;
+
+  wallpaper = ../assests/Wallpapers/nord_valley.png;
+
+  background-derivation = pkgs.runCommand "sddm-bg.jpg" { } ''
+    cp ${wallpaper} $out
+  '';
 in
 {
   imports = [
@@ -34,6 +40,8 @@ in
     programs.silentSDDM = {
       enable = true;
 
+      extraBackgrounds = [ background-derivation ];
+
       settings = {
         General = {
           enable-animations = true;
@@ -41,7 +49,7 @@ in
         };
 
         LoginScreen = {
-          background = "${../assests/Wallpapers/nord_valley.png}";
+          background = "${background-derivation.name}";
           blur = 0;
           background-mode = "fill";
           background-color = c.base00;
@@ -166,6 +174,12 @@ in
 
     services.displayManager.sddm = {
       wayland.enable = cfg.wayland.enable;
+      settings = {
+        Theme = {
+          CursorTheme = "Bibata-Modern-Ice";
+          CursorSize = 24;
+        };
+      };
     };
 
     environment = {
@@ -178,14 +192,6 @@ in
         qt6.qtwayland
         inter
       ];
-
-      etc = {
-        "sddm.conf.d/cursor.conf".text = ''
-          [Theme]
-          CursorTheme=Bibata-Modern-Ice
-          CursorSize=24
-        '';
-      };
 
       sessionVariables = {
         XCURSOR_THEME = "Bibata-Modern-Ice";
