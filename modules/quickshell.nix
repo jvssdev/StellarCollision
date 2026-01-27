@@ -73,7 +73,7 @@ in
             id: root
             property bool shown: false
             property int focusedIndex: -1
-            property color backgroundColor: "80${c.base00}"
+            property color backgroundColor: "#80${c.base00}"
             property color buttonColor: "transparent"
             property color buttonHoverColor: "${c.base0D}"
             default property list<PowerButton> buttons
@@ -292,75 +292,73 @@ in
       '';
 
       "quickshell/IdleMonitors.qml".text = ''
-                import QtQuick
-                import Quickshell
-                import Quickshell.Wayland
-                import Quickshell.Io
-                Scope {
-                    id: idleScope
-                    property bool manualInhibit: false
-                    QtObject { id: audioPlaying; property bool isPlaying: false }
-                    Process {
-                        id: audioCheckProc
-                        command: ["${getExe pkgs.bash}", "-c", "${getExe pkgs.playerctl} -a status 2>/dev/null | grep Playing > /dev/null && echo yes || echo no"]
-                        stdout: SplitParser {
-                            onRead: data => {
-                                if (data) {
-                                    audioPlaying.isPlaying = data.trim() === "yes"
-                                }
-                            }
-                        }
-                    }
-                    Timer {
-                        interval: 2000
-                        running: true
-                        repeat: true
-                        triggeredOnStart: true
-                        onTriggered: audioCheckProc.running = true
-                    }
-                    IdleInhibitor {
-                        enabled: manualInhibit || audioPlaying.isPlaying
-                    }
-                    function handleIdleAction(action, isIdle) {
-                        if (!
-
-        action) return;
-                        if (action === "lock" && isIdle) lockProc.running = true;
-                        if (action === "suspend" && isIdle) suspendProc.running = true;
-                        if (action === "dpms off" && isIdle) wlopmOffProc.running = true;
-                        if (action === "dpms on" && !isIdle) wlopmOnProc.running = true;
-                    }
-                    Process { id: wlopmOffProc; command: ["${getExe pkgs.wlopm}", "--off", "*"] }
-                    Process { id: wlopmOnProc; command: ["${getExe pkgs.wlopm}", "--on", "*"] }
-                    Process { id: lockProc; command: ["${getExe pkgs.quickshell}", "ipc", "call", "lockScreen", "toggle"] }
-                    Process { id: suspendProc; command: ["${getExe' pkgs.systemd "systemctl"}", "suspend"] }
-                    Process {
-                        id: logindMonitor
-                        command: ["${lib.getExe' pkgs.dbus "dbus-monitor"}", "--system", "type='signal',interface='org.freedesktop.login1.Manager',member='PrepareForSleep'"]
-                        running: true
-                        stdout: SplitParser {
-                            onRead: data => {
-                                if (data.includes("boolean true")) {
-                                    lockProc.running = true
-                                }
-                            }
-                        }
-                    }
-                    Variants {
-                        model: [
-                            { timeout: 240, idleAction: "dpms off", returnAction: "dpms on" },
-                            { timeout: 300, idleAction: "lock" },
-                            { timeout: 600, idleAction: "suspend" }
-                        ]
-                        IdleMonitor {
-                            required property var modelData
-                            enabled: !audioPlaying.isPlaying && !manualInhibit
-                            respectInhibitors: true
-                            timeout: modelData.timeout
-                            onIsIdleChanged: idleScope.handleIdleAction(isIdle ? modelData.idleAction : modelData.returnAction, isIdle)
+        import QtQuick
+        import Quickshell
+        import Quickshell.Wayland
+        import Quickshell.Io
+        Scope {
+            id: idleScope
+            property bool manualInhibit: false
+            QtObject { id: audioPlaying; property bool isPlaying: false }
+            Process {
+                id: audioCheckProc
+                command: ["${getExe pkgs.bash}", "-c", "${getExe pkgs.playerctl} -a status 2>/dev/null | grep Playing > /dev/null && echo yes || echo no"]
+                stdout: SplitParser {
+                    onRead: data => {
+                        if (data) {
+                            audioPlaying.isPlaying = data.trim() === "yes"
                         }
                     }
                 }
+            }
+            Timer {
+                interval: 2000
+                running: true
+                repeat: true
+                triggeredOnStart: true
+                onTriggered: audioCheckProc.running = true
+            }
+            IdleInhibitor {
+                enabled: manualInhibit || audioPlaying.isPlaying
+            }
+            function handleIdleAction(action, isIdle) {
+                if (!action) return;
+                if (action === "lock" && isIdle) lockProc.running = true;
+                if (action === "suspend" && isIdle) suspendProc.running = true;
+                if (action === "dpms off" && isIdle) wlopmOffProc.running = true;
+                if (action === "dpms on" && !isIdle) wlopmOnProc.running = true;
+            }
+            Process { id: wlopmOffProc; command: ["${getExe pkgs.wlopm}", "--off", "*"] }
+            Process { id: wlopmOnProc; command: ["${getExe pkgs.wlopm}", "--on", "*"] }
+            Process { id: lockProc; command: ["${getExe pkgs.quickshell}", "ipc", "call", "lockScreen", "toggle"] }
+            Process { id: suspendProc; command: ["${getExe' pkgs.systemd "systemctl"}", "suspend"] }
+            Process {
+                id: logindMonitor
+                command: ["${lib.getExe' pkgs.dbus "dbus-monitor"}", "--system", "type='signal',interface='org.freedesktop.login1.Manager',member='PrepareForSleep'"]
+                running: true
+                stdout: SplitParser {
+                    onRead: data => {
+                        if (data.includes("boolean true")) {
+                            lockProc.running = true
+                        }
+                    }
+                }
+            }
+            Variants {
+                model: [
+                    { timeout: 240, idleAction: "dpms off", returnAction: "dpms on" },
+                    { timeout: 300, idleAction: "lock" },
+                    { timeout: 600, idleAction: "suspend" }
+                ]
+                IdleMonitor {
+                    required property var modelData
+                    enabled: !audioPlaying.isPlaying && !manualInhibit
+                    respectInhibitors: true
+                    timeout: modelData.timeout
+                    onIsIdleChanged: idleScope.handleIdleAction(isIdle ? modelData.idleAction : modelData.returnAction, isIdle)
+                }
+            }
+        }
       '';
 
       "quickshell/shell.qml".text = ''
@@ -406,20 +404,20 @@ in
             }
             QtObject {
                 id: theme
-                readonly property string bg: "${c.base00}"
-                readonly property string bgAlt: "${c.base01}"
-                readonly property string bgLighter: "${c.base02}"
-                readonly property string fg: "${c.base05}"
-                readonly property string fgMuted: "${c.base04}"
-                readonly property string fgSubtle: "${c.base03}"
-                readonly property string red: "${c.base08}"
-                readonly property string green: "${c.base0B}"
-                readonly property string yellow: "${c.base0A}"
-                readonly property string blue: "${c.base0D}"
-                readonly property string darkBlue: "${c.base0D}"
-                readonly property string magenta: "${c.base0E}"
-                readonly property string cyan: "${c.base0C}"
-                readonly property string orange: "${c.base09}"
+                readonly property color bg: "${c.base00}"
+                readonly property color bgAlt: "${c.base01}"
+                readonly property color bgLighter: "${c.base02}"
+                readonly property color fg: "${c.base05}"
+                readonly property color fgMuted: "${c.base04}"
+                readonly property color fgSubtle: "${c.base03}"
+                readonly property color red: "${c.base08}"
+                readonly property color green: "${c.base0B}"
+                readonly property color yellow: "${c.base0A}"
+                readonly property color blue: "${c.base0D}"
+                readonly property color darkBlue: "${c.base0D}"
+                readonly property color magenta: "${c.base0E}"
+                readonly property color cyan: "${c.base0C}"
+                readonly property color orange: "${c.base09}"
                 readonly property int radius: 10
                 readonly property int borderWidth: 2
                 readonly property int padding: 14
