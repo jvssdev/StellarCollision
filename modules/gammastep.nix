@@ -60,10 +60,11 @@ in
 
       xdg.config.files."gammastep/config.ini".text = ''
         [general]
-        temp-day = ${toString cfg.temperatureDay}
-        temp-night = ${toString cfg.temperatureNight}
-        dawn-time = ${cfg.dawnTime}
-        dusk-time = ${cfg.duskTime}
+        temp-day=${toString cfg.temperatureDay}
+        temp-night=${toString cfg.temperatureNight}
+        dawn-time=${cfg.dawnTime}
+        dusk-time=${cfg.duskTime}
+        fade=1
       '';
     };
   };
