@@ -30,27 +30,24 @@ in
   config = mkIf cfg.enable {
     hj = {
       packages = [ cfg.package ];
-
       xdg.config.files."wpaperd/config.toml".text = ''
         [any]
         path = "${../assets/Wallpapers}"
         sorting = "random"
         duration = "10m"
       '';
+    };
 
-      xdg.config.files."systemd/user/wpaperd.service".text = ''
-        [Unit]
-        Description=wpaperd wallpaper daemon
-        PartOf=graphical-session.target
-
-        [Service]
-        ExecStart=${getExe cfg.package}
-        Restart=always
-        RestartSec=3
-
-        [Install]
-        WantedBy=graphical-session.target
-      '';
+    systemd.user.services.wpaperd = {
+      description = "wpaperd wallpaper daemon";
+      after = [ "graphical-session-pre.target" ];
+      partOf = [ "graphical-session.target" ];
+      wantedBy = [ "graphical-session.target" ];
+      serviceConfig = {
+        ExecStart = "${getExe cfg.package}";
+        Restart = "always";
+        RestartSec = 3;
+      };
     };
   };
 }
