@@ -51,8 +51,6 @@ in
       exec-once = "${getExe' pkgs.networkmanagerapplet "nm-applet"} --indicator"
       exec-once = "${getExe' pkgs.blueman "blueman-applet"}"
       exec-once = "${getExe quickshell}"
-      exec-once = "${getExe pkgs.dunst}"
-      exec-once = "${getExe pkgs.wpaperd}"
       exec-once = "${getExe' pkgs.wl-clipboard "wl-paste"} --type text --watch ${getExe pkgs.cliphist} store"
       exec-once = "${getExe' pkgs.wl-clipboard "wl-paste"} --type image --watch ${getExe pkgs.cliphist} store"
       exec-once = "${getExe pkgs.wl-clip-persist} --clipboard regular --reconnect-tries 0"
