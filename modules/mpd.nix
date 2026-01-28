@@ -12,7 +12,6 @@ let
     getExe
     mkForce
     ;
-
   cfg = config.cfg.mpd;
   homeDir = config.cfg.vars.homeDirectory;
   xdgConfig = config.hj.xdg.config.directory;
@@ -26,8 +25,11 @@ in
       description = "Enable MPD backend.";
     };
   };
-
   config = mkIf cfg.enable {
+    hj.packages = with pkgs; [
+      mpd
+      mpdris2
+    ];
 
     services = {
       playerctld.enable = true;
@@ -41,27 +43,23 @@ in
         state_file           "${xdgState}/mpd/state"
         sticker_file         "${xdgState}/mpd/sticker.sql"
         db_file              "${xdgState}/mpd/database"
-
         auto_update          "yes"
         volume_normalization "no"
         restore_paused       "yes"
         filesystem_charset   "UTF-8"
         replaygain           "off"
         audio_buffer_size    "8192"
-
         audio_output {
           type       "pipewire"
           name       "PipeWire"
           format     "44100:24:2"
         }
-
         audio_output {
           type       "fifo"
           name       "Visualiser"
           path       "/tmp/mpd.fifo"
           format     "44100:16:2"
         }
-
         audio_output {
           type       "httpd"
           name       "lossless"
@@ -70,7 +68,6 @@ in
           max_clients "8"
           format     "44100:16:2"
         }
-
         bind_to_address "127.0.0.1"
         port            "6600"
       '';
@@ -90,7 +87,6 @@ in
           Restart = "on-failure";
         };
       };
-
       mpdris2 = {
         description = "MPD D-Bus Interface (mpDris2)";
         after = [ "mpd.service" ];
