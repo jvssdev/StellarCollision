@@ -51,7 +51,6 @@ in
       exec-once = "${getExe' pkgs.networkmanagerapplet "nm-applet"} --indicator"
       exec-once = "${getExe' pkgs.blueman "blueman-applet"}"
       exec-once = "${getExe quickshell}"
-      exec-once = "${getExe pkgs.gammastep} ${if config.cfg.gammastep.tray then "-indicator" else ""}" 
       exec-once = "${getExe pkgs.dunst}"
       exec-once = "${getExe pkgs.wpaperd}"
       exec-once = "${getExe' pkgs.wl-clipboard "wl-paste"} --type text --watch ${getExe pkgs.cliphist} store"
