@@ -77,15 +77,15 @@ in
         export HOME="${homeDir}"
         export XDG_RUNTIME_DIR="/run/user/$USER_ID"
 
-        export DISPLAY=":11"
-        unset WAYLAND_DISPLAY
+        export WAYLAND_DISPLAY="wayland-0"
+        unset DISPLAY
 
+        unset GTK_IM_MODULE
+        unset QT_IM_MODULE
         export XMODIFIERS="@im=fcitx"
-        export GTK_IM_MODULE="fcitx"
-        export QT_IM_MODULE="fcitx"
-        export SDL_IM_MODULE="fcitx"
         export GLFW_IM_MODULE="ibus"
 
+        export LD_LIBRARY_PATH="${lib.makeLibraryPath [ pkgs.libxkbcommon ]}:$LD_LIBRARY_PATH"
         export XKB_CONFIG_ROOT="${pkgs.xkeyboard_config}/share/X11/xkb"
         export XKB_DEFAULT_LAYOUT="br"
 
