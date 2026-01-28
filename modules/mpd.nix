@@ -36,6 +36,13 @@ in
       mpd.enable = mkForce false;
     };
 
+    systemd.tmpfiles.rules = [
+      "d ${homeDir}/Media/Music 0755 ${config.cfg.vars.username} users -"
+      "d ${xdgConfig}/mpd 0755 ${config.cfg.vars.username} users -"
+      "d ${xdgConfig}/mpd/playlists 0755 ${config.cfg.vars.username} users -"
+      "d ${xdgState}/mpd 0755 ${config.cfg.vars.username} users -"
+    ];
+
     hj.xdg.config.files = {
       "mpd/mpd.conf".text = ''
         music_directory      "${homeDir}/Media/Music"
