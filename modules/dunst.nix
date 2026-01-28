@@ -1,16 +1,14 @@
 {
-  config,
   lib,
+  config,
   pkgs,
   ...
 }:
 let
   inherit (lib)
+    types
     mkOption
     mkIf
-    types
-    getExe
-    generators
     ;
   inherit (config.cfg.fonts.monospace) name;
   cfg = config.cfg.dunst;
@@ -21,12 +19,13 @@ in
     enable = mkOption {
       type = types.bool;
       default = false;
-      description = "Enable Dunst notification daemon.";
+      description = "Enable Dunst configuration.";
     };
 
     package = mkOption {
       type = types.package;
       default = pkgs.dunst;
+      description = "The Dunst package to install.";
     };
   };
 
@@ -35,7 +34,7 @@ in
       packages = [ cfg.package ];
 
       xdg.config.files."dunst/dunstrc" = {
-        generator = generators.toINI { };
+        generator = lib.generators.toINI { };
         value = {
           global = {
             monitor = 0;
@@ -127,24 +126,6 @@ in
             timeout = 3;
           };
         };
-      };
-
-      systemd.enable = true;
-
-      systemd.services.dunst = {
-        description = "Dunst notification daemon";
-        wantedBy = [ "graphical-session.target" ];
-        after = [ "graphical-session.target" ];
-        partOf = [ "graphical-session.target" ];
-
-        serviceConfig = {
-          ExecStart = getExe cfg.package;
-          Restart = "always";
-          RestartSec = 3;
-        };
-
-        restartTriggers = [ config.hj.xdg.config.files."dunst/dunstrc".source ];
-        restartIfChanged = true;
       };
     };
   };

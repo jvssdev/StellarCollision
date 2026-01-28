@@ -9,10 +9,8 @@ let
     mkOption
     mkIf
     types
-    getExe
     ;
   cfg = config.cfg.wpaperd;
-
   wallpapers = builtins.path {
     path = ../assets/Wallpapers;
     name = "wallpapers";
@@ -21,11 +19,7 @@ let
 in
 {
   options.cfg.wpaperd = {
-    enable = mkOption {
-      type = types.bool;
-      default = false;
-    };
-
+    enable = lib.mkEnableOption "wpaperd";
     package = mkOption {
       type = types.package;
       default = pkgs.wpaperd;
@@ -40,26 +34,7 @@ in
         [any]
         path = "${wallpapers}"
         duration = "10m"
-        sorting = "random"
       '';
-
-      systemd.enable = true;
-
-      systemd.services.wpaperd = {
-        description = "wpaperd wallpaper daemon";
-        wantedBy = [ "graphical-session.target" ];
-        after = [ "graphical-session.target" ];
-        partOf = [ "graphical-session.target" ];
-
-        serviceConfig = {
-          ExecStart = getExe cfg.package;
-          Restart = "always";
-          RestartSec = 3;
-        };
-
-        restartTriggers = [ config.hj.xdg.config.files."wpaperd/config.toml".source ];
-        restartIfChanged = true;
-      };
     };
   };
 }
