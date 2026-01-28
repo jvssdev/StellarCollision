@@ -42,23 +42,32 @@ in
     hj.xdg.config.files."xdg-desktop-portal-termfilechooser/config" = {
       text = ''
         [filechooser]
-        cmd = $HOME/.config/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh
-        default_dir = $HOME
-        open_mode = suggested
-        save_mode = last
+        cmd=${
+          config.hjem.users.${config.cfg.vars.username}.directory
+        }/.config/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh
+        default_dir=${config.hjem.users.${config.cfg.vars.username}.directory}
+        open_mode=suggested
+        save_mode=last  
       '';
     };
     hj.xdg.config.files."xdg-desktop-portal-termfilechooser/yazi-wrapper.sh" = {
       executable = true;
       text = ''
         #!${pkgs.bash}/bin/bash
-        set -e
+        set -euo pipefail
+
         multiple="$1"
         directory="$2"
         save="$3"
         path="$4"
         out="$5"
-        ${pkgs.wezterm}/bin/wezterm start --always-new-process -- ${pkgs.yazi}/bin/yazi --chooser-file="$out" "$path"
+
+        ${pkgs.wezterm}/bin/wezterm start \
+          --always-new-process \
+          --class filechooser \
+          -- ${pkgs.yazi}/bin/yazi \
+          --chooser-file="$out" \
+          "$path"
       '';
     };
   };
