@@ -7,6 +7,7 @@
 let
   inherit (lib) mkEnableOption mkIf;
   cfg = config.cfg.portals;
+  homeDir = config.cfg.vars.homeDirectory;
 in
 {
   options.cfg.portals = {
@@ -42,12 +43,10 @@ in
     hj.xdg.config.files."xdg-desktop-portal-termfilechooser/config" = {
       text = ''
         [filechooser]
-        cmd=${
-          config.hjem.users.${config.cfg.vars.username}.directory
-        }/.config/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh
-        default_dir=${config.hjem.users.${config.cfg.vars.username}.directory}
+        cmd=${homeDir}/.config/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh
+        default_dir=${homeDir}
         open_mode=suggested
-        save_mode=last  
+        save_mode=last
       '';
     };
     hj.xdg.config.files."xdg-desktop-portal-termfilechooser/yazi-wrapper.sh" = {
