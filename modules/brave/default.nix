@@ -12,6 +12,17 @@ let
   preferencesContent = import ./_preferences.nix;
   policiesContent = import ./_policies.nix;
 
+  forcedExtensions = map (id: "${id};https://clients2.google.com/service/update2/crx") cfg.extensions;
+
+  fullPolicies = policiesContent.policies // {
+    ExtensionInstallForcelist = forcedExtensions;
+  };
+
+  braveFixed = pkgs.brave.overrideAttrs (old: {
+    postFixup = (old.postFixup or "") + ''
+      rm -f $out/share/applications/com.brave.Browser.desktop
+    '';
+  });
 in
 {
   options.cfg.brave = {
@@ -23,19 +34,19 @@ in
 
     package = mkOption {
       type = types.package;
-      default = pkgs.brave;
+      default = braveFixed;
       description = "The Brave package to install.";
     };
 
     extensions = mkOption {
       type = types.listOf types.str;
       default = [
-        "pkehgijcmpdhfbdbbnkijodmdjhbjlgp"
-        "dbepggeogbaibhgnhhndojpepiihcmeb"
-        "dhdgffkkebhmkfjojejmpbldmpobfkfo"
-        "ammjkodgmmoknidbanneddgankgfejfh"
-        "eimadpbcbfnmbkopoojfekhnkhdbieeh"
-        "mnjggcdmjocbbbhaepdhchncahnbgone"
+        "pkehgijcmpdhfbdbbnkijodmdjhbjlgp" # uBlock Origin Lite
+        "dbepggeogbaibhgnhhndojpepiihcmeb" # Tampermonkey
+        "dhdgffkkebhmkfjojejmpbldmpobfkfo" # Bitwarden
+        "ammjkodgmmoknidbanneddgankgfejfh" # Dark Reader
+        "eimadpbcbfnmbkopoojfekhnkhdbieeh" # DuckDuckGo Privacy Essentials
+        "mnjggcdmjocbbbhaepdhchncahnbgone" # SponsorBlock
       ];
       description = "List of extension IDs to install.";
     };
@@ -44,11 +55,8 @@ in
   config = mkIf cfg.enable {
     hj.packages = [ cfg.package ];
 
-    programs.chromium = {
-      enable = true;
-      inherit (cfg) extensions;
-      extraOpts = policiesContent.policies;
-    };
+    environment.etc."opt/chrome/policies/managed/brave-policies.json".text =
+      builtins.toJSON fullPolicies;
 
     hj.xdg.config = {
       files = {
