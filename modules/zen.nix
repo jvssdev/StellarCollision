@@ -10,8 +10,6 @@ let
 
   c = config.cfg.theme.colors;
 
-  nur = import inputs.nur { inherit pkgs; };
-
   customPolicies = {
     AutofillCreditCardEnabled = false;
     AutofillAddressEnabled = false;
@@ -117,6 +115,30 @@ let
         Status = "locked";
       };
     };
+
+    ExtensionSettings = {
+      "*" = {
+        installation_mode = "allowed";
+      };
+    }
+    //
+      lib.mapAttrs'
+        (name: slug: {
+          inherit name;
+          value = {
+            installation_mode = "force_installed";
+            install_url = "https://addons.mozilla.org/firefox/downloads/latest/${slug}/latest.xpi";
+          };
+        })
+        {
+          "uBlock0@raymondhill.net" = "ublock-origin";
+          "addon@darkreader.org" = "darkreader";
+          "keepassxc-browser@keepassxc.org" = "keepassxc-browser";
+          "sponsorblocker@ajay.app" = "sponsorblock";
+          "firefox@betterttv.net" = "betterttv";
+          "{d7742d87-e61d-4b78-b8a1-b469842139fa}" = "vimium-ff";
+          "jhnleackffjbkkjknccjgfjlgnndgnce" = "auto-tab-discard";
+        };
   };
 
   zen-unwrapped =
@@ -177,25 +199,6 @@ let
       in
       ''user_pref("${name}", ${valStr});''
     ) settings
-  );
-
-  addons = nur.repos.rycee.firefox-addons;
-
-  extensionsList = with addons; [
-    ublock-origin
-    darkreader
-    keepassxc-browser
-    sponsorblock
-    betterttv
-    vimium
-    auto-tab-discard
-  ];
-
-  extensionFiles = lib.listToAttrs (
-    builtins.map (ext: {
-      name = ".zen/default/extensions/${ext.addonId}.xpi";
-      value.source = ext;
-    }) extensionsList
   );
 in
 {
@@ -402,8 +405,7 @@ in
             }
           }
         '';
-      }
-      // extensionFiles;
+      };
     };
   };
 }
