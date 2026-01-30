@@ -194,9 +194,7 @@ let
   extensionFiles = lib.listToAttrs (
     builtins.map (ext: {
       name = ".zen/default/extensions/${ext.addonId}.xpi";
-      value = {
-        source = ext;
-      };
+      value.source = ext;
     }) extensionsList
   );
 in
