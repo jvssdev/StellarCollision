@@ -137,7 +137,7 @@ let
           "sponsorblocker@ajay.app" = "sponsorblock";
           "firefox@betterttv.net" = "betterttv";
           "{d7742d87-e61d-4b78-b8a1-b469842139fa}" = "vimium-ff";
-          "jhnleackffjbkkjknccjgfjlgnndgnce" = "auto-tab-discard";
+          "{c2c003ee-bd69-42a2-b0e9-6f34222cb046}" = "auto-tab-discard";
         };
   };
 
