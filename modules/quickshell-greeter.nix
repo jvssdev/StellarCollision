@@ -61,12 +61,14 @@ in
         };
       };
     };
+
     users.users.${greeterUser} = {
       isSystemUser = true;
       group = greeterUser;
       extraGroups = [
         "video"
         "render"
+        "seat"
       ];
       home = greeterHome;
       createHome = true;
