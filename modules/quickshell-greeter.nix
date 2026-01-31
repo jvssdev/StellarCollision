@@ -56,7 +56,7 @@ in
                 ])
               ];
             in
-            "${lib.getExe pkgs.cage} -s -- env QML_IMPORT_PATH=${qmlImports} ${quickshell}/bin/quickshell ${greeterHome}/.config/quickshell/greeter.qml";
+            "${pkgs.dbus}/bin/dbus-run-session -- ${lib.getExe pkgs.cage} -s -- env QML_IMPORT_PATH=${qmlImports} ${quickshell}/bin/quickshell ${greeterHome}/.config/quickshell/greeter.qml";
           user = greeterUser;
         };
       };
@@ -100,7 +100,7 @@ in
         import QtQuick
         import QtQuick.Layouts
         import QtQuick.Controls
-        import QtGraphicalEffects
+        import Qt5Compat.GraphicalEffects
         import Quickshell
         import Quickshell.Wayland
         import Quickshell.Io
