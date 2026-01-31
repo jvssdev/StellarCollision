@@ -73,6 +73,8 @@
     networkmanager.enable = true;
   };
 
+  environment.pathsToLink = [ "/share/icons" ];
+
   services = {
     dbus = {
       enable = true;
