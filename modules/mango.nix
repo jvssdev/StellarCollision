@@ -33,7 +33,10 @@ in
   imports = [ inputs.mango.nixosModules.mango ];
 
   config = mkIf cfg.enable {
-    programs.mango.enable = true;
+    programs.mango = {
+      enable = true;
+      package = inputs.mango.packages.${pkgs.stdenv.hostPlatform.system}.mango;
+    };
 
     hj.packages = [
       screenshot
@@ -250,6 +253,16 @@ in
       windowrule=isnamedscratchpad:1,width:1900,height:1600,appid:wezterm-yazi-nvim
       layerrule=noblur:1,layer_name:selection
     '';
+
+    systemd.user.targets.mango-session = {
+      unitConfig = {
+        Description = "mango compositor session";
+        Documentation = [ "man:systemd.special(7)" ];
+        BindsTo = [ "graphical-session.target" ];
+        Wants = [ "graphical-session-pre.target" ];
+        After = [ "graphical-session-pre.target" ];
+      };
+    };
 
     environment.sessionVariables = {
       XDG_SESSION_TYPE = "wayland";
