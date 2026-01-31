@@ -188,7 +188,7 @@ in
     enable = mkEnableOption "Enable SDDM configuration.";
     wayland.enable = mkOption {
       type = types.bool;
-      default = true;
+      default = false;
       description = "Enable Wayland for SDDM.";
     };
   };
@@ -223,7 +223,7 @@ in
 
     services.displayManager.sddm = {
       enable = true;
-      wayland.enable = cfg.wayland.enable;
+      wayland.enable = false;
       package = pkgs.kdePackages.sddm;
       theme = silentTheme.pname;
 
