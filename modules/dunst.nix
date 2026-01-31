@@ -77,7 +77,7 @@ in
             max_icon_size = 64;
             sticky_history = true;
             history_length = 100;
-            browser = "brave";
+            browser = "zen-beta";
             always_run_script = true;
             title = "Dunst";
             class = "Dunst";

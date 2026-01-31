@@ -20,16 +20,16 @@ in
     xdg.mime = {
       enable = true;
       defaultApplications = {
-        "x-scheme-handler/http" = "brave-browser.desktop";
-        "x-scheme-handler/https" = "brave-browser.desktop";
-        "x-scheme-handler/chrome" = "brave-browser.desktop";
-        "text/html" = "brave-browser.desktop";
-        "application/x-extension-htm" = "brave-browser.desktop";
-        "application/x-extension-html" = "brave-browser.desktop";
-        "application/x-extension-shtml" = "brave-browser.desktop";
-        "application/xhtml+xml" = "brave-browser.desktop";
-        "application/x-extension-xhtml" = "brave-browser.desktop";
-        "application/x-extension-xht" = "brave-browser.desktop";
+        "x-scheme-handler/http" = "zen-browser.desktop";
+        "x-scheme-handler/https" = "zen-browser.desktop";
+        "x-scheme-handler/chrome" = "zen-browser.desktop";
+        "text/html" = "zen-browser.desktop";
+        "application/x-extension-htm" = "zen-browser.desktop";
+        "application/x-extension-html" = "zen-browser.desktop";
+        "application/x-extension-shtml" = "zen-browser.desktop";
+        "application/xhtml+xml" = "zen-browser.desktop";
+        "application/x-extension-xhtml" = "zen-browser.desktop";
+        "application/x-extension-xht" = "zen-browser.desktop";
 
         "inode/directory" = "yazi-open.desktop";
 
