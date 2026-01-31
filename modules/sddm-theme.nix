@@ -221,7 +221,7 @@ in
       wayland.enable = cfg.wayland.enable;
       package = pkgs.kdePackages.sddm;
       theme = silentTheme.pname;
-      extraPackages = silentTheme.propagatedBuildInputs;
+      extraPackages = silentTheme.propagatedBuildInputs ++ [ config.cfg.gtk.cursorTheme.package ];
       settings = {
         General = {
           GreeterEnvironment =
