@@ -30,7 +30,8 @@
     locale.enable = true;
     editorPackages.enable = true;
     yazi.enable = true;
-    sddm.enable = true;
+    sddm.enable = false;
+    quickshellGreeter.enable = true;
     virtualisation.enable = true;
     jujutsu = {
       enable = true;
