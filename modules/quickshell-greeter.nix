@@ -45,19 +45,29 @@ in
       enable = true;
       settings = {
         default_session = {
-          command = "${quickshell}/bin/quickshell ${greeterHome}/.config/quickshell/greeter.qml";
+          command =
+            let
+              qmlImports = lib.concatStringsSep ":" [
+                "${greeterHome}/.config/quickshell"
+                "${quickshell}/share/qml"
+                (lib.makeSearchPath "lib/qt-6/qml" [
+                  pkgs.kdePackages.qtdeclarative
+                  pkgs.kdePackages.qtbase
+                ])
+              ];
+            in
+            "${lib.getExe pkgs.cage} -s -- env QML_IMPORT_PATH=${qmlImports} ${quickshell}/bin/quickshell ${greeterHome}/.config/quickshell/greeter.qml";
           user = greeterUser;
-        };
-        initial_session = mkIf cfg.autologin.enable {
-          command = "${mango}/bin/mango";
-          inherit (cfg.autologin) user;
         };
       };
     };
-
     users.users.${greeterUser} = {
       isSystemUser = true;
       group = greeterUser;
+      extraGroups = [
+        "video"
+        "render"
+      ];
       home = greeterHome;
       createHome = true;
     };
@@ -77,6 +87,7 @@ in
         "d ${greeterHome}/.icons 0755 ${greeterUser} ${greeterUser} -"
         "L+ ${greeterHome}/.icons/default - - - - ${cursorPkg}/share/icons/${cursorName}"
         "C ${greeterHome}/.config/quickshell/wallpaper.png - - - - ${../assets/Wallpapers/a6116535-4a72-453e-83c9-ea97b8597d8c.png}"
+        "L+ ${greeterHome}/.config/quickshell/greeter.qml - - - - /etc/greetd/quickshell/greeter.qml"
       ];
 
     environment.etc = {
