@@ -57,7 +57,7 @@ in
                 ])
               ];
             in
-            "${pkgs.dbus}/bin/dbus-run-session -- ${pkgs.cage}/bin/cage -s -m last -- env QML_IMPORT_PATH=${qmlImports} ${quickshell}/bin/quickshell ${greeterHome}/.config/quickshell/greeter.qml";
+            "${pkgs.dbus}/bin/dbus-run-session -- ${lib.getExe pkgs.cage} -s -m last -- env QML_IMPORT_PATH=${qmlImports} ${quickshell}/bin/quickshell ${greeterHome}/.config/quickshell/greeter.qml";
           user = greeterUser;
         };
       };
@@ -74,6 +74,8 @@ in
       home = greeterHome;
       createHome = true;
     };
+
+    services.seatd.enable = true;
 
     users.groups.${greeterUser} = { };
 

@@ -81,7 +81,6 @@
       enable = true;
       packages = [ pkgs.dconf ];
     };
-    seatd.enable = true;
     auto-cpufreq = {
       enable = true;
       settings = {
