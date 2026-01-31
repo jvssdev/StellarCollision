@@ -215,10 +215,18 @@ in
 
     qt.enable = true;
 
-    systemd.tmpfiles.rules = [
-      "L+ /var/lib/sddm/.icons/default - - - - ${cursorPkg}/share/icons/${cursorName}"
-      "d /var/lib/sddm/.icons 0755 sddm sddm"
-    ];
+    systemd.tmpfiles.rules =
+      let
+        cursorPath = "${cursorPkg}/share/icons/${cursorName}";
+      in
+      [
+        "d /var/lib/sddm/.icons 0755 sddm sddm -"
+        "L+ /var/lib/sddm/.icons/default - - - - ${cursorPath}"
+        "L+ /var/lib/sddm/.icons/${cursorName} - - - - ${cursorPath}"
+        "d /usr/share/icons 0755 root root -"
+        "L+ /usr/share/icons/${cursorName} - - - - ${cursorPath}"
+        "L+ /usr/share/icons/default - - - - ${cursorPath}"
+      ];
 
     services.displayManager.sddm = {
       enable = true;
@@ -226,7 +234,7 @@ in
       package = pkgs.kdePackages.sddm;
       theme = silentTheme.pname;
 
-      extraPackages = silentTheme.propagatedBuildInputs;
+      extraPackages = silentTheme.propagatedBuildInputs ++ [ cursorPkg ];
 
       settings = {
         General = {
@@ -235,7 +243,7 @@ in
             + "QT_IM_MODULE=qtvirtualkeyboard,"
             + "XCURSOR_THEME=${cursorName},"
             + "XCURSOR_SIZE=${toString cursorSize},"
-            + "XCURSOR_PATH=/usr/share/icons:${cursorPkg}/share/icons";
+            + "XCURSOR_PATH=${cursorPkg}/share/icons:/usr/share/icons:/var/lib/sddm/.icons";
           InputMethod = "qtvirtualkeyboard";
         };
         Theme = {
