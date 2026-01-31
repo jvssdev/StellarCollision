@@ -215,16 +215,11 @@ in
       let
         cursorPkg = config.cfg.gtk.cursorTheme.package;
         cursorName = config.cfg.gtk.cursorTheme.name;
+        themePath = "${cursorPkg}/share/icons/${cursorName}";
       in
       [
-        "L+ /var/lib/sddm/.icons/default - - - - ${cursorPkg}/share/icons/${cursorName}"
-
-        "d /usr/share/icons/default 0755 root root -"
-
-        "L+ /usr/share/icons/default/index.theme - - - - ${pkgs.writeText "default-index.theme" ''
-          [Icon Theme]
-          Inherits=${cursorName}
-        ''}"
+        "L+ /usr/share/icons/default - - - - ${themePath}"
+        "L+ /var/lib/sddm/.icons/default - - - - ${themePath}"
 
         "d /var/lib/sddm/.icons 0755 sddm sddm -"
       ];
@@ -243,12 +238,13 @@ in
             let
               cursorTheme = config.cfg.gtk.cursorTheme.name;
               cursorSize = toString config.cfg.gtk.cursorTheme.size;
+              themePath = "${config.cfg.gtk.cursorTheme.package}/share/icons";
             in
             "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/,"
             + "QT_IM_MODULE=qtvirtualkeyboard,"
             + "XCURSOR_THEME=${cursorTheme},"
             + "XCURSOR_SIZE=${cursorSize},"
-            + "XCURSOR_PATH=/usr/share/icons:/var/lib/sddm/.icons:${config.cfg.gtk.cursorTheme.package}/share/icons";
+            + "XCURSOR_PATH=/usr/share/icons:/var/lib/sddm/.icons:${themePath}";
           InputMethod = "qtvirtualkeyboard";
         };
         Theme = {
