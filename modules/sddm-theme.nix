@@ -217,6 +217,7 @@ in
 
     systemd.tmpfiles.rules = [
       "d /var/lib/sddm/.icons 0755 sddm sddm -"
+      "L+ /var/lib/sddm/.icons/${cursorName} - - - - ${cursorPkg}/share/icons/${cursorName}"
       "L+ /var/lib/sddm/.icons/default - - - - ${cursorPkg}/share/icons/${cursorName}"
     ];
 
@@ -226,7 +227,7 @@ in
       package = pkgs.kdePackages.sddm;
       theme = silentTheme.pname;
 
-      extraPackages = silentTheme.propagatedBuildInputs;
+      extraPackages = silentTheme.propagatedBuildInputs ++ [ cursorPkg ];
 
       settings = {
         General = {
@@ -235,7 +236,7 @@ in
             + "QT_IM_MODULE=qtvirtualkeyboard,"
             + "XCURSOR_THEME=${cursorName},"
             + "XCURSOR_SIZE=${cursorSize},"
-            + "XCURSOR_PATH=/usr/share/icons:${cursorPkg}/share/icons";
+            + "XCURSOR_PATH=/usr/share/icons:/var/lib/sddm/.icons:${cursorPkg}/share/icons";
           InputMethod = "qtvirtualkeyboard";
         };
         Theme = {
