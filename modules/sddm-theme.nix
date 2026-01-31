@@ -22,9 +22,9 @@ let
     cp ${wallpaper} $out
   '';
 
-  cursorThemePkg = config.cfg.gtk.cursorTheme.package;
-  cursorThemeName = config.cfg.gtk.cursorTheme.name;
-  cursorThemeSize = config.cfg.gtk.cursorTheme.size;
+  cursorPkg = config.cfg.gtk.cursorTheme.package;
+  cursorName = config.cfg.gtk.cursorTheme.name;
+  cursorSize = toString config.cfg.gtk.cursorTheme.size;
 
   silentTheme = silentSDDM.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
     extraBackgrounds = [ background-derivation ];
@@ -203,18 +203,36 @@ in
         kdePackages.qtstyleplugin-kvantum
         kdePackages.qtwayland
         qt6.qtwayland
-        cursorThemePkg
+        cursorPkg
       ];
+
+      etc."X11/Xresources".text = ''
+        Xcursor.theme: ${cursorName}
+        Xcursor.size: ${cursorSize}
+      '';
+
+      etc."sddm.conf.d/cursor.conf".text = ''
+        [Theme]
+        CursorTheme=${cursorName}
+        CursorSize=${cursorSize}
+      '';
     };
 
     qt.enable = true;
 
-    systemd.tmpfiles.rules = [
-      "d /var/lib/sddm 0755 sddm sddm -"
-      "d /var/lib/sddm/.icons 0755 sddm sddm -"
-      "L+ /var/lib/sddm/.icons/${cursorThemeName} - - - - ${cursorThemePkg}/share/icons/${cursorThemeName}"
-      "d /run/sddm 0755 sddm sddm -"
-    ];
+    systemd.tmpfiles.rules =
+      let
+        cursorThemePath = "${cursorPkg}/share/icons/${cursorName}";
+      in
+      [
+        "d /var/lib/sddm/.icons 0755 sddm sddm -"
+        "d /var/lib/sddm/.config 0755 sddm sddm -"
+
+        "L+ /var/lib/sddm/.icons/${cursorName} - - - - ${cursorThemePath}"
+        "L+ /var/lib/sddm/.icons/default - - - - ${cursorThemePath}"
+        "L+ /usr/share/icons/default - - - - ${cursorThemePath}"
+        "L+ /usr/share/icons/default/index.theme - - - - ${cursorThemePath}/index.theme"
+      ];
 
     services.displayManager.sddm = {
       enable = true;
@@ -222,30 +240,47 @@ in
       package = pkgs.kdePackages.sddm;
       theme = silentTheme.pname;
 
-      extraPackages = silentTheme.propagatedBuildInputs ++ [ cursorThemePkg ];
+      extraPackages = silentTheme.propagatedBuildInputs ++ [ cursorPkg ];
 
       settings = {
         General = {
           GreeterEnvironment =
-            "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/,"
-            + "QT_IM_MODULE=qtvirtualkeyboard,"
-            + "XCURSOR_THEME=${cursorThemeName},"
-            + "XCURSOR_SIZE=${toString cursorThemeSize}";
+            let
+              themePath = "${cursorPkg}/share/icons";
+            in
+            lib.concatStringsSep "," [
+              "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/"
+              "QT_IM_MODULE=qtvirtualkeyboard"
+              "XCURSOR_THEME=${cursorName}"
+              "XCURSOR_SIZE=${cursorSize}"
+              "XCURSOR_PATH=/usr/share/icons:/var/lib/sddm/.icons:${themePath}:${themePath}/${cursorName}/cursors"
+              "QT_QPA_PLATFORMTHEME=qt6ct"
+              "XWAYLAND_CURSOR_THEME=${cursorName}"
+              "XWAYLAND_CURSOR_SIZE=${cursorSize}"
+            ];
           InputMethod = "qtvirtualkeyboard";
         };
         Theme = {
-          CursorTheme = cursorThemeName;
-          CursorSize = cursorThemeSize;
-        };
-        X11 = {
-          ServerArguments = "-nolisten tcp";
+          CursorTheme = cursorName;
+          CursorSize = cursorSize;
+          ThemeDir = "/usr/share/icons";
         };
       };
     };
 
-    environment.sessionVariables = {
-      XCURSOR_THEME = cursorThemeName;
-      XCURSOR_SIZE = toString cursorThemeSize;
-    };
+    system.activationScripts.sddm-cursor-fix = ''
+            mkdir -p /var/lib/sddm/.config
+            chown sddm:sddm /var/lib/sddm/.config
+            
+            if [ ! -f /var/lib/sddm/.config/gtk-3.0/settings.ini ]; then
+              mkdir -p /var/lib/sddm/.config/gtk-3.0
+              cat > /var/lib/sddm/.config/gtk-3.0/settings.ini <<EOF
+      [Settings]
+      gtk-cursor-theme-name=${cursorName}
+      gtk-cursor-theme-size=${cursorSize}
+      EOF
+              chown -R sddm:sddm /var/lib/sddm/.config
+            fi
+    '';
   };
 }
