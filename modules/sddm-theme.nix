@@ -22,6 +22,10 @@ let
     cp ${wallpaper} $out
   '';
 
+  cursorPkg = config.cfg.gtk.cursorTheme.package;
+  cursorName = config.cfg.gtk.cursorTheme.name;
+  cursorSize = toString config.cfg.gtk.cursorTheme.size;
+
   silentTheme = silentSDDM.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
     extraBackgrounds = [ background-derivation ];
     theme-overrides = {
@@ -199,13 +203,18 @@ in
         kdePackages.qtstyleplugin-kvantum
         kdePackages.qtwayland
         qt6.qtwayland
-        config.cfg.gtk.cursorTheme.package
+        cursorPkg
       ];
+
+      etc."X11/Xresources".text = ''
+        Xcursor.theme: ${cursorName}
+        Xcursor.size: ${cursorSize}
+      '';
 
       etc."sddm.conf.d/cursor.conf".text = ''
         [Theme]
-        CursorTheme=${config.cfg.gtk.cursorTheme.name}
-        CursorSize=${toString config.cfg.gtk.cursorTheme.size}
+        CursorTheme=${cursorName}
+        CursorSize=${cursorSize}
       '';
     };
 
@@ -213,15 +222,19 @@ in
 
     systemd.tmpfiles.rules =
       let
-        cursorPkg = config.cfg.gtk.cursorTheme.package;
-        cursorName = config.cfg.gtk.cursorTheme.name;
-        themePath = "${cursorPkg}/share/icons/${cursorName}";
+        cursorThemePath = "${cursorPkg}/share/icons/${cursorName}";
       in
       [
-        "L+ /usr/share/icons/default - - - - ${themePath}"
-        "L+ /var/lib/sddm/.icons/default - - - - ${themePath}"
-
         "d /var/lib/sddm/.icons 0755 sddm sddm -"
+        "d /var/lib/sddm/.config 0755 sddm sddm -"
+
+        "L+ /var/lib/sddm/.icons/${cursorName} - - - - ${cursorThemePath}"
+
+        "L+ /var/lib/sddm/.icons/default - - - - ${cursorThemePath}"
+
+        "L+ /usr/share/icons/default - - - - ${cursorThemePath}"
+
+        "L+ /usr/share/icons/default/index.theme - - - - ${cursorThemePath}/index.theme"
       ];
 
     services.displayManager.sddm = {
@@ -230,28 +243,48 @@ in
       package = pkgs.kdePackages.sddm;
       theme = silentTheme.pname;
 
-      extraPackages = silentTheme.propagatedBuildInputs ++ [ config.cfg.gtk.cursorTheme.package ];
+      extraPackages = silentTheme.propagatedBuildInputs ++ [ cursorPkg ];
 
       settings = {
         General = {
           GreeterEnvironment =
             let
-              cursorTheme = config.cfg.gtk.cursorTheme.name;
-              cursorSize = toString config.cfg.gtk.cursorTheme.size;
-              themePath = "${config.cfg.gtk.cursorTheme.package}/share/icons";
+              themePath = "${cursorPkg}/share/icons";
             in
-            "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/,"
-            + "QT_IM_MODULE=qtvirtualkeyboard,"
-            + "XCURSOR_THEME=${cursorTheme},"
-            + "XCURSOR_SIZE=${cursorSize},"
-            + "XCURSOR_PATH=/usr/share/icons:/var/lib/sddm/.icons:${themePath}";
+            lib.concatStringsSep "," [
+              "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/"
+              "QT_IM_MODULE=qtvirtualkeyboard"
+              "XCURSOR_THEME=${cursorName}"
+              "XCURSOR_SIZE=${cursorSize}"
+              "XCURSOR_PATH=/usr/share/icons:/var/lib/sddm/.icons:${themePath}:${themePath}/${cursorName}/cursors"
+              "QT_QPA_PLATFORMTHEME=qt6ct"
+              "XWAYLAND_CURSOR_THEME=${cursorName}"
+              "XWAYLAND_CURSOR_SIZE=${cursorSize}"
+            ];
           InputMethod = "qtvirtualkeyboard";
+          DefaultSession = "plasma";
         };
         Theme = {
-          CursorTheme = config.cfg.gtk.cursorTheme.name;
-          CursorSize = config.cfg.gtk.cursorTheme.size;
+          CursorTheme = cursorName;
+          CursorSize = cursorSize;
+          ThemeDir = "/usr/share/icons";
         };
       };
     };
+
+    system.activationScripts.sddm-cursor-fix = ''
+            mkdir -p /var/lib/sddm/.config
+            chown sddm:sddm /var/lib/sddm/.config
+            
+            if [ ! -f /var/lib/sddm/.config/gtk-3.0/settings.ini ]; then
+              mkdir -p /var/lib/sddm/.config/gtk-3.0
+              cat > /var/lib/sddm/.config/gtk-3.0/settings.ini <<EOF
+      [Settings]
+      gtk-cursor-theme-name=${cursorName}
+      gtk-cursor-theme-size=${cursorSize}
+      EOF
+              chown -R sddm:sddm /var/lib/sddm/.config
+            fi
+    '';
   };
 }
