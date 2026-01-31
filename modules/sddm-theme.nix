@@ -199,6 +199,7 @@ in
         kdePackages.qtstyleplugin-kvantum
         kdePackages.qtwayland
         qt6.qtwayland
+        config.cfg.gtk.cursorTheme.package
       ];
 
       etc."sddm.conf.d/cursor.conf".text = ''
@@ -217,7 +218,15 @@ in
       in
       [
         "L+ /var/lib/sddm/.icons/default - - - - ${cursorPkg}/share/icons/${cursorName}"
-        "d /var/lib/sddm/.icons 0755 sddm sddm"
+
+        "d /usr/share/icons/default 0755 root root -"
+
+        "L+ /usr/share/icons/default/index.theme - - - - ${pkgs.writeText "default-index.theme" ''
+          [Icon Theme]
+          Inherits=${cursorName}
+        ''}"
+
+        "d /var/lib/sddm/.icons 0755 sddm sddm -"
       ];
 
     services.displayManager.sddm = {
@@ -225,20 +234,21 @@ in
       wayland.enable = cfg.wayland.enable;
       package = pkgs.kdePackages.sddm;
       theme = silentTheme.pname;
-      extraPackages = silentTheme.propagatedBuildInputs;
+
+      extraPackages = silentTheme.propagatedBuildInputs ++ [ config.cfg.gtk.cursorTheme.package ];
+
       settings = {
         General = {
           GreeterEnvironment =
             let
               cursorTheme = config.cfg.gtk.cursorTheme.name;
               cursorSize = toString config.cfg.gtk.cursorTheme.size;
-              cursorPkgPath = "${config.cfg.gtk.cursorTheme.package}/share/icons/${cursorTheme}";
             in
             "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/,"
             + "QT_IM_MODULE=qtvirtualkeyboard,"
             + "XCURSOR_THEME=${cursorTheme},"
             + "XCURSOR_SIZE=${cursorSize},"
-            + "XCURSOR_PATH=/usr/share/icons:${cursorPkgPath}";
+            + "XCURSOR_PATH=/usr/share/icons:/var/lib/sddm/.icons:${config.cfg.gtk.cursorTheme.package}/share/icons";
           InputMethod = "qtvirtualkeyboard";
         };
         Theme = {
