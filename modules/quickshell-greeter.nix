@@ -53,10 +53,11 @@ in
                 (lib.makeSearchPath "lib/qt-6/qml" [
                   pkgs.kdePackages.qtdeclarative
                   pkgs.kdePackages.qtbase
+                  pkgs.kdePackages.qt5compat
                 ])
               ];
             in
-            "${pkgs.dbus}/bin/dbus-run-session -- ${lib.getExe pkgs.cage} -s -- env QML_IMPORT_PATH=${qmlImports} ${quickshell}/bin/quickshell ${greeterHome}/.config/quickshell/greeter.qml";
+            "${pkgs.dbus}/bin/dbus-run-session -- ${pkgs.cage}/bin/cage -s -m last -- env QML_IMPORT_PATH=${qmlImports} ${quickshell}/bin/quickshell ${greeterHome}/.config/quickshell/greeter.qml";
           user = greeterUser;
         };
       };
