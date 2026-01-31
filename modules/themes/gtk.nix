@@ -116,11 +116,5 @@ in
         gtk-xft-rgba=rgb
       '';
     };
-
-    environment.sessionVariables = {
-      GTK_THEME = cfg.theme.name;
-      XCURSOR_THEME = cfg.cursorTheme.name;
-      XCURSOR_SIZE = toString cfg.cursorTheme.size;
-    };
   };
 }

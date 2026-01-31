@@ -204,15 +204,9 @@ in
 
       etc."sddm.conf.d/cursor.conf".text = ''
         [Theme]
-        CursorTheme=Bibata-Modern-Ice
-        CursorSize=24
+        CursorTheme=${config.cfg.gtk.cursorTheme.name}
+        CursorSize=${toString config.cfg.gtk.cursorTheme.size}
       '';
-
-      sessionVariables = {
-        XCURSOR_THEME = "Bibata-Modern-Ice";
-        XCURSOR_SIZE = "24";
-        QT_QPA_PLATFORMTHEME = "qt5ct";
-      };
     };
 
     qt.enable = true;
@@ -230,12 +224,22 @@ in
       extraPackages = silentTheme.propagatedBuildInputs;
       settings = {
         General = {
-          GreeterEnvironment = "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/,QT_IM_MODULE=qtvirtualkeyboard,XCURSOR_THEME=Bibata-Modern-Ice,XCURSOR_SIZE=24,XCURSOR_PATH=/usr/share/icons:${pkgs.bibata-cursors}/share/icons";
+          GreeterEnvironment =
+            let
+              cursorTheme = config.cfg.gtk.cursorTheme.name;
+              cursorSize = toString config.cfg.gtk.cursorTheme.size;
+            in
+            "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/,"
+            + "QT_IM_MODULE=qtvirtualkeyboard,"
+            + "XCURSOR_THEME=${cursorTheme},"
+            + "XCURSOR_SIZE=${cursorSize},"
+            + "XCURSOR_PATH=/usr/share/icons:${pkgs.bibata-cursors}/share/icons,"
+            + "WLR_NO_HARDWARE_CURSORS=1";
           InputMethod = "qtvirtualkeyboard";
         };
         Theme = {
-          CursorTheme = "Bibata-Modern-Ice";
-          CursorSize = 24;
+          CursorTheme = config.cfg.gtk.cursorTheme.name;
+          CursorSize = config.cfg.gtk.cursorTheme.size;
         };
       };
     };

@@ -42,11 +42,6 @@ in
 
   config = mkIf cfg.enable {
 
-    environment.sessionVariables = {
-      "EDITOR" = "nvim";
-      "VISUAL" = "nvim";
-      "SUDO_EDITOR" = "nvim";
-    };
     programs.nvf = {
       enable = true;
       defaultEditor = true;

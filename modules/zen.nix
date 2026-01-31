@@ -219,11 +219,6 @@ in
     hj = {
       packages = [ cfg.package ];
 
-      environment.sessionVariables = {
-        MOZ_ENABLE_WAYLAND = "1";
-        MOZ_USE_XINPUT2 = "1";
-      };
-
       files = {
         ".zen/profiles.ini".text = ''
           [General]

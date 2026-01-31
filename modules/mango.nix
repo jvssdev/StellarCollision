@@ -167,7 +167,7 @@ in
       bind=SUPER,t,spawn,${getExe pkgs.${config.cfg.vars.terminal}}
       bind=SUPER,a,spawn,${getExe pkgs.fuzzel}
       bind=SUPER,n,spawn,${getExe dunst-fuzzel}
-      bind=SUPER,b,spawn,${getExe pkgs.${config.cfg.vars.browser}}
+      bind=SUPER,b,spawn,${config.cfg.vars.browser}
       bind=SUPER,x,spawn,${getExe quickshell} ipc call powerMenu toggle
       bind=SUPER,p,spawn,${getExe screenshot}
       bind=SUPER,v,spawn,${getExe clipboard.fuzzel-clipboard}
@@ -262,19 +262,6 @@ in
         Wants = [ "graphical-session-pre.target" ];
         After = [ "graphical-session-pre.target" ];
       };
-    };
-
-    environment.sessionVariables = {
-      XDG_SESSION_TYPE = "wayland";
-      QT_QPA_PLATFORM = "wayland";
-      SDL_VIDEODRIVER = "wayland";
-      _JAVA_AWT_WM_NONREPARENTING = "1";
-      NIXOS_OZONE_WL = "1";
-      MOZ_ENABLE_WAYLAND = "1";
-      GDK_BACKEND = "wayland";
-      CLUTTER_BACKEND = "wayland";
-      ELECTRON_OZONE_PLATFORM_HINT = "auto";
-      GTK_USE_PORTAL = "1";
     };
   };
 }

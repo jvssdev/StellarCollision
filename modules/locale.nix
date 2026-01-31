@@ -51,12 +51,6 @@ in
       };
     };
 
-    environment.sessionVariables = {
-      XMODIFIERS = "@im=fcitx";
-      QT_IM_MODULE = "fcitx";
-      SDL_IM_MODULE = "fcitx";
-    };
-
     hj.xdg.config.files = {
       "fcitx5/conf/classicui.conf".text = ''
         Vertical Candidate List=False

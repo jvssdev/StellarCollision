@@ -2496,10 +2496,5 @@ in
         general="${config.cfg.fonts.monospace.name},11"
       '';
     };
-    environment.sessionVariables = {
-      QT_QPA_PLATFORMTHEME = "qt5ct";
-      QT_WAYLAND_DISABLE_WINDOWDECORATION = "1";
-      QT_AUTO_SCREEN_SCALE_FACTOR = "1";
-    };
   };
 }

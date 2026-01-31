@@ -7,6 +7,7 @@
     drivers.intel.enable = true;
     mango.enable = true;
     quickshell.enable = true;
+    sessionVariables.enable = true;
     portals.enable = true;
     ghostty.enable = false;
     wezterm.enable = true;
