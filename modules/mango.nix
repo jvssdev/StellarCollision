@@ -49,8 +49,8 @@ in
       exec-once="${getExe' pkgs.dbus "dbus-update-activation-environment"} --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=wlroots"
       exec-once=systemctl --user reset-failed
       exec-once=systemctl --user start mango-session.target
-      exec-once = "sh -c 'sleep 2; ${getExe pkgs.xwayland-satellite} :11 &'"
-      exec-once = "sh -c 'sleep 3; echo \"Xft.dpi: 140\" | ${getExe' pkgs.xorg.xrdb "xrdb"} -merge'"
+      exec-once = "${getExe pkgs.xwayland-satellite}"
+      exec-once = "sh -c 'sleep 1; echo \"Xft.dpi: 140\" | ${getExe' pkgs.xorg.xrdb "xrdb"} -merge'"
       exec-once = "${getExe' pkgs.networkmanagerapplet "nm-applet"} --indicator"
       exec-once = "${getExe' pkgs.blueman "blueman-applet"}"
       exec-once = "${getExe quickshell}"
@@ -72,7 +72,7 @@ in
       env=ELECTRON_OZONE_PLATFORM_HINT,auto
       env=XCURSOR_THEME,Bibata-Modern-Ice
       env=XCURSOR_SIZE,24
-      env=DISPLAY,:11
+      env=DISPLAY,:0
       env=QT_IM_MODULE,fcitx
       env=SDL_IM_MODULE,fcitx
       env=XMODIFIERS,@im=fcitx
