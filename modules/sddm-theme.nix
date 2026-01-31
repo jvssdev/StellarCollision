@@ -26,6 +26,22 @@ let
   cursorName = config.cfg.gtk.cursorTheme.name;
   cursorSize = config.cfg.gtk.cursorTheme.size;
 
+  setupCursorScript = pkgs.writeShellScript "setup-sddm-cursor" ''
+    mkdir -p /run/sddm
+    cat > /run/sddm/cursor.conf <<EOF
+    XCURSOR_THEME=${cursorName}
+    XCURSOR_SIZE=${toString cursorSize}
+    EOF
+
+    mkdir -p /var/lib/sddm/.icons
+    ln -sf ${cursorPkg}/share/icons/${cursorName} /var/lib/sddm/.icons/default 2>/dev/null || true
+    ln -sf ${cursorPkg}/share/icons/${cursorName} /var/lib/sddm/.icons/${cursorName} 2>/dev/null || true
+    chown -R sddm:sddm /var/lib/sddm/.icons
+
+    mkdir -p /usr/share/icons
+    ln -sf ${cursorPkg}/share/icons/${cursorName} /usr/share/icons/default 2>/dev/null || true
+  '';
+
   silentTheme = silentSDDM.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
     extraBackgrounds = [ background-derivation ];
     theme-overrides = {
@@ -215,18 +231,26 @@ in
 
     qt.enable = true;
 
-    systemd.tmpfiles.rules =
-      let
-        cursorPath = "${cursorPkg}/share/icons/${cursorName}";
-      in
-      [
+    systemd = {
+      tmpfiles.rules = [
         "d /var/lib/sddm/.icons 0755 sddm sddm -"
-        "L+ /var/lib/sddm/.icons/default - - - - ${cursorPath}"
-        "L+ /var/lib/sddm/.icons/${cursorName} - - - - ${cursorPath}"
+        "L+ /var/lib/sddm/.icons/default - - - - ${cursorPkg}/share/icons/${cursorName}"
+        "L+ /var/lib/sddm/.icons/${cursorName} - - - - ${cursorPkg}/share/icons/${cursorName}"
         "d /usr/share/icons 0755 root root -"
-        "L+ /usr/share/icons/${cursorName} - - - - ${cursorPath}"
-        "L+ /usr/share/icons/default - - - - ${cursorPath}"
+        "L+ /usr/share/icons/default - - - - ${cursorPkg}/share/icons/${cursorName}"
       ];
+
+      services.sddm-cursor-setup = {
+        description = "Setup SDDM cursor before display manager starts";
+        wantedBy = [ "display-manager.service" ];
+        before = [ "display-manager.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = setupCursorScript;
+          RemainAfterExit = true;
+        };
+      };
+    };
 
     services.displayManager.sddm = {
       enable = true;
@@ -238,12 +262,13 @@ in
 
       settings = {
         General = {
-          GreeterEnvironment =
-            "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/,"
-            + "QT_IM_MODULE=qtvirtualkeyboard,"
-            + "XCURSOR_THEME=${cursorName},"
-            + "XCURSOR_SIZE=${toString cursorSize},"
-            + "XCURSOR_PATH=${cursorPkg}/share/icons:/usr/share/icons:/var/lib/sddm/.icons";
+          GreeterEnvironment = lib.concatStringsSep "," [
+            "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/"
+            "QT_IM_MODULE=qtvirtualkeyboard"
+            "XCURSOR_THEME=${cursorName}"
+            "XCURSOR_SIZE=${toString cursorSize}"
+            "XCURSOR_PATH=${cursorPkg}/share/icons:/usr/share/icons:/var/lib/sddm/.icons"
+          ];
           InputMethod = "qtvirtualkeyboard";
         };
         Theme = {
