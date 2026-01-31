@@ -24,7 +24,7 @@ let
 
   cursorPkg = config.cfg.gtk.cursorTheme.package;
   cursorName = config.cfg.gtk.cursorTheme.name;
-  cursorSize = toString config.cfg.gtk.cursorTheme.size;
+  cursorSize = config.cfg.gtk.cursorTheme.size;
 
   silentTheme = silentSDDM.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
     extraBackgrounds = [ background-derivation ];
@@ -194,8 +194,6 @@ in
   };
 
   config = mkIf cfg.enable {
-    services.xserver.enable = true;
-
     environment = {
       systemPackages = with pkgs; [
         silentTheme
@@ -211,16 +209,15 @@ in
       etc."sddm.conf.d/cursor.conf".text = ''
         [Theme]
         CursorTheme=${cursorName}
-        CursorSize=${cursorSize}
+        CursorSize=${toString cursorSize}
       '';
     };
 
     qt.enable = true;
 
     systemd.tmpfiles.rules = [
-      "d /var/lib/sddm/.icons 0755 sddm sddm -"
-      "L+ /var/lib/sddm/.icons/${cursorName} - - - - ${cursorPkg}/share/icons/${cursorName}"
       "L+ /var/lib/sddm/.icons/default - - - - ${cursorPkg}/share/icons/${cursorName}"
+      "d /var/lib/sddm/.icons 0755 sddm sddm"
     ];
 
     services.displayManager.sddm = {
@@ -229,7 +226,7 @@ in
       package = pkgs.kdePackages.sddm;
       theme = silentTheme.pname;
 
-      extraPackages = silentTheme.propagatedBuildInputs ++ [ cursorPkg ];
+      extraPackages = silentTheme.propagatedBuildInputs;
 
       settings = {
         General = {
@@ -237,8 +234,8 @@ in
             "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/,"
             + "QT_IM_MODULE=qtvirtualkeyboard,"
             + "XCURSOR_THEME=${cursorName},"
-            + "XCURSOR_SIZE=${cursorSize},"
-            + "XCURSOR_PATH=/usr/share/icons:/var/lib/sddm/.icons:${cursorPkg}/share/icons";
+            + "XCURSOR_SIZE=${toString cursorSize},"
+            + "XCURSOR_PATH=/usr/share/icons:${cursorPkg}/share/icons";
           InputMethod = "qtvirtualkeyboard";
         };
         Theme = {
