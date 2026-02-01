@@ -89,7 +89,7 @@ in
         import Quickshell.Services.Greetd
 
         ShellRoot {
-            Component.onCompleted: console.log("Greeter QML loaded")
+            Component.onCompleted: console.log("Greeter QML loaded successfully")
 
             Greetd {
                 id: greetd
@@ -369,6 +369,7 @@ in
         "d ${greeterHome}/.icons 0755 ${greeterUser} ${greeterUser} -"
         "L+ ${greeterHome}/.icons/default - - - - ${cursorPkg}/share/icons/${cursorName}"
         "C ${greeterHome}/.config/quickshell/wallpaper.png - - - - ${../assets/Wallpapers/a6116535-4a72-453e-83c9-ea97b8597d8c.png}"
+        "L ${greeterHome}/.config/quickshell/greeter.qml - - - - /etc/greetd/quickshell/greeter.qml"
       ];
 
     systemd.services.greetd = {
