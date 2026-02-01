@@ -1,7 +1,7 @@
 {
   config,
   pkgs,
-  inputs,
+  # inputs,
   lib,
   ...
 }:
@@ -145,10 +145,10 @@ in
     services.greetd = {
       enable = true;
       settings = {
-        initial_session = {
-          command = "${inputs.mango.packages.${pkgs.stdenv.hostPlatform.system}.mango}/bin/mango";
-          user = "${config.cfg.vars.username}";
-        };
+        # initial_session = {
+        #   command = "${inputs.mango.packages.${pkgs.stdenv.hostPlatform.system}.mango}/bin/mango";
+        #   user = "${config.cfg.vars.username}";
+        # };
       };
     };
   };
