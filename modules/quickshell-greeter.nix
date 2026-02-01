@@ -44,7 +44,7 @@ in
       restart = true;
       settings = {
         default_session = {
-          command = "${pkgs.cage}/bin/cage -d -- ${quickshell}/bin/quickshell ${greeterHome}/.config/quickshell/greeter.qml";
+          command = "${pkgs.cage}/bin/cage -- ${quickshell}/bin/quickshell ${greeterHome}/.config/quickshell/greeter.qml";
           user = greeterUser;
         };
         initial_session = mkIf cfg.autologin.enable {
