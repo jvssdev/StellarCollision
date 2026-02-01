@@ -85,8 +85,8 @@ in
         GTK = {
           application_prefer_dark = true;
           cursor_size = config.cfg.gtk.cursorTheme.size;
+          cursor_theme_name = config.cfg.gtk.cursorTheme.name;
         };
-
         commands = {
           reboot = [
             "${pkgs.systemd}/bin/systemctl"
