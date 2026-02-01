@@ -22,26 +22,6 @@ let
     cp ${wallpaper} $out
   '';
 
-  cursorPkg = config.cfg.gtk.cursorTheme.package;
-  cursorName = config.cfg.gtk.cursorTheme.name;
-  cursorSize = config.cfg.gtk.cursorTheme.size;
-
-  setupCursorScript = pkgs.writeShellScript "setup-sddm-cursor" ''
-    mkdir -p /run/sddm
-    cat > /run/sddm/cursor.conf <<EOF
-    XCURSOR_THEME=${cursorName}
-    XCURSOR_SIZE=${toString cursorSize}
-    EOF
-
-    mkdir -p /var/lib/sddm/.icons
-    ln -sf ${cursorPkg}/share/icons/${cursorName} /var/lib/sddm/.icons/default 2>/dev/null || true
-    ln -sf ${cursorPkg}/share/icons/${cursorName} /var/lib/sddm/.icons/${cursorName} 2>/dev/null || true
-    chown -R sddm:sddm /var/lib/sddm/.icons
-
-    mkdir -p /usr/share/icons
-    ln -sf ${cursorPkg}/share/icons/${cursorName} /usr/share/icons/default 2>/dev/null || true
-  '';
-
   silentTheme = silentSDDM.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
     extraBackgrounds = [ background-derivation ];
     theme-overrides = {
@@ -214,43 +194,40 @@ in
       systemPackages = with pkgs; [
         silentTheme
         silentTheme.test
-        cursorPkg
         kdePackages.qt6ct
         libsForQt5.qtstyleplugin-kvantum
         kdePackages.qtstyleplugin-kvantum
         kdePackages.qtwayland
         qt6.qtwayland
+        config.cfg.gtk.cursorTheme.package
       ];
 
       etc."sddm.conf.d/cursor.conf".text = ''
         [Theme]
-        CursorTheme=${cursorName}
-        CursorSize=${toString cursorSize}
+        CursorTheme=${config.cfg.gtk.cursorTheme.name}
+        CursorSize=${toString config.cfg.gtk.cursorTheme.size}
       '';
     };
 
     qt.enable = true;
 
-    systemd = {
-      tmpfiles.rules = [
-        "d /var/lib/sddm/.icons 0755 sddm sddm -"
+    systemd.tmpfiles.rules =
+      let
+        cursorPkg = config.cfg.gtk.cursorTheme.package;
+        cursorName = config.cfg.gtk.cursorTheme.name;
+      in
+      [
         "L+ /var/lib/sddm/.icons/default - - - - ${cursorPkg}/share/icons/${cursorName}"
-        "L+ /var/lib/sddm/.icons/${cursorName} - - - - ${cursorPkg}/share/icons/${cursorName}"
-        "d /usr/share/icons 0755 root root -"
-        "L+ /usr/share/icons/default - - - - ${cursorPkg}/share/icons/${cursorName}"
-      ];
 
-      services.sddm-cursor-setup = {
-        description = "Setup SDDM cursor before display manager starts";
-        wantedBy = [ "display-manager.service" ];
-        before = [ "display-manager.service" ];
-        serviceConfig = {
-          Type = "oneshot";
-          ExecStart = setupCursorScript;
-          RemainAfterExit = true;
-        };
-      };
-    };
+        "d /usr/share/icons/default 0755 root root -"
+
+        "L+ /usr/share/icons/default/index.theme - - - - ${pkgs.writeText "default-index.theme" ''
+          [Icon Theme]
+          Inherits=${cursorName}
+        ''}"
+
+        "d /var/lib/sddm/.icons 0755 sddm sddm -"
+      ];
 
     services.displayManager.sddm = {
       enable = true;
@@ -258,22 +235,25 @@ in
       package = pkgs.kdePackages.sddm;
       theme = silentTheme.pname;
 
-      extraPackages = silentTheme.propagatedBuildInputs ++ [ cursorPkg ];
+      extraPackages = silentTheme.propagatedBuildInputs ++ [ config.cfg.gtk.cursorTheme.package ];
 
       settings = {
         General = {
-          GreeterEnvironment = lib.concatStringsSep "," [
-            "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/"
-            "QT_IM_MODULE=qtvirtualkeyboard"
-            "XCURSOR_THEME=${cursorName}"
-            "XCURSOR_SIZE=${toString cursorSize}"
-            "XCURSOR_PATH=${cursorPkg}/share/icons:/usr/share/icons:/var/lib/sddm/.icons"
-          ];
+          GreeterEnvironment =
+            let
+              cursorTheme = config.cfg.gtk.cursorTheme.name;
+              cursorSize = toString config.cfg.gtk.cursorTheme.size;
+            in
+            "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/,"
+            + "QT_IM_MODULE=qtvirtualkeyboard,"
+            + "XCURSOR_THEME=${cursorTheme},"
+            + "XCURSOR_SIZE=${cursorSize},"
+            + "XCURSOR_PATH=/usr/share/icons:/var/lib/sddm/.icons:${config.cfg.gtk.cursorTheme.package}/share/icons";
           InputMethod = "qtvirtualkeyboard";
         };
         Theme = {
-          CursorTheme = cursorName;
-          CursorSize = cursorSize;
+          CursorTheme = config.cfg.gtk.cursorTheme.name;
+          CursorSize = config.cfg.gtk.cursorTheme.size;
         };
       };
     };
