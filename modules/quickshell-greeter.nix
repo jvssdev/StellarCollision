@@ -45,19 +45,7 @@ in
       enable = true;
       settings = {
         default_session = {
-          command =
-            let
-              qmlImports = lib.concatStringsSep ":" [
-                "${greeterHome}/.config/quickshell"
-                "${quickshell}/share/qml"
-                (lib.makeSearchPath "lib/qt-6/qml" [
-                  pkgs.kdePackages.qtdeclarative
-                  pkgs.kdePackages.qtbase
-                  pkgs.kdePackages.qt5compat
-                ])
-              ];
-            in
-            "${pkgs.dbus}/bin/dbus-run-session -- ${lib.getExe pkgs.cage} -s -m last -- env QML_IMPORT_PATH=${qmlImports} ${quickshell}/bin/quickshell ${greeterHome}/.config/quickshell/greeter.qml";
+          command = "${quickshell}/bin/quickshell ${greeterHome}/.config/quickshell/greeter.qml";
           user = greeterUser;
         };
       };
@@ -109,8 +97,20 @@ in
         import Quickshell
         import Quickshell.Wayland
         import Quickshell.Io
+        import Quickshell.Greetd
 
         ShellRoot {
+            GreetdServer {
+                id: greetd
+                onLoginSucceeded: Quickshell.quit()
+                onLoginFailed: {
+                    console.error("Login failed:", reason)
+                    errorText.text = "Login failed: " + reason
+                    errorText.visible = true
+                    passwordField.text = ""
+                }
+            }
+
             Variants {
                 model: Quickshell.screens
 
@@ -121,7 +121,7 @@ in
                     WlrLayershell.layer: WlrLayer.Overlay
                     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
 
-                    anchors.fill: parent
+                    anchors.fill: true
                     color: "transparent"
 
                     Image {
@@ -174,7 +174,7 @@ in
 
                         Rectangle {
                             Layout.preferredWidth: 420
-                            Layout.preferredHeight: 300
+                            Layout.preferredHeight: 350
                             color: "#e6${strings.removePrefix "#" c.base00}"
                             radius: 20
                             border.color: "${c.base0D}"
@@ -262,14 +262,26 @@ in
                                     onAccepted: loginButton.clicked()
                                 }
 
+                                Text {
+                                    id: errorText
+                                    visible: false
+                                    text: ""
+                                    color: "${c.base08}"
+                                    font.pixelSize: 14
+                                    font.family: "${config.cfg.fonts.monospace.name}"
+                                    Layout.fillWidth: true
+                                    wrapMode: Text.Wrap
+                                }
+
                                 Button {
                                     id: loginButton
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 50
                                     text: "Login"
+                                    enabled: !greetd.loginActive
 
                                     contentItem: Text {
-                                        text: parent.text
+                                        text: greetd.loginActive ? "Logging in..." : parent.text
                                         color: "${c.base00}"
                                         font.pixelSize: 20
                                         font.family: "${config.cfg.fonts.monospace.name}"
@@ -279,21 +291,15 @@ in
                                     }
 
                                     background: Rectangle {
-                                        color: parent.down ? "${c.base0C}" : (parent.hovered ? "${c.base0B}" : "${c.base0D}")
+                                        color: parent.enabled ? 
+                                            (parent.down ? "${c.base0C}" : (parent.hovered ? "${c.base0B}" : "${c.base0D}")) : 
+                                            "${c.base03}"
                                         radius: 10
                                     }
 
                                     onClicked: {
-                                        Process.exec(
-                                            "${getExe' pkgs.greetd "agreety"}",
-                                            ["-c", "${mango}/bin/mango"],
-                                            {
-                                                env: {
-                                                    "USER": userSelector.currentValue,
-                                                    "PASSWORD": passwordField.text
-                                                }
-                                            }
-                                        );
+                                        errorText.visible = false
+                                        greetd.login(userSelector.currentValue, passwordField.text, "${mango}/bin/mango")
                                     }
                                 }
                             }
