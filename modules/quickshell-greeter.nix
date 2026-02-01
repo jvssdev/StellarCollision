@@ -89,25 +89,33 @@ in
         import Quickshell.Services.Greetd
 
         ShellRoot {
+            Component.onCompleted: console.log("Greeter QML loaded")
+
             Greetd {
                 id: greetd
 
-                onLaunched: Quickshell.quit()
+                onLaunched: {
+                    console.log("Session launched")
+                    Quickshell.quit()
+                }
 
                 onAuthMessage: (message, error, responseRequired, echoResponse) => {
+                    console.log("Auth message:", message, "required:", responseRequired)
                     if (responseRequired) {
                         greetd.respond(passwordField.text)
                     }
                 }
 
                 onAuthFailure: {
-                    errorText.text = "Incorrect password. Try again."
+                    console.log("Authentication failed")
+                    errorText.text = "Incorrect password"
                     errorText.visible = true
                     passwordField.text = ""
                     passwordField.focus = true
                 }
 
                 onAuthError: (error) => {
+                    console.log("Auth error:", error)
                     errorText.text = "Error: " + error
                     errorText.visible = true
                 }
@@ -127,9 +135,11 @@ in
                     color: "transparent"
 
                     Image {
+                        id: wallpaper
                         anchors.fill: parent
                         source: "wallpaper.png"
                         fillMode: Image.PreserveAspectCrop
+                        asynchronous: true
                     }
 
                     Rectangle {
@@ -293,6 +303,7 @@ in
 
                                     onClicked: {
                                         errorText.visible = false
+                                        console.log("Login attempt for:", userSelector.currentValue)
                                         greetd.createSession(userSelector.currentValue)
                                         greetd.launch("${mango}/bin/mango", true)
                                     }
