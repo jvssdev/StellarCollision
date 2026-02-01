@@ -79,13 +79,11 @@ in
         [
           "d ${greeterHome}/.config 0755 ${greeterUser} ${greeterUser} -"
           "d ${greeterHome}/.config/quickshell 0755 ${greeterUser} ${greeterUser} -"
-          "d ${greeterHome}/.config/quickshell/pam 0755 ${greeterUser} ${greeterUser} -"
           "d ${greeterHome}/.icons 0755 ${greeterUser} ${greeterUser} -"
           "d /run/user/995 0700 ${greeterUser} ${greeterUser} -"
           "L+ ${greeterHome}/.icons/default - - - - ${cursorPkg}/share/icons/${cursorName}"
           "C ${greeterHome}/.config/quickshell/wallpaper.png - - - - ${../assets/Wallpapers/a6116535-4a72-453e-83c9-ea97b8597d8c.png}"
           "L+ ${greeterHome}/.config/quickshell/greeter.qml - - - - /etc/greetd/quickshell/greeter.qml"
-          "L+ ${greeterHome}/.config/quickshell/pam/greetd.conf - - - - /etc/greetd/quickshell/pam/greetd.conf"
         ];
 
       services.greetd = {
@@ -118,10 +116,6 @@ in
         ${mango}/bin/mango
       '';
 
-      "greetd/quickshell/pam/greetd.conf".text = ''
-        auth required pam_unix.so
-      '';
-
       "greetd/quickshell/greeter.qml".text = ''
         import QtQuick
         import QtQuick.Layouts
@@ -130,24 +124,36 @@ in
         import Quickshell
         import Quickshell.Wayland
         import Quickshell.Io
-        import Quickshell.Greetd
-        import Quickshell.Services.Pam
+        import Quickshell.Services.Greetd
 
         ShellRoot {
-            GreetdServer {
+            Greetd {
                 id: greetd
                 
-                onLoginSucceeded: {
-                    console.log("Login succeeded")
+                onLaunched: {
+                    console.log("Session launched successfully")
                     Quickshell.quit()
                 }
                 
-                onLoginFailed: function(reason) {
-                    console.error("Login failed:", reason)
-                    errorText.text = "Login failed: " + reason
+                onAuthMessage: function(message, error, responseRequired, echoResponse) {
+                    console.log("Auth message:", message)
+                    if (responseRequired) {
+                        greetd.respond(passwordField.text)
+                    }
+                }
+                
+                onAuthFailure: function() {
+                    console.error("Authentication failed")
+                    errorText.text = "Authentication failed. Please try again."
                     errorText.visible = true
                     passwordField.text = ""
                     passwordField.focus = true
+                }
+                
+                onAuthError: function(error) {
+                    console.error("Auth error:", error)
+                    errorText.text = "Error: " + error
+                    errorText.visible = true
                 }
             }
 
@@ -307,7 +313,7 @@ in
                                     }
 
                                     onAccepted: {
-                                        if (text.length > 0 && !greetd.loginActive) {
+                                        if (text.length > 0) {
                                             loginButton.clicked()
                                         }
                                     }
@@ -334,10 +340,10 @@ in
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 50
                                     text: "Login"
-                                    enabled: !greetd.loginActive && passwordField.text.length > 0
+                                    enabled: passwordField.text.length > 0
 
                                     contentItem: Text {
-                                        text: greetd.loginActive ? "Logging in..." : parent.text
+                                        text: parent.text
                                         color: parent.enabled ? "${c.base00}" : "${c.base04}"
                                         font.pixelSize: 20
                                         font.family: "${config.cfg.fonts.monospace.name}"
@@ -356,10 +362,10 @@ in
                                     onClicked: {
                                         errorText.visible = false
                                         var username = userSelector.currentValue
-                                        var password = passwordField.text
                                         
-                                        console.log("Attempting login for user:", username)
-                                        greetd.login(username, password, "${mango}/bin/mango")
+                                        console.log("Creating session for user:", username)
+                                        greetd.createSession(username)
+                                        greetd.launch("${mango}/bin/mango", true)
                                     }
                                 }
                             }
