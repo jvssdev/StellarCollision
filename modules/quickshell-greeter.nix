@@ -87,40 +87,9 @@ in
         import Quickshell
         import Quickshell.Wayland
         import Quickshell.Io
-        import Quickshell.Services.Greetd
 
         ShellRoot {
             Component.onCompleted: console.log("Greeter QML loaded successfully")
-
-            Greetd {
-                id: greetd
-
-                onLaunched: {
-                    console.log("Session launched")
-                    Quickshell.quit()
-                }
-
-                onAuthMessage: (message, error, responseRequired, echoResponse) => {
-                    console.log("Auth message:", message, "required:", responseRequired)
-                    if (responseRequired) {
-                        greetd.respond(passwordField.text)
-                    }
-                }
-
-                onAuthFailure: {
-                    console.log("Authentication failed")
-                    errorText.text = "Incorrect password"
-                    errorText.visible = true
-                    passwordField.text = ""
-                    passwordField.focus = true
-                }
-
-                onAuthError: (error) => {
-                    console.log("Auth error:", error)
-                    errorText.text = "Error: " + error
-                    errorText.visible = true
-                }
-            }
 
             Variants {
                 model: Quickshell.screens
@@ -305,8 +274,7 @@ in
                                     onClicked: {
                                         errorText.visible = false
                                         console.log("Login attempt for:", userSelector.currentValue)
-                                        greetd.createSession(userSelector.currentValue)
-                                        greetd.launch("${mango}/bin/mango", true)
+                                        Process.exec("${getExe' pkgs.greetd "agreety"}", ["-c", "${mango}/bin/mango"], { env: { USER: userSelector.currentValue, PASSWORD: passwordField.text } })
                                     }
                                 }
                             }
