@@ -1,7 +1,6 @@
 {
   config,
   pkgs,
-  # inputs,
   lib,
   ...
 }:
@@ -60,21 +59,32 @@ in
     programs.regreet = {
       enable = true;
 
-      iconTheme.name = config.cfg.gtk.iconTheme.name;
-      iconTheme.package = config.cfg.gtk.iconTheme.package;
-      cursorTheme.name = config.cfg.gtk.iconTheme.name;
-      theme.name = config.cfg.gtk.theme.name;
-      theme.package = config.cfg.gtk.theme.package;
+      theme = {
+        inherit (config.cfg.gtk.theme) name package;
+      };
+
+      iconTheme = {
+        inherit (config.cfg.gtk.iconTheme) name package;
+      };
+
+      cursorTheme = {
+        inherit (config.cfg.gtk.cursorTheme) name package;
+      };
+
       font = {
         inherit (config.cfg.fonts.monospace) name package;
         inherit (config.cfg.fonts) size;
       };
-      cursorTheme.package = config.cfg.gtk.cursorTheme.package;
 
       settings = {
         background = {
           path = ../assets/Wallpapers/a6116535-4a72-453e-83c9-ea97b8597d8c.png;
           sizing = "fill";
+        };
+
+        GTK = {
+          application_prefer_dark = true;
+          cursor_size = config.cfg.gtk.cursorTheme.size;
         };
 
         commands = {
