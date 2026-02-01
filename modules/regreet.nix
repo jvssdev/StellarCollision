@@ -161,5 +161,9 @@ in
         # };
       };
     };
+    systemd.services.greetd.environment = {
+      XCURSOR_THEME = config.cfg.gtk.cursorTheme.name;
+      XCURSOR_SIZE = toString config.cfg.gtk.cursorTheme.size;
+    };
   };
 }
