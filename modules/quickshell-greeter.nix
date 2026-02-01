@@ -21,6 +21,29 @@ let
 
   greeterUser = "greeter";
   greeterHome = "/var/lib/greeter";
+
+  greeterScript = pkgs.writeShellScript "quickshell-greeter-wrapper" ''
+    set -x
+
+    export XDG_SESSION_TYPE=wayland
+    export XDG_CURRENT_DESKTOP=cage
+    export XDG_RUNTIME_DIR=/run/user/$(id -u)
+    export WAYLAND_DISPLAY=wayland-0
+
+    export QT_QPA_PLATFORM=wayland
+    export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+
+    export QML_IMPORT_PATH="${quickshell}/share/qml:${pkgs.kdePackages.qtdeclarative}/lib/qt-6/qml:${pkgs.kdePackages.qtbase}/lib/qt-6/qml:${pkgs.kdePackages.qt5compat}/lib/qt-6/qml"
+
+    mkdir -p "$XDG_RUNTIME_DIR"
+    chmod 0700 "$XDG_RUNTIME_DIR"
+
+    echo "Starting cage with quickshell..." >&2
+    echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR" >&2
+    echo "QML_IMPORT_PATH=$QML_IMPORT_PATH" >&2
+
+    exec ${pkgs.dbus}/bin/dbus-run-session ${pkgs.cage}/bin/cage -s -d -- ${quickshell}/bin/quickshell ${greeterHome}/.config/quickshell/greeter.qml
+  '';
 in
 {
   options.cfg.quickshellGreeter = {
@@ -45,10 +68,15 @@ in
       enable = true;
       settings = {
         default_session = {
-          command = "${pkgs.dbus}/bin/dbus-run-session ${pkgs.cage}/bin/cage -s -- ${quickshell}/bin/quickshell ${greeterHome}/.config/quickshell/greeter.qml";
+          command = "${greeterScript}";
           user = greeterUser;
         };
       };
+    };
+
+    security.pam.services.greetd = {
+      enableGnomeKeyring = lib.mkForce false;
+      gnupg.enable = lib.mkForce false;
     };
 
     users.users.${greeterUser} = {
@@ -69,6 +97,9 @@ in
       quickshell
       pkgs.cage
       pkgs.kdePackages.qtwayland
+      pkgs.kdePackages.qtdeclarative
+      pkgs.kdePackages.qtbase
+      pkgs.kdePackages.qt5compat
     ];
 
     systemd.tmpfiles.rules =
@@ -80,6 +111,7 @@ in
         "d ${greeterHome}/.config 0755 ${greeterUser} ${greeterUser} -"
         "d ${greeterHome}/.config/quickshell 0755 ${greeterUser} ${greeterUser} -"
         "d ${greeterHome}/.icons 0755 ${greeterUser} ${greeterUser} -"
+        "d /run/user/995 0700 ${greeterUser} ${greeterUser} -"
         "L+ ${greeterHome}/.icons/default - - - - ${cursorPkg}/share/icons/${cursorName}"
         "C ${greeterHome}/.config/quickshell/wallpaper.png - - - - ${../assets/Wallpapers/a6116535-4a72-453e-83c9-ea97b8597d8c.png}"
         "L+ ${greeterHome}/.config/quickshell/greeter.qml - - - - /etc/greetd/quickshell/greeter.qml"
@@ -102,11 +134,20 @@ in
         import Quickshell.Greetd
 
         ShellRoot {
+            Component.onCompleted: {
+                console.log("ShellRoot initialized")
+                console.log("Screens available:", Quickshell.screens.length)
+            }
+            
             GreetdServer {
                 id: greetd
                 
+                Component.onCompleted: {
+                    console.log("GreetdServer initialized")
+                }
+                
                 onLoginSucceeded: {
-                    console.log("Login succeeded")
+                    console.log("Login succeeded, quitting")
                     Quickshell.quit()
                 }
                 
@@ -126,6 +167,10 @@ in
                     property var modelData
                     screen: modelData
 
+                    Component.onCompleted: {
+                        console.log("PanelWindow created for screen:", modelData.name)
+                    }
+
                     WlrLayershell.layer: WlrLayer.Overlay
                     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
 
@@ -140,6 +185,12 @@ in
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         cache: false
+                        
+                        onStatusChanged: {
+                            if (status == Image.Error) {
+                                console.error("Failed to load wallpaper")
+                            }
+                        }
                     }
 
                     FastBlur {
@@ -227,6 +278,7 @@ in
                                               (user: ''append({ text: "${user}", value: "${user}" });'')
                                               (builtins.attrNames (lib.filterAttrs (_: user: user.isNormalUser) config.users.users))
                                             }
+                                            console.log("Users loaded:", count)
                                         }
                                     }
 
@@ -275,7 +327,10 @@ in
                                     font.family: "${config.cfg.fonts.monospace.name}"
                                     selectByMouse: true
                                     
-                                    Component.onCompleted: forceActiveFocus()
+                                    Component.onCompleted: {
+                                        forceActiveFocus()
+                                        console.log("Password field ready")
+                                    }
 
                                     background: Rectangle {
                                         color: "${c.base01}"
@@ -293,6 +348,7 @@ in
                                     Keys.onEscapePressed: text = ""
                                     
                                     function doLogin() {
+                                        console.log("Attempting login for:", userSelector.currentValue)
                                         errorText.visible = false
                                         greetd.login(userSelector.currentValue, passwordField.text, "${mango}/bin/mango")
                                     }
@@ -393,7 +449,7 @@ in
       serviceConfig = {
         Type = "idle";
         StandardInput = "tty";
-        StandardOutput = "tty";
+        StandardOutput = "journal";
         StandardError = "journal";
         TTYReset = true;
         TTYVHangup = true;
@@ -401,8 +457,15 @@ in
       };
 
       unitConfig = {
-        After = [ "systemd-user-sessions.service" ];
+        After = [
+          "systemd-user-sessions.service"
+          "plymouth-quit-wait.service"
+        ];
       };
+    };
+
+    systemd.services."user-runtime-dir@995" = {
+      enable = true;
     };
   };
 }
