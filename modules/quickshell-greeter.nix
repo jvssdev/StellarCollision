@@ -30,12 +30,10 @@ in
       enable = mkOption {
         type = types.bool;
         default = false;
-        description = "Enable autologin";
       };
       user = mkOption {
         type = types.str;
         default = "";
-        description = "User to autologin";
       };
     };
   };
@@ -43,10 +41,15 @@ in
   config = mkIf cfg.enable {
     services.greetd = {
       enable = true;
+      restart = true;
       settings = {
         default_session = {
           command = "${quickshell}/bin/quickshell ${greeterHome}/.config/quickshell/greeter.qml";
           user = greeterUser;
+        };
+        initial_session = mkIf cfg.autologin.enable {
+          command = "${mango}/bin/mango";
+          inherit (cfg.autologin) user;
         };
       };
     };
@@ -64,63 +67,22 @@ in
     };
 
     users.groups.${greeterUser} = { };
+    environment = {
 
-    environment.systemPackages = [
-      quickshell
-      pkgs.kdePackages.qtwayland
-    ];
-    systemd = {
+      systemPackages = [
+        quickshell
+        pkgs.kdePackages.qtwayland
+      ];
 
-      tmpfiles.rules =
-        let
-          cursorPkg = config.cfg.gtk.cursorTheme.package;
-          cursorName = config.cfg.gtk.cursorTheme.name;
-        in
-        [
-          "d ${greeterHome}/.config 0755 ${greeterUser} ${greeterUser} -"
-          "d ${greeterHome}/.config/quickshell 0755 ${greeterUser} ${greeterUser} -"
-          "d ${greeterHome}/.icons 0755 ${greeterUser} ${greeterUser} -"
-          "d /run/user/995 0700 ${greeterUser} ${greeterUser} -"
-          "L+ ${greeterHome}/.icons/default - - - - ${cursorPkg}/share/icons/${cursorName}"
-          "C ${greeterHome}/.config/quickshell/wallpaper.png - - - - ${../assets/Wallpapers/a6116535-4a72-453e-83c9-ea97b8597d8c.png}"
-          "L+ ${greeterHome}/.config/quickshell/greeter.qml - - - - /etc/greetd/quickshell/greeter.qml"
-        ];
-
-      services.greetd = {
-        serviceConfig = {
-          Type = "idle";
-          StandardInput = "tty";
-          StandardOutput = "tty";
-          StandardError = "journal";
-          TTYReset = true;
-          TTYVHangup = true;
-          TTYVTDisallocate = true;
-        };
-
-        unitConfig = {
-          After = [
-            "systemd-user-sessions.service"
-            "plymouth-quit-wait.service"
-          ];
-        };
-      };
-
-      services."user-runtime-dir@995" = {
-        enable = true;
-      };
-    };
-
-    environment.etc = {
-      "greetd/environments".text = ''
+      etc."greetd/environments".text = ''
         Mango
         ${mango}/bin/mango
       '';
 
-      "greetd/quickshell/greeter.qml".text = ''
+      etc."greetd/quickshell/greeter.qml".text = ''
         import QtQuick
         import QtQuick.Layouts
         import QtQuick.Controls
-        import Qt5Compat.GraphicalEffects
         import Quickshell
         import Quickshell.Wayland
         import Quickshell.Io
@@ -129,29 +91,23 @@ in
         ShellRoot {
             Greetd {
                 id: greetd
-                
-                onLaunched: {
-                    console.log("Session launched successfully")
-                    Quickshell.quit()
-                }
-                
-                onAuthMessage: function(message, error, responseRequired, echoResponse) {
-                    console.log("Auth message:", message)
+
+                onLaunched: Quickshell.quit()
+
+                onAuthMessage: (message, error, responseRequired, echoResponse) => {
                     if (responseRequired) {
                         greetd.respond(passwordField.text)
                     }
                 }
-                
-                onAuthFailure: function() {
-                    console.error("Authentication failed")
-                    errorText.text = "Authentication failed. Please try again."
+
+                onAuthFailure: {
+                    errorText.text = "Incorrect password. Try again."
                     errorText.visible = true
                     passwordField.text = ""
                     passwordField.focus = true
                 }
-                
-                onAuthError: function(error) {
-                    console.error("Auth error:", error)
+
+                onAuthError: (error) => {
                     errorText.text = "Error: " + error
                     errorText.visible = true
                 }
@@ -167,27 +123,18 @@ in
                     WlrLayershell.layer: WlrLayer.Overlay
                     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
 
-                    anchors.fill: true
+                    anchors.fill: parent
                     color: "transparent"
-                    visible: true
 
                     Image {
-                        id: wallpaper
                         anchors.fill: parent
-                        source: "file://${greeterHome}/.config/quickshell/wallpaper.png"
+                        source: "wallpaper.png"
                         fillMode: Image.PreserveAspectCrop
-                        asynchronous: true
-                    }
-
-                    FastBlur {
-                        anchors.fill: wallpaper
-                        source: wallpaper
-                        radius: 64
                     }
 
                     Rectangle {
                         anchors.fill: parent
-                        color: Qt.rgba(0, 0, 0, 0.45)
+                        color: Qt.rgba(0, 0, 0, 0.55)
                     }
 
                     ColumnLayout {
@@ -195,7 +142,6 @@ in
                         spacing: 40
 
                         Text {
-                            id: clockText
                             text: Qt.formatTime(new Date(), "HH:mm")
                             color: "${c.base06}"
                             font.pixelSize: 100
@@ -209,7 +155,7 @@ in
                                 interval: 1000
                                 running: true
                                 repeat: true
-                                onTriggered: clockText.text = Qt.formatTime(new Date(), "HH:mm")
+                                onTriggered: parent.text = Qt.formatTime(new Date(), "HH:mm")
                             }
                         }
 
@@ -252,7 +198,7 @@ in
                                         id: usersModel
                                         Component.onCompleted: {
                                             ${lib.concatMapStringsSep
-                                              "\n                                            "
+                                              "\n                                          "
                                               (user: ''append({ text: "${user}", value: "${user}" });'')
                                               (builtins.attrNames (lib.filterAttrs (_: user: user.isNormalUser) config.users.users))
                                             }
@@ -269,7 +215,6 @@ in
                                             color: "${c.base05}"
                                             font.pixelSize: 18
                                             font.family: "${config.cfg.fonts.monospace.name}"
-                                            verticalAlignment: Text.AlignVCenter
                                         }
                                         background: Rectangle {
                                             color: highlighted ? "${c.base02}" : "transparent"
@@ -303,24 +248,15 @@ in
                                     color: "${c.base05}"
                                     font.pixelSize: 18
                                     font.family: "${config.cfg.fonts.monospace.name}"
-                                    selectByMouse: true
 
                                     background: Rectangle {
                                         color: "${c.base01}"
-                                        border.color: passwordField.activeFocus ? "${c.base0D}" : "${c.base03}"
+                                        border.color: activeFocus ? "${c.base0D}" : "${c.base03}"
                                         border.width: 2
                                         radius: 10
                                     }
 
-                                    onAccepted: {
-                                        if (text.length > 0) {
-                                            loginButton.clicked()
-                                        }
-                                    }
-                                    
-                                    Keys.onEscapePressed: {
-                                        text = ""
-                                    }
+                                    onAccepted: loginButton.clicked()
                                 }
 
                                 Text {
@@ -332,7 +268,6 @@ in
                                     font.family: "${config.cfg.fonts.monospace.name}"
                                     Layout.fillWidth: true
                                     wrapMode: Text.Wrap
-                                    Layout.preferredHeight: visible ? implicitHeight : 0
                                 }
 
                                 Button {
@@ -340,11 +275,10 @@ in
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 50
                                     text: "Login"
-                                    enabled: passwordField.text.length > 0
 
                                     contentItem: Text {
                                         text: parent.text
-                                        color: parent.enabled ? "${c.base00}" : "${c.base04}"
+                                        color: "${c.base00}"
                                         font.pixelSize: 20
                                         font.family: "${config.cfg.fonts.monospace.name}"
                                         font.bold: true
@@ -353,18 +287,13 @@ in
                                     }
 
                                     background: Rectangle {
-                                        color: parent.enabled ? 
-                                            (parent.down ? "${c.base0C}" : (parent.hovered ? "${c.base0B}" : "${c.base0D}")) : 
-                                            "${c.base03}"
+                                        color: down ? "${c.base0C}" : (hovered ? "${c.base0B}" : "${c.base0D}")
                                         radius: 10
                                     }
 
                                     onClicked: {
                                         errorText.visible = false
-                                        var username = userSelector.currentValue
-                                        
-                                        console.log("Creating session for user:", username)
-                                        greetd.createSession(username)
+                                        greetd.createSession(userSelector.currentValue)
                                         greetd.launch("${mango}/bin/mango", true)
                                     }
                                 }
@@ -379,7 +308,7 @@ in
                                 text: "Shutdown"
                                 padding: 12
                                 background: Rectangle {
-                                    color: parent.down ? "${c.base02}" : (parent.hovered ? "${c.base01}" : "transparent")
+                                    color: down ? "${c.base02}" : (hovered ? "${c.base01}" : "transparent")
                                     border.color: "${c.base03}"
                                     border.width: 2
                                     radius: 10
@@ -397,7 +326,7 @@ in
                                 text: "Reboot"
                                 padding: 12
                                 background: Rectangle {
-                                    color: parent.down ? "${c.base02}" : (parent.hovered ? "${c.base01}" : "transparent")
+                                    color: down ? "${c.base02}" : (hovered ? "${c.base01}" : "transparent")
                                     border.color: "${c.base03}"
                                     border.width: 2
                                     radius: 10
@@ -416,6 +345,38 @@ in
             }
         }
       '';
+    };
+
+    systemd.tmpfiles.rules =
+      let
+        cursorPkg = config.cfg.gtk.cursorTheme.package;
+        cursorName = config.cfg.gtk.cursorTheme.name;
+      in
+      [
+        "d ${greeterHome}/.config 0755 ${greeterUser} ${greeterUser} -"
+        "d ${greeterHome}/.config/quickshell 0755 ${greeterUser} ${greeterUser} -"
+        "d ${greeterHome}/.icons 0755 ${greeterUser} ${greeterUser} -"
+        "L+ ${greeterHome}/.icons/default - - - - ${cursorPkg}/share/icons/${cursorName}"
+        "C ${greeterHome}/.config/quickshell/wallpaper.png - - - - ${../assets/Wallpapers/a6116535-4a72-453e-83c9-ea97b8597d8c.png}"
+      ];
+
+    systemd.services.greetd = {
+      serviceConfig = {
+        Type = "idle";
+        StandardInput = "tty";
+        StandardOutput = "tty";
+        StandardError = "journal";
+        TTYReset = true;
+        TTYVHangup = true;
+        TTYVTDisallocate = true;
+
+        Restart = lib.mkForce "on-failure";
+      };
+
+      unitConfig.After = [
+        "systemd-user-sessions.service"
+        "plymouth-quit-wait.service"
+      ];
     };
   };
 }
