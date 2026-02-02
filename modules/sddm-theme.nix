@@ -25,9 +25,7 @@ let
     export XCURSOR_THEME=${config.cfg.gtk.cursorTheme.name}
     export XCURSOR_SIZE=${toString config.cfg.gtk.cursorTheme.size}
 
-
     GREETER_DIR=$(mktemp -d)
-
 
     cat > $GREETER_DIR/mango.conf << 'MANGOCONF'
     monitorrule=eDP-1,0.60,1,tile,0,1,0,0,1920,1080,60
@@ -37,7 +35,6 @@ let
       inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default
     }/bin/quickshell --config $GREETER_DIR/greeter.qml; ${pkgs.mangowc}/bin/mangowc
     MANGOCONF
-
 
     cat > $GREETER_DIR/greeter.qml << 'QML'
     import QtQuick
@@ -55,7 +52,6 @@ let
         
         property string username: "${config.cfg.vars.username}"
         
-        // Background
         PanelWindow {
             anchors.fill: true
             color: "${c.base00}"
@@ -74,7 +70,6 @@ let
             }
         }
         
-        // Login Panel
         PanelWindow {
             anchors.centerIn: true
             width: 420
@@ -278,7 +273,6 @@ let
     }
     QML
 
-
     ${pkgs.mangowc}/bin/mangowc -c $GREETER_DIR/mango.conf
   '';
 in
@@ -303,12 +297,10 @@ in
       };
       users.groups.greeter = { };
       services = {
-
         displayManager.sddm.enable = lib.mkForce false;
 
         greetd = {
           enable = true;
-          vt = 1;
           settings = {
             default_session = {
               command = "${quickshellGreeter}/bin/quickshell-greeter";
