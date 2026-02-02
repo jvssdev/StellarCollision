@@ -21,13 +21,17 @@ let
     import QtQuick 2.15
     import QtQuick.Layouts 1.15
     import QtQuick.Controls 2.15
-    import SddmComponents 2.0
 
-    Background {
+    Rectangle {
         id: root
         color: "${c.base00}"
-        source: "wallpaper.png"
-        fillMode: Image.PreserveAspectFit
+
+        Image {
+            anchors.fill: parent
+            source: "wallpaper.png"
+            fillMode: Image.PreserveAspectFit
+            asynchronous: true
+        }
 
         ColumnLayout {
             anchors.centerIn: parent
@@ -74,7 +78,7 @@ let
                 id: passwordField
                 implicitWidth: 300
                 padding: 15
-                focus: usernameField.text.length > 0
+                focus: true
                 echoMode: TextInput.Password
                 placeholderText: "Password"
                 inputMethodHints: Qt.ImhSensitiveData
@@ -85,7 +89,7 @@ let
                     border.width: 2
                     radius: 10
                 }
-                onAccepted: loginButton.clicked()
+                onAccepted: if (enabled) loginButton.clicked()
                 Layout.alignment: Qt.AlignHCenter
             }
 
@@ -96,11 +100,18 @@ let
                 currentIndex: sessionModel.lastIndex
                 implicitWidth: 300
                 Layout.alignment: Qt.AlignHCenter
+                popup: Popup {
+                    y: parent.height
+                    width: parent.width
+                    padding: 0
+                }
                 contentItem: Text {
-                    text: parent.displayText
+                    text: parent.displayText || parent.currentText
                     color: "${c.base05}"
                     font.family: "${config.cfg.fonts.monospace.name}"
                     horizontalAlignment: Text.AlignHCenter
+                    leftPadding: 10
+                    rightPadding: 10
                 }
                 background: Rectangle {
                     color: Qt.rgba(46/255, 52/255, 64/255, 0.85)
@@ -113,7 +124,7 @@ let
             Button {
                 id: loginButton
                 text: "Login"
-                enabled: passwordField.text.length > 0 && usernameField.text.length > 0
+                enabled: usernameField.text.length > 0 && passwordField.text.length > 0
                 padding: 12
                 Layout.alignment: Qt.AlignHCenter
                 onClicked: {
@@ -149,54 +160,48 @@ let
         RowLayout {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
-            anchors.bottomMargin: 40
-            spacing: 40
+            anchors.bottomMargin: 60
+            spacing: 60
 
             Button {
                 visible: sddm.canPowerOff
                 text: ""
-                font.pixelSize: 32
-                padding: 20
+                font.pixelSize: 48
+                padding: 30
                 onClicked: sddm.powerOff()
                 background: Rectangle { color: "transparent" }
                 contentItem: Text {
                     text: parent.text
                     color: parent.hovered ? "${c.base08}" : "${c.base05}"
                     font: parent.font
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
                 }
             }
 
             Button {
                 visible: sddm.canReboot
                 text: ""
-                font.pixelSize: 32
-                padding: 20
+                font.pixelSize: 48
+                padding: 30
                 onClicked: sddm.reboot()
                 background: Rectangle { color: "transparent" }
                 contentItem: Text {
                     text: parent.text
                     color: parent.hovered ? "${c.base0A}" : "${c.base05}"
                     font: parent.font
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
                 }
             }
 
             Button {
                 visible: sddm.canSuspend
                 text: ""
-                font.pixelSize: 32
-                padding: 20
+                font.pixelSize: 48
+                padding: 30
                 onClicked: sddm.suspend()
                 background: Rectangle { color: "transparent" }
                 contentItem: Text {
                     text: parent.text
                     color: parent.hovered ? "${c.base0E}" : "${c.base05}"
                     font: parent.font
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
                 }
             }
         }
@@ -239,10 +244,17 @@ let
       cp ${wallpaper} $out/share/sddm/themes/${themeName}/wallpaper.png
       cp ${mainQml} $out/share/sddm/themes/${themeName}/Main.qml
 
+      cat > $out/share/sddm/themes/${themeName}/theme.conf <<EOF
+      [General]
+      background=wallpaper.png
+      type=qtquick
+      EOF
+
       cat > $out/share/sddm/themes/${themeName}/metadata.desktop <<EOF
       [Desktop Entry]
       Name=Quickshell SDDM
-      Comment=Clean minimal SDDM theme matching Quickshell lock screen
+      Comment=Minimal clean theme matching Quickshell lock screen
+      Type=theme
       EOF
     '';
   };
@@ -306,7 +318,7 @@ in
 
       settings = {
         General = {
-          InputMethod = "qtvirtualkeyboard";
+          InputMethod = "";
         };
         Theme = {
           CursorTheme = config.cfg.gtk.cursorTheme.name;
