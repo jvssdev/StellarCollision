@@ -21,6 +21,7 @@ let
     import QtQuick 2.15
     import QtQuick.Layouts 1.15
     import QtQuick.Controls 2.15
+    import SddmComponents 2.0
 
     Rectangle {
         id: root
@@ -89,7 +90,7 @@ let
                     border.width: 2
                     radius: 10
                 }
-                onAccepted: if (enabled) loginButton.clicked()
+                onAccepted: if (loginButton.enabled) loginButton.clicked()
                 Layout.alignment: Qt.AlignHCenter
             }
 
@@ -100,13 +101,8 @@ let
                 currentIndex: sessionModel.lastIndex
                 implicitWidth: 300
                 Layout.alignment: Qt.AlignHCenter
-                popup: Popup {
-                    y: parent.height
-                    width: parent.width
-                    padding: 0
-                }
                 contentItem: Text {
-                    text: parent.displayText || parent.currentText
+                    text: sessionCombo.displayText || sessionCombo.currentText
                     color: "${c.base05}"
                     font.family: "${config.cfg.fonts.monospace.name}"
                     horizontalAlignment: Text.AlignHCenter
@@ -161,7 +157,7 @@ let
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 60
-            spacing: 60
+            spacing: 80
 
             Button {
                 visible: sddm.canPowerOff
@@ -246,7 +242,6 @@ let
 
       cat > $out/share/sddm/themes/${themeName}/theme.conf <<EOF
       [General]
-      background=wallpaper.png
       type=qtquick
       EOF
 
@@ -317,12 +312,13 @@ in
       extraPackages = [ config.cfg.gtk.cursorTheme.package ];
 
       settings = {
-        General = {
-          InputMethod = "";
-        };
         Theme = {
+          Current = themeName;
           CursorTheme = config.cfg.gtk.cursorTheme.name;
           CursorSize = config.cfg.gtk.cursorTheme.size;
+        };
+        General = {
+          InputMethod = "";
         };
       };
     };
