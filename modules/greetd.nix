@@ -7,15 +7,17 @@
 }:
 let
   inherit (lib)
-    mkOption
-    types
     mkIf
     mkEnableOption
+    getExe
     ;
-  cfg = config.cfg.sddm;
+  cfg = config.cfg.greetd;
   c = config.cfg.theme.colors;
 
   wallpaper = ../assets/Wallpapers/a6116535-4a72-453e-83c9-ea97b8597d8c.png;
+
+  mangowc = inputs.mango.packages.${pkgs.stdenv.hostPlatform.system}.mango;
+  quickshell = inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default;
 
   quickshellGreeter = pkgs.writeShellScriptBin "quickshell-greeter" ''
     export QT_QPA_PLATFORM=wayland
@@ -27,16 +29,14 @@ let
 
     GREETER_DIR=$(mktemp -d)
 
-    cat > $GREETER_DIR/mango.conf << 'MANGOCONF'
+    cat > $GREETER_DIR/mango.conf << MANGOCONF
     monitorrule=eDP-1,0.60,1,tile,0,1,0,0,1920,1080,60
     borderpx=0
     rootcolor=0x000000ff
-    exec-once=${
-      inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default
-    }/bin/quickshell --config $GREETER_DIR/greeter.qml; ${pkgs.mangowc}/bin/mangowc
+    exec-once=${quickshell}/bin/quickshell --config $GREETER_DIR/greeter.qml; ${getExe mangowc}
     MANGOCONF
 
-    cat > $GREETER_DIR/greeter.qml << 'QML'
+    cat > $GREETER_DIR/greeter.qml << QML
     import QtQuick
     import QtQuick.Layouts
     import QtQuick.Controls
@@ -273,57 +273,50 @@ let
     }
     QML
 
-    ${pkgs.mangowc}/bin/mangowc -c $GREETER_DIR/mango.conf
+    ${getExe mangowc} -c $GREETER_DIR/mango.conf
   '';
 in
 {
-  options.cfg.sddm = {
-    enable = mkEnableOption "Enable display manager configuration.";
-    useGreetd = mkOption {
-      type = types.bool;
-      default = true;
-      description = "Use greetd with Quickshell instead of SDDM";
-    };
+  options.cfg.greetd = {
+    enable = mkEnableOption "Enable greetd display manager with Quickshell greeter.";
   };
 
-  config = mkIf cfg.enable (
-    mkIf cfg.useGreetd {
+  config = mkIf cfg.enable {
+    services = {
+      displayManager.sddm.enable = lib.mkForce false;
 
-      users.users.greeter = {
-        isSystemUser = true;
-        group = "greeter";
-        home = "/var/lib/greeter";
-        createHome = true;
-      };
-      users.groups.greeter = { };
-      services = {
-        displayManager.sddm.enable = lib.mkForce false;
-
-        greetd = {
-          enable = true;
-          settings = {
-            default_session = {
-              command = "${quickshellGreeter}/bin/quickshell-greeter";
-              user = "greeter";
-            };
-            # initial_session = {
-            #   command = "${pkgs.mangowc}/bin/mangowc";
-            #   user = config.cfg.vars.username;
-            # };
+      greetd = {
+        enable = true;
+        settings = {
+          default_session = {
+            command = "${quickshellGreeter}/bin/quickshell-greeter";
+            user = "greeter";
+          };
+          initial_session = {
+            command = "${getExe mangowc}";
+            user = config.cfg.vars.username;
           };
         };
-
-        udev.extraRules = ''
-          KERNEL=="tty[0-9]*", TAG+="uaccess", TAG+="seat"
-          KERNEL=="drm/card[0-9]*", TAG+="uaccess", TAG+="seat"
-        '';
       };
 
-      environment.systemPackages = [
-        inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default
-        pkgs.mangowc
-        quickshellGreeter
-      ];
-    }
-  );
+      udev.extraRules = ''
+        KERNEL=="tty[0-9]*", TAG+="uaccess", TAG+="seat"
+        KERNEL=="drm/card[0-9]*", TAG+="uaccess", TAG+="seat"
+      '';
+    };
+
+    users.users.greeter = {
+      isSystemUser = true;
+      group = "greeter";
+      home = "/var/lib/greeter";
+      createHome = true;
+    };
+    users.groups.greeter = { };
+
+    environment.systemPackages = [
+      quickshell
+      mangowc
+      quickshellGreeter
+    ];
+  };
 }
