@@ -21,17 +21,13 @@ let
     import QtQuick 2.15
     import QtQuick.Layouts 1.15
     import QtQuick.Controls 2.15
+    import SddmComponents 2.0
 
-    Rectangle {
+    Background {
         id: root
         color: "${c.base00}"
-
-        Image {
-            anchors.fill: parent
-            source: "wallpaper.png"
-            fillMode: Image.PreserveAspectFit
-            asynchronous: true
-        }
+        source: "wallpaper.png"
+        fillMode: Image.PreserveAspectFit
 
         ColumnLayout {
             anchors.centerIn: parent
@@ -117,7 +113,7 @@ let
             Button {
                 id: loginButton
                 text: "Login"
-                enabled: passwordField.text.length > 0
+                enabled: passwordField.text.length > 0 && usernameField.text.length > 0
                 padding: 12
                 Layout.alignment: Qt.AlignHCenter
                 onClicked: {
@@ -154,52 +150,54 @@ let
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 40
-            spacing: 30
-            visible: sddm.canPowerOff || sddm.canReboot || sddm.canSuspend
+            spacing: 40
 
             Button {
                 visible: sddm.canPowerOff
-                text: " Shutdown"
-                padding: 12
+                text: ""
+                font.pixelSize: 32
+                padding: 20
                 onClicked: sddm.powerOff()
+                background: Rectangle { color: "transparent" }
                 contentItem: Text {
                     text: parent.text
-                    color: "${c.base08}"
-                    font.family: "${config.cfg.fonts.monospace.name}"
-                    font.pixelSize: 14
-                    font.bold: true
+                    color: parent.hovered ? "${c.base08}" : "${c.base05}"
+                    font: parent.font
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
                 }
-                background: Rectangle { color: "transparent" }
             }
 
             Button {
                 visible: sddm.canReboot
-                text: " Reboot"
-                padding: 12
+                text: ""
+                font.pixelSize: 32
+                padding: 20
                 onClicked: sddm.reboot()
+                background: Rectangle { color: "transparent" }
                 contentItem: Text {
                     text: parent.text
-                    color: "${c.base0A}"
-                    font.family: "${config.cfg.fonts.monospace.name}"
-                    font.pixelSize: 14
-                    font.bold: true
+                    color: parent.hovered ? "${c.base0A}" : "${c.base05}"
+                    font: parent.font
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
                 }
-                background: Rectangle { color: "transparent" }
             }
 
             Button {
                 visible: sddm.canSuspend
-                text: " Suspend"
-                padding: 12
+                text: ""
+                font.pixelSize: 32
+                padding: 20
                 onClicked: sddm.suspend()
+                background: Rectangle { color: "transparent" }
                 contentItem: Text {
                     text: parent.text
-                    color: "${c.base0E}"
-                    font.family: "${config.cfg.fonts.monospace.name}"
-                    font.pixelSize: 14
-                    font.bold: true
+                    color: parent.hovered ? "${c.base0E}" : "${c.base05}"
+                    font: parent.font
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
                 }
-                background: Rectangle { color: "transparent" }
             }
         }
 
@@ -208,9 +206,7 @@ let
             running: true
             repeat: true
             triggeredOnStart: true
-            onTriggered: {
-                clockLabel.text = Qt.formatTime(new Date(), "HH:mm")
-            }
+            onTriggered: clockLabel.text = Qt.formatTime(new Date(), "HH:mm")
         }
 
         Timer {
@@ -218,9 +214,7 @@ let
             running: true
             repeat: true
             triggeredOnStart: true
-            onTriggered: {
-                dateLabel.text = Qt.formatDate(new Date(), "dd/MM/yyyy")
-            }
+            onTriggered: dateLabel.text = Qt.formatDate(new Date(), "dd/MM/yyyy")
         }
 
         Connections {
@@ -245,16 +239,10 @@ let
       cp ${wallpaper} $out/share/sddm/themes/${themeName}/wallpaper.png
       cp ${mainQml} $out/share/sddm/themes/${themeName}/Main.qml
 
-      cat > $out/share/sddm/themes/${themeName}/theme.conf <<EOF
-      [General]
-      background=wallpaper.png
-      EOF
-
       cat > $out/share/sddm/themes/${themeName}/metadata.desktop <<EOF
       [Desktop Entry]
-      Name=Quickshell Match
-      Comment=Clean SDDM theme matching Quickshell lock screen
-      Type=X-SDDM-QtQuick
+      Name=Quickshell SDDM
+      Comment=Clean minimal SDDM theme matching Quickshell lock screen
       EOF
     '';
   };
