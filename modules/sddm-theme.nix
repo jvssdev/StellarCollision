@@ -59,7 +59,6 @@ let
                   font.family: "${config.cfg.fonts.monospace.name}"
                   font.bold: true
                   style: Text.Outline
-                  styleColor: "#000000"
                   styleColor: Qt.rgba(0, 0, 0, 0.8)
                   Layout.alignment: Qt.AlignHCenter
               }
@@ -278,9 +277,8 @@ let
     pname = themeName;
     version = "1.0.0";
 
-    buildInputs = [ pkgs.qt6.qtbase ];
-
-    unpackPhase = "true";
+    dontUnpack = true;
+    dontWrapQtApps = true;
 
     installPhase = ''
       runHook preInstall
@@ -288,24 +286,16 @@ let
       themeDir=$out/share/sddm/themes/${themeName}
       mkdir -p $themeDir
 
-
       cp ${wallpaper} $themeDir/wallpaper.png
-
-
       cp ${mainQml} $themeDir/Main.qml
-
 
       cat > $themeDir/theme.conf << 'EOF'
       [General]
       type=qml
       name=Quickshell SDDM
       description=Minimal SDDM theme matching Quickshell style
-      author=${config.cfg.vars.username}
       version=1.0
-      website=
-      license=MIT
       EOF
-
 
       cat > $themeDir/metadata.desktop << EOF
       [Desktop Entry]
@@ -332,7 +322,6 @@ in
   };
 
   config = mkIf cfg.enable {
-
     environment.systemPackages = [ customTheme ];
 
     services.displayManager.sddm = {
@@ -346,31 +335,13 @@ in
           Current = themeName;
           CursorTheme = config.cfg.gtk.cursorTheme.name;
           CursorSize = config.cfg.gtk.cursorTheme.size;
-          FacesDir = "/var/lib/AccountsService/icons";
         };
         General = {
           DisplayServer = if cfg.wayland.enable then "wayland" else "x11";
           GreeterEnvironment = "QT_QPA_PLATFORM=wayland";
           InputMethod = "";
         };
-        Wayland = lib.mkIf cfg.wayland.enable {
-          EnableHiDPI = true;
-          CompositorCommand = "${pkgs.kdePackages.kwin}/bin/kwin_wayland --drm --no-lockscreen";
-        };
       };
     };
-
-    environment.etc."sddm.conf.d/99-custom.conf".text = ''
-      [Theme]
-      Current=${themeName}
-      ThemeDir=/run/current-system/sw/share/sddm/themes
-
-      [General]
-      DefaultSession=hyprland.desktop
-    '';
-
-    systemd.tmpfiles.rules = lib.mkIf (config.cfg.gtk.enable or false) [
-      "L+ /var/lib/sddm/.config/gtk-3.0 - - - - /home/${config.cfg.vars.username}/.config/gtk-3.0"
-    ];
   };
 }
