@@ -19,24 +19,7 @@ let
   mangowc = inputs.mango.packages.${pkgs.stdenv.hostPlatform.system}.mango;
   quickshell = inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default;
 
-  quickshellGreeter = pkgs.writeShellScriptBin "quickshell-greeter" ''
-    export QT_QPA_PLATFORM=wayland
-    export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
-    export XDG_SESSION_TYPE=wayland
-    export XDG_CURRENT_DESKTOP=wlroots
-    export XCURSOR_THEME=${config.cfg.gtk.cursorTheme.name}
-    export XCURSOR_SIZE=${toString config.cfg.gtk.cursorTheme.size}
-
-    GREETER_DIR=$(mktemp -d)
-
-    cat > $GREETER_DIR/mango.conf << MANGOCONF
-    monitorrule=eDP-1,0.60,1,tile,0,1,0,0,1920,1080,60
-    borderpx=0
-    rootcolor=0x000000ff
-    exec-once=${quickshell}/bin/quickshell --config $GREETER_DIR/greeter.qml; ${getExe mangowc}
-    MANGOCONF
-
-    cat > $GREETER_DIR/greeter.qml << QML
+  greeterQml = pkgs.writeText "greeter.qml" ''
     import QtQuick
     import QtQuick.Layouts
     import QtQuick.Controls
@@ -271,9 +254,24 @@ let
             }
         }
     }
-    QML
+  '';
 
-    ${getExe mangowc} -c $GREETER_DIR/mango.conf
+  mangoConf = pkgs.writeText "mango-greeter.conf" ''
+    monitorrule=eDP-1,0.60,1,tile,0,1,0,0,1920,1080,60
+    borderpx=0
+    rootcolor=0x000000ff
+    exec-once=${quickshell}/bin/quickshell --config ${greeterQml}
+  '';
+
+  quickshellGreeter = pkgs.writeShellScriptBin "quickshell-greeter" ''
+    export QT_QPA_PLATFORM=wayland
+    export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+    export XDG_SESSION_TYPE=wayland
+    export XDG_CURRENT_DESKTOP=wlroots
+    export XCURSOR_THEME=${config.cfg.gtk.cursorTheme.name}
+    export XCURSOR_SIZE=${toString config.cfg.gtk.cursorTheme.size}
+
+    ${getExe mangowc} -c ${mangoConf}
   '';
 in
 {
@@ -282,6 +280,14 @@ in
   };
 
   config = mkIf cfg.enable {
+
+    users.users.greeter = {
+      isSystemUser = true;
+      group = "greeter";
+      home = "/var/lib/greeter";
+      createHome = true;
+    };
+    users.groups.greeter = { };
     services = {
       displayManager.sddm.enable = lib.mkForce false;
 
@@ -292,10 +298,6 @@ in
             command = "${quickshellGreeter}/bin/quickshell-greeter";
             user = "greeter";
           };
-          initial_session = {
-            command = "${getExe mangowc}";
-            user = config.cfg.vars.username;
-          };
         };
       };
 
@@ -304,14 +306,6 @@ in
         KERNEL=="drm/card[0-9]*", TAG+="uaccess", TAG+="seat"
       '';
     };
-
-    users.users.greeter = {
-      isSystemUser = true;
-      group = "greeter";
-      home = "/var/lib/greeter";
-      createHome = true;
-    };
-    users.groups.greeter = { };
 
     environment.systemPackages = [
       quickshell
