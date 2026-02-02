@@ -17,253 +17,307 @@ let
   wallpaper = ../assets/Wallpapers/a6116535-4a72-453e-83c9-ea97b8597d8c.png;
   themeName = "quickshell-sddm";
 
-  mainQml = pkgs.writeText "Main.qml" ''
-    import QtQuick 2.15
-    import QtQuick.Layouts 1.15
-    import QtQuick.Controls 2.15
-    import SddmComponents 2.0
+  mainQml = pkgs.writeTextFile {
+    name = "Main.qml";
+    text = ''
+      import QtQuick 2.15
+      import QtQuick.Layouts 1.15
+      import QtQuick.Controls 2.15
+      import SddmComponents 2.0
 
-    Rectangle {
-        id: root
-        anchors.fill: parent
-        color: "${c.base00}"
+      Rectangle {
+          id: root
+          anchors.fill: parent
+          color: "${c.base00}"
 
-        Image {
-            anchors.fill: parent
-            source: "wallpaper.png"
-            fillMode: Image.PreserveAspectCrop
-            asynchronous: false
-        }
+          Image {
+              id: backgroundImage
+              anchors.fill: parent
+              source: "wallpaper.png"
+              fillMode: Image.PreserveAspectCrop
+              cache: false
+              asynchronous: false
+              z: 0
+          }
 
-        ColumnLayout {
-            anchors.centerIn: parent
-            spacing: 25
+          Rectangle {
+              anchors.fill: parent
+              color: Qt.rgba(0, 0, 0, 0.3)
+              z: 1
+          }
 
-            Text {
-                id: clockLabel
-                text: Qt.formatTime(new Date(), "HH:mm")
-                color: "${c.base06}"
-                font.pixelSize: 64
-                font.family: "${config.cfg.fonts.monospace.name}"
-                font.bold: true
-                style: Text.Outline
-                styleColor: Qt.rgba(0, 0, 0, 0.8)
-                Layout.alignment: Qt.AlignHCenter
-                renderType: Text.NativeRendering
-            }
+          ColumnLayout {
+              z: 2
+              anchors.centerIn: parent
+              spacing: 20
 
-            Text {
-                id: dateLabel
-                text: Qt.formatDate(new Date(), "dd/MM/yyyy")
-                color: "${c.base04}"
-                font.pixelSize: 22
-                font.family: "${config.cfg.fonts.monospace.name}"
-                Layout.alignment: Qt.AlignHCenter
-                renderType: Text.NativeRendering
-            }
+              Text {
+                  id: clockLabel
+                  text: Qt.formatTime(new Date(), "HH:mm")
+                  color: "${c.base06}"
+                  font.pixelSize: 72
+                  font.family: "${config.cfg.fonts.monospace.name}"
+                  font.bold: true
+                  style: Text.Outline
+                  styleColor: "#000000"
+                  styleColor: Qt.rgba(0, 0, 0, 0.8)
+                  Layout.alignment: Qt.AlignHCenter
+              }
 
-            Item { height: 20 }
+              Text {
+                  id: dateLabel
+                  text: Qt.formatDate(new Date(), "dd/MM/yyyy")
+                  color: "${c.base04}"
+                  font.pixelSize: 24
+                  font.family: "${config.cfg.fonts.monospace.name}"
+                  Layout.alignment: Qt.AlignHCenter
+              }
 
-            TextField {
-                id: usernameField
-                implicitWidth: 320
-                padding: 12
-                text: sddm.lastUser || ""
-                placeholderText: "Username"
-                color: "${c.base05}"
-                font.family: "${config.cfg.fonts.monospace.name}"
-                background: Rectangle {
-                    color: Qt.rgba(0.11, 0.13, 0.18, 0.9)
-                    border.color: "${c.base0D}"
-                    border.width: 2
-                    radius: 8
-                }
-                Layout.alignment: Qt.AlignHCenter
-            }
+              Item { 
+                  Layout.preferredHeight: 30 
+              }
 
-            TextField {
-                id: passwordField
-                implicitWidth: 320
-                padding: 12
-                focus: true
-                echoMode: TextInput.Password
-                placeholderText: "Password"
-                inputMethodHints: Qt.ImhSensitiveData
-                color: "${c.base05}"
-                font.family: "${config.cfg.fonts.monospace.name}"
-                background: Rectangle {
-                    color: Qt.rgba(0.11, 0.13, 0.18, 0.9)
-                    border.color: "${c.base0D}"
-                    border.width: 2
-                    radius: 8
-                }
-                onAccepted: if (loginButton.enabled) loginButton.clicked()
-                Layout.alignment: Qt.AlignHCenter
-            }
+              TextField {
+                  id: usernameField
+                  implicitWidth: 300
+                  height: 45
+                  padding: 12
+                  text: sddm.lastUser || ""
+                  placeholderText: "Username"
+                  color: "${c.base05}"
+                  font.family: "${config.cfg.fonts.monospace.name}"
+                  font.pixelSize: 14
+                  background: Rectangle {
+                      color: Qt.rgba(0.11, 0.13, 0.18, 0.95)
+                      border.color: "${c.base0D}"
+                      border.width: 2
+                      radius: 8
+                  }
+                  Layout.alignment: Qt.AlignHCenter
+                  Keys.onReturnPressed: passwordField.forceActiveFocus()
+                  Keys.onEnterPressed: passwordField.forceActiveFocus()
+              }
 
-            ComboBox {
-                id: sessionCombo
-                model: sessionModel
-                textRole: "name"
-                currentIndex: sessionModel.lastIndex
-                implicitWidth: 320
-                Layout.alignment: Qt.AlignHCenter
-                contentItem: Text {
-                    text: sessionCombo.displayText || sessionCombo.currentText
-                    color: "${c.base05}"
-                    font.family: "${config.cfg.fonts.monospace.name}"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    leftPadding: 10
-                    rightPadding: 10
-                }
-                background: Rectangle {
-                    color: Qt.rgba(0.11, 0.13, 0.18, 0.9)
-                    border.color: "${c.base0D}"
-                    border.width: 2
-                    radius: 8
-                }
-            }
+              TextField {
+                  id: passwordField
+                  implicitWidth: 300
+                  height: 45
+                  padding: 12
+                  focus: true
+                  echoMode: TextInput.Password
+                  placeholderText: "Password"
+                  inputMethodHints: Qt.ImhSensitiveData
+                  color: "${c.base05}"
+                  font.family: "${config.cfg.fonts.monospace.name}"
+                  font.pixelSize: 14
+                  background: Rectangle {
+                      color: Qt.rgba(0.11, 0.13, 0.18, 0.95)
+                      border.color: "${c.base0D}"
+                      border.width: 2
+                      radius: 8
+                  }
+                  onAccepted: {
+                      if (loginButton.enabled) 
+                          sddm.login(usernameField.text, passwordField.text, sessionCombo.currentIndex)
+                  }
+                  Layout.alignment: Qt.AlignHCenter
+              }
 
-            Button {
-                id: loginButton
-                text: "Login"
-                enabled: usernameField.text.length > 0 && passwordField.text.length > 0
-                padding: 12
-                implicitWidth: 320
-                Layout.alignment: Qt.AlignHCenter
-                onClicked: {
-                    errorText.visible = false
-                    sddm.login(usernameField.text, passwordField.text, sessionCombo.currentIndex)
-                }
-                contentItem: Text {
-                    text: parent.text
-                    color: "${c.base00}"
-                    font.pixelSize: 16
-                    font.bold: true
-                    font.family: "${config.cfg.fonts.monospace.name}"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-                background: Rectangle {
-                    color: parent.down ? "${c.base0B}" : (parent.hovered ? "${c.base0C}" : "${c.base0D}")
-                    radius: 8
-                }
-            }
+              ComboBox {
+                  id: sessionCombo
+                  model: sessionModel
+                  textRole: "name"
+                  currentIndex: sessionModel.lastIndex
+                  implicitWidth: 300
+                  height: 40
+                  Layout.alignment: Qt.AlignHCenter
+                  contentItem: Text {
+                      text: sessionCombo.displayText
+                      color: "${c.base05}"
+                      font.family: "${config.cfg.fonts.monospace.name}"
+                      font.pixelSize: 14
+                      horizontalAlignment: Text.AlignHCenter
+                      verticalAlignment: Text.AlignVCenter
+                  }
+                  background: Rectangle {
+                      color: Qt.rgba(0.11, 0.13, 0.18, 0.95)
+                      border.color: "${c.base0D}"
+                      border.width: 2
+                      radius: 8
+                  }
+              }
 
-            Text {
-                id: errorText
-                visible: false
-                text: "Login failed"
-                color: "${c.base08}"
-                font.pixelSize: 14
-                font.family: "${config.cfg.fonts.monospace.name}"
-                Layout.alignment: Qt.AlignHCenter
-            }
-        }
+              Button {
+                  id: loginButton
+                  text: "Login"
+                  enabled: usernameField.text.length > 0 && passwordField.text.length > 0
+                  implicitWidth: 300
+                  height: 45
+                  Layout.alignment: Qt.AlignHCenter
+                  onClicked: {
+                      errorText.visible = false
+                      sddm.login(usernameField.text, passwordField.text, sessionCombo.currentIndex)
+                  }
+                  contentItem: Text {
+                      text: parent.text
+                      color: "${c.base00}"
+                      font.pixelSize: 16
+                      font.bold: true
+                      font.family: "${config.cfg.fonts.monospace.name}"
+                      horizontalAlignment: Text.AlignHCenter
+                      verticalAlignment: Text.AlignVCenter
+                  }
+                  background: Rectangle {
+                      color: parent.down ? "${c.base0B}" : (parent.hovered ? "${c.base0C}" : "${c.base0D}")
+                      radius: 8
+                  }
+              }
 
-        RowLayout {
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: 40
-            spacing: 60
+              Text {
+                  id: errorText
+                  visible: false
+                  text: "Authentication failed"
+                  color: "${c.base08}"
+                  font.pixelSize: 14
+                  font.family: "${config.cfg.fonts.monospace.name}"
+                  Layout.alignment: Qt.AlignHCenter
+              }
+          }
 
-            Button {
-                visible: sddm.canPowerOff
-                text: "⏻"
-                font.pixelSize: 32
-                padding: 20
-                onClicked: sddm.powerOff()
-                background: Rectangle { color: "transparent" }
-                contentItem: Text {
-                    text: parent.text
-                    color: parent.hovered ? "${c.base08}" : "${c.base05}"
-                    font: parent.font
-                    renderType: Text.NativeRendering
-                }
-            }
+          Row {
+              z: 2
+              anchors.horizontalCenter: parent.horizontalCenter
+              anchors.bottom: parent.bottom
+              anchors.bottomMargin: 50
+              spacing: 40
 
-            Button {
-                visible: sddm.canReboot
-                text: "↻"
-                font.pixelSize: 32
-                padding: 20
-                onClicked: sddm.reboot()
-                background: Rectangle { color: "transparent" }
-                contentItem: Text {
-                    text: parent.text
-                    color: parent.hovered ? "${c.base0A}" : "${c.base05}"
-                    font: parent.font
-                    renderType: Text.NativeRendering
-                }
-            }
+              Button {
+                  visible: sddm.canPowerOff
+                  width: 60
+                  height: 60
+                  onClicked: sddm.powerOff()
+                  background: Rectangle { 
+                      color: parent.hovered ? Qt.rgba(1, 0, 0, 0.3) : "transparent"
+                      radius: 30
+                  }
+                  contentItem: Text {
+                      text: "⏻"
+                      color: parent.hovered ? "${c.base08}" : "${c.base05}"
+                      font.pixelSize: 28
+                      horizontalAlignment: Text.AlignHCenter
+                      verticalAlignment: Text.AlignVCenter
+                  }
+              }
 
-            Button {
-                visible: sddm.canSuspend
-                text: "⏾"
-                font.pixelSize: 32
-                padding: 20
-                onClicked: sddm.suspend()
-                background: Rectangle { color: "transparent" }
-                contentItem: Text {
-                    text: parent.text
-                    color: parent.hovered ? "${c.base0E}" : "${c.base05}"
-                    font: parent.font
-                    renderType: Text.NativeRendering
-                }
-            }
-        }
+              Button {
+                  visible: sddm.canReboot
+                  width: 60
+                  height: 60
+                  onClicked: sddm.reboot()
+                  background: Rectangle { 
+                      color: parent.hovered ? Qt.rgba(1, 0.5, 0, 0.3) : "transparent"
+                      radius: 30
+                  }
+                  contentItem: Text {
+                      text: "↻"
+                      color: parent.hovered ? "${c.base0A}" : "${c.base05}"
+                      font.pixelSize: 28
+                      horizontalAlignment: Text.AlignHCenter
+                      verticalAlignment: Text.AlignVCenter
+                  }
+              }
 
-        Timer {
-            interval: 1000
-            running: true
-            repeat: true
-            triggeredOnStart: true
-            onTriggered: clockLabel.text = Qt.formatTime(new Date(), "HH:mm")
-        }
+              Button {
+                  visible: sddm.canSuspend
+                  width: 60
+                  height: 60
+                  onClicked: sddm.suspend()
+                  background: Rectangle { 
+                      color: parent.hovered ? Qt.rgba(0, 0.5, 1, 0.3) : "transparent"
+                      radius: 30
+                  }
+                  contentItem: Text {
+                      text: "⏾"
+                      color: parent.hovered ? "${c.base0E}" : "${c.base05}"
+                      font.pixelSize: 28
+                      horizontalAlignment: Text.AlignHCenter
+                      verticalAlignment: Text.AlignVCenter
+                  }
+              }
+          }
 
-        Timer {
-            interval: 60000
-            running: true
-            repeat: true
-            triggeredOnStart: true
-            onTriggered: dateLabel.text = Qt.formatDate(new Date(), "dd/MM/yyyy")
-        }
+          Timer {
+              interval: 1000
+              running: true
+              repeat: true
+              triggeredOnStart: true
+              onTriggered: clockLabel.text = Qt.formatTime(new Date(), "HH:mm")
+          }
 
-        Connections {
-            target: sddm
-            function onLoginFailed() {
-                passwordField.text = ""
-                errorText.visible = true
-                passwordField.forceActiveFocus()
-            }
-        }
-    }
-  '';
+          Timer {
+              interval: 60000
+              running: true
+              repeat: true
+              triggeredOnStart: true
+              onTriggered: dateLabel.text = Qt.formatDate(new Date(), "dd/MM/yyyy")
+          }
+
+          Connections {
+              target: sddm
+              function onLoginFailed() {
+                  passwordField.text = ""
+                  errorText.visible = true
+                  passwordField.forceActiveFocus()
+              }
+          }
+      }
+    '';
+  };
 
   customTheme = pkgs.stdenvNoCC.mkDerivation {
     pname = themeName;
     version = "1.0.0";
-    src = pkgs.runCommand "theme-src" { } ''
-      mkdir -p $out
-    '';
-    installPhase = ''
-      mkdir -p $out/share/sddm/themes/${themeName}
-      cp ${wallpaper} $out/share/sddm/themes/${themeName}/wallpaper.png
-      cp ${mainQml} $out/share/sddm/themes/${themeName}/Main.qml
 
-      cat > $out/share/sddm/themes/${themeName}/theme.conf <<EOF
+    buildInputs = [ pkgs.qt6.qtbase ];
+
+    unpackPhase = "true";
+
+    installPhase = ''
+      runHook preInstall
+
+      themeDir=$out/share/sddm/themes/${themeName}
+      mkdir -p $themeDir
+
+
+      cp ${wallpaper} $themeDir/wallpaper.png
+
+
+      cp ${mainQml} $themeDir/Main.qml
+
+
+      cat > $themeDir/theme.conf << 'EOF'
       [General]
+      type=qml
+      name=Quickshell SDDM
+      description=Minimal SDDM theme matching Quickshell style
+      author=${config.cfg.vars.username}
+      version=1.0
+      website=
+      license=MIT
+      EOF
+
+
+      cat > $themeDir/metadata.desktop << EOF
+      [Desktop Entry]
+      Name=Quickshell SDDM
+      Comment=Minimal SDDM theme matching Quickshell lock screen
+      Type=Service
+
+      [X-SDDM-Theme]
       type=qml
       EOF
 
-      cat > $out/share/sddm/themes/${themeName}/metadata.desktop <<EOF
-      [Desktop Entry]
-      Name=Quickshell SDDM
-      Comment=Minimal clean theme matching Quickshell lock screen
-      Type=theme
-      X-Plasma-API=declarativeappletscript
-      EOF
+      runHook postInstall
     '';
   };
 in
@@ -278,32 +332,45 @@ in
   };
 
   config = mkIf cfg.enable {
-    environment = {
-      systemPackages = [
-        customTheme
-      ];
 
-      etc."sddm.conf.d/theme.conf".text = lib.mkForce ''
-        [Theme]
-        Current=${themeName}
-        CursorTheme=${config.cfg.gtk.cursorTheme.name}
-        CursorSize=${toString config.cfg.gtk.cursorTheme.size}
-      '';
-    };
-
-    qt.enable = true;
+    environment.systemPackages = [ customTheme ];
 
     services.displayManager.sddm = {
       enable = true;
-      wayland.enable = cfg.wayland.enable;
       package = pkgs.kdePackages.sddm;
       theme = themeName;
+      wayland.enable = cfg.wayland.enable;
+
       settings = {
+        Theme = {
+          Current = themeName;
+          CursorTheme = config.cfg.gtk.cursorTheme.name;
+          CursorSize = config.cfg.gtk.cursorTheme.size;
+          FacesDir = "/var/lib/AccountsService/icons";
+        };
         General = {
+          DisplayServer = if cfg.wayland.enable then "wayland" else "x11";
+          GreeterEnvironment = "QT_QPA_PLATFORM=wayland";
           InputMethod = "";
-          DefaultSession = "";
+        };
+        Wayland = lib.mkIf cfg.wayland.enable {
+          EnableHiDPI = true;
+          CompositorCommand = "${pkgs.kdePackages.kwin}/bin/kwin_wayland --drm --no-lockscreen";
         };
       };
     };
+
+    environment.etc."sddm.conf.d/99-custom.conf".text = ''
+      [Theme]
+      Current=${themeName}
+      ThemeDir=/run/current-system/sw/share/sddm/themes
+
+      [General]
+      DefaultSession=hyprland.desktop
+    '';
+
+    systemd.tmpfiles.rules = lib.mkIf (config.cfg.gtk.enable or false) [
+      "L+ /var/lib/sddm/.config/gtk-3.0 - - - - /home/${config.cfg.vars.username}/.config/gtk-3.0"
+    ];
   };
 }
