@@ -21,7 +21,6 @@ let
     import QtQuick 2.15
     import QtQuick.Layouts 1.15
     import QtQuick.Controls 2.15
-    import SddmComponents 2.0
 
     Rectangle {
         id: root
@@ -63,7 +62,7 @@ let
                 id: usernameField
                 implicitWidth: 300
                 padding: 15
-                text: sddm.lastUser || ""
+                text: sddm.greeterEnvironment.lastUser || ""
                 placeholderText: "Username"
                 color: "${c.base05}"
                 background: Rectangle {
@@ -102,7 +101,7 @@ let
                 implicitWidth: 300
                 Layout.alignment: Qt.AlignHCenter
                 contentItem: Text {
-                    text: sessionCombo.displayText || sessionCombo.currentText
+                    text: currentText
                     color: "${c.base05}"
                     font.family: "${config.cfg.fonts.monospace.name}"
                     horizontalAlignment: Text.AlignHCenter
@@ -133,8 +132,6 @@ let
                     font.pixelSize: 16
                     font.bold: true
                     font.family: "${config.cfg.fonts.monospace.name}"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
                 }
                 background: Rectangle {
                     color: parent.down ? "${c.base0B}" : (parent.hovered ? "${c.base0C}" : "${c.base0D}")
@@ -163,7 +160,6 @@ let
                 visible: sddm.canPowerOff
                 text: ""
                 font.pixelSize: 48
-                padding: 30
                 onClicked: sddm.powerOff()
                 background: Rectangle { color: "transparent" }
                 contentItem: Text {
@@ -177,7 +173,6 @@ let
                 visible: sddm.canReboot
                 text: ""
                 font.pixelSize: 48
-                padding: 30
                 onClicked: sddm.reboot()
                 background: Rectangle { color: "transparent" }
                 contentItem: Text {
@@ -191,7 +186,6 @@ let
                 visible: sddm.canSuspend
                 text: ""
                 font.pixelSize: 48
-                padding: 30
                 onClicked: sddm.suspend()
                 background: Rectangle { color: "transparent" }
                 contentItem: Text {
@@ -244,13 +238,6 @@ let
       [General]
       type=qtquick
       EOF
-
-      cat > $out/share/sddm/themes/${themeName}/metadata.desktop <<EOF
-      [Desktop Entry]
-      Name=Quickshell SDDM
-      Comment=Minimal clean theme matching Quickshell lock screen
-      Type=theme
-      EOF
     '';
   };
 in
@@ -275,6 +262,13 @@ in
         qt6.qtwayland
         config.cfg.gtk.cursorTheme.package
       ];
+
+      etc."sddm.conf.d/00-quickshell-theme.conf".text = ''
+        [Theme]
+        Current=${themeName}
+        CursorTheme=${config.cfg.gtk.cursorTheme.name}
+        CursorSize=${toString config.cfg.gtk.cursorTheme.size}
+      '';
 
       etc."sddm.conf.d/cursor.conf".text = ''
         [Theme]
@@ -312,11 +306,6 @@ in
       extraPackages = [ config.cfg.gtk.cursorTheme.package ];
 
       settings = {
-        Theme = {
-          Current = themeName;
-          CursorTheme = config.cfg.gtk.cursorTheme.name;
-          CursorSize = config.cfg.gtk.cursorTheme.size;
-        };
         General = {
           InputMethod = "";
         };
