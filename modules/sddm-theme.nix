@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 let
@@ -14,169 +13,250 @@ let
     ;
   cfg = config.cfg.sddm;
   c = config.cfg.theme.colors;
-  inherit (inputs) silentSDDM;
 
-  wallpaper = ../assets/Wallpapers/nord_valley.png;
+  wallpaper = ../assets/Wallpapers/a6116535-4a72-453e-83c9-ea97b8597d8c.png;
+  themeName = "quickshell-sddm";
 
-  background-derivation = pkgs.runCommand "bg.jpg" { } ''
-    cp ${wallpaper} $out
+  mainQml = pkgs.writeText "Main.qml" ''
+    import QtQuick 2.15
+    import QtQuick.Layouts 1.15
+    import QtQuick.Controls 2.15
+
+    Rectangle {
+        id: root
+        color: "${c.base00}"
+
+        Image {
+            anchors.fill: parent
+            source: "wallpaper.png"
+            fillMode: Image.PreserveAspectFit
+            asynchronous: true
+        }
+
+        ColumnLayout {
+            anchors.centerIn: parent
+            spacing: 30
+
+            Text {
+                id: clockLabel
+                text: Qt.formatTime(new Date(), "HH:mm")
+                color: "${c.base06}"
+                font.pixelSize: 72
+                font.family: "${config.cfg.fonts.monospace.name}"
+                font.bold: true
+                style: Text.Outline
+                styleColor: Qt.rgba(0, 0, 0, 0.8)
+                Layout.alignment: Qt.AlignHCenter
+            }
+
+            Text {
+                id: dateLabel
+                text: Qt.formatDate(new Date(), "dd/MM/yyyy")
+                color: "${c.base04}"
+                font.pixelSize: 24
+                font.family: "${config.cfg.fonts.monospace.name}"
+                Layout.alignment: Qt.AlignHCenter
+            }
+
+            TextField {
+                id: usernameField
+                implicitWidth: 300
+                padding: 15
+                text: sddm.lastUser || ""
+                placeholderText: "Username"
+                color: "${c.base05}"
+                background: Rectangle {
+                    color: Qt.rgba(46/255, 52/255, 64/255, 0.85)
+                    border.color: "${c.base0D}"
+                    border.width: 2
+                    radius: 10
+                }
+                Layout.alignment: Qt.AlignHCenter
+            }
+
+            TextField {
+                id: passwordField
+                implicitWidth: 300
+                padding: 15
+                focus: usernameField.text.length > 0
+                echoMode: TextInput.Password
+                placeholderText: "Password"
+                inputMethodHints: Qt.ImhSensitiveData
+                color: "${c.base05}"
+                background: Rectangle {
+                    color: Qt.rgba(46/255, 52/255, 64/255, 0.85)
+                    border.color: "${c.base0D}"
+                    border.width: 2
+                    radius: 10
+                }
+                onAccepted: loginButton.clicked()
+                Layout.alignment: Qt.AlignHCenter
+            }
+
+            ComboBox {
+                id: sessionCombo
+                model: sessionModel
+                textRole: "name"
+                currentIndex: sessionModel.lastIndex
+                implicitWidth: 300
+                Layout.alignment: Qt.AlignHCenter
+                contentItem: Text {
+                    text: parent.displayText
+                    color: "${c.base05}"
+                    font.family: "${config.cfg.fonts.monospace.name}"
+                    horizontalAlignment: Text.AlignHCenter
+                }
+                background: Rectangle {
+                    color: Qt.rgba(46/255, 52/255, 64/255, 0.85)
+                    border.color: "${c.base0D}"
+                    border.width: 2
+                    radius: 10
+                }
+            }
+
+            Button {
+                id: loginButton
+                text: "Login"
+                enabled: passwordField.text.length > 0
+                padding: 12
+                Layout.alignment: Qt.AlignHCenter
+                onClicked: {
+                    errorText.visible = false
+                    sddm.login(usernameField.text, passwordField.text, sessionCombo.currentIndex)
+                }
+                contentItem: Text {
+                    text: parent.text
+                    color: "${c.base00}"
+                    font.pixelSize: 16
+                    font.bold: true
+                    font.family: "${config.cfg.fonts.monospace.name}"
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                background: Rectangle {
+                    color: parent.down ? "${c.base0B}" : (parent.hovered ? "${c.base0C}" : "${c.base0D}")
+                    radius: 8
+                }
+            }
+
+            Text {
+                id: errorText
+                visible: false
+                text: "Login failed"
+                color: "${c.base08}"
+                font.pixelSize: 14
+                font.family: "${config.cfg.fonts.monospace.name}"
+                Layout.alignment: Qt.AlignHCenter
+            }
+        }
+
+        RowLayout {
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 40
+            spacing: 30
+            visible: sddm.canPowerOff || sddm.canReboot || sddm.canSuspend
+
+            Button {
+                visible: sddm.canPowerOff
+                text: " Shutdown"
+                padding: 12
+                onClicked: sddm.powerOff()
+                contentItem: Text {
+                    text: parent.text
+                    color: "${c.base08}"
+                    font.family: "${config.cfg.fonts.monospace.name}"
+                    font.pixelSize: 14
+                    font.bold: true
+                }
+                background: Rectangle { color: "transparent" }
+            }
+
+            Button {
+                visible: sddm.canReboot
+                text: " Reboot"
+                padding: 12
+                onClicked: sddm.reboot()
+                contentItem: Text {
+                    text: parent.text
+                    color: "${c.base0A}"
+                    font.family: "${config.cfg.fonts.monospace.name}"
+                    font.pixelSize: 14
+                    font.bold: true
+                }
+                background: Rectangle { color: "transparent" }
+            }
+
+            Button {
+                visible: sddm.canSuspend
+                text: " Suspend"
+                padding: 12
+                onClicked: sddm.suspend()
+                contentItem: Text {
+                    text: parent.text
+                    color: "${c.base0E}"
+                    font.family: "${config.cfg.fonts.monospace.name}"
+                    font.pixelSize: 14
+                    font.bold: true
+                }
+                background: Rectangle { color: "transparent" }
+            }
+        }
+
+        Timer {
+            interval: 1000
+            running: true
+            repeat: true
+            triggeredOnStart: true
+            onTriggered: {
+                clockLabel.text = Qt.formatTime(new Date(), "HH:mm")
+            }
+        }
+
+        Timer {
+            interval: 60000
+            running: true
+            repeat: true
+            triggeredOnStart: true
+            onTriggered: {
+                dateLabel.text = Qt.formatDate(new Date(), "dd/MM/yyyy")
+            }
+        }
+
+        Connections {
+            target: sddm
+            function onLoginFailed() {
+                passwordField.text = ""
+                errorText.visible = true
+                passwordField.forceActiveFocus()
+            }
+        }
+    }
   '';
 
-  silentTheme = silentSDDM.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
-    extraBackgrounds = [ background-derivation ];
-    theme-overrides = {
-      General = {
-        enable-animations = true;
-      };
-      LoginScreen = {
-        background = "${background-derivation.name}";
-        blur = 0;
-      };
-      "LoginScreen.LoginArea" = {
-        position = "center";
-        margin = -1;
-      };
-      "LoginScreen.LoginArea.Avatar" = {
-        shape = "circle";
-        active-size = 140;
-        border-radius = 1;
-        active-border-size = 2;
-        active-border-color = c.base0D;
-      };
-      "LoginScreen.LoginArea.LoginButton" = {
-        font-size = 22;
-        icon-size = 30;
-        content-color = c.base05;
-        active-content-color = c.base06;
-        background-color = c.base00;
-        background-opacity = 0.7;
-        active-background-color = c.base0D;
-        active-background-opacity = 0.7;
-        border-size = 2;
-        border-color = c.base0D;
-      };
-      "LoginScreen.LoginArea.PasswordInput" = {
-        width = 460;
-        height = 60;
-        font-size = 22;
-        display-icon = true;
-        icon-size = 30;
-        content-color = c.base05;
-        background-color = c.base00;
-        background-opacity = 0.7;
-        border-size = 2;
-        border-color = c.base0D;
-        margin-top = 20;
-      };
-      "LoginScreen.LoginArea.Spinner" = {
-        text = "Logging in";
-        font-size = 36;
-        icon-size = 72;
-        color = c.base06;
-        spacing = 1;
-      };
-      "LoginScreen.LoginArea.Username" = {
-        font-size = 40;
-        color = c.base00;
-        margin = 5;
-      };
-      "LoginScreen.LoginArea.WarningMessage" = {
-        font-size = 22;
-        normal-color = c.base06;
-        warning-color = c.base0A;
-        error-color = c.base08;
-      };
-      "LoginScreen.MenuArea.Buttons" = {
-        size = 60;
-      };
-      "LoginScreen.MenuArea.Keyboard" = {
-        display = true;
-      };
-      "LoginScreen.MenuArea.Layout" = {
-        index = 2;
-        position = "bottom-center";
-        font-size = 20;
-        icon-size = 32;
-        content-color = c.base05;
-        active-content-color = c.base06;
-        background-color = c.base00;
-        background-opacity = 0.7;
-        border-size = 2;
-        border-color = c.base0D;
-      };
-      "LoginScreen.MenuArea.Popups" = {
-        max-height = 600;
-        item-height = 60;
-        item-spacing = 1;
-        padding = 2;
-        font-size = 22;
-        icon-size = 24;
-        content-color = c.base05;
-        active-content-color = c.base06;
-        background-color = c.base00;
-        background-opacity = 0.7;
-        active-option-background-color = c.base02;
-        active-option-background-opacity = 0.7;
-        border-size = 2;
-        border-color = c.base0D;
-        display-scrollbar = true;
-      };
-      "LoginScreen.MenuArea.Power" = {
-        index = 0;
-        popup-width = 200;
-        position = "bottom-center";
-        icon-size = 32;
-        content-color = c.base05;
-        active-content-color = c.base06;
-        background-color = c.base00;
-        background-opacity = 0.7;
-        border-size = 2;
-        border-color = c.base0D;
-      };
-      "LoginScreen.MenuArea.Session" = {
-        index = 1;
-        position = "bottom-center";
-        button-width = 300;
-        popup-width = 300;
-        font-size = 25;
-        icon-size = 32;
-        content-color = c.base05;
-        active-content-color = c.base06;
-        background-color = c.base00;
-        background-opacity = 0.7;
-        active-background-opacity = 0.7;
-        border-size = 2;
-        border-color = c.base0D;
-      };
-      LockScreen = {
-        background = "${background-derivation.name}";
-        blur = 50;
-      };
-      "LockScreen.Clock" = {
-        position = "center";
-        align = "center";
-        format = "hh:mm:ss";
-        color = c.base01;
-        font-size = 92;
-      };
-      "LockScreen.Date" = {
-        margin-top = 1;
-        format = "dd/MM/yyyy";
-        locale = "pt_BR";
-        color = c.base0D;
-        font-size = 32;
-      };
-      "LockScreen.Message" = {
-        text = "Press any key";
-        font-size = 32;
-        color = c.base0D;
-        icon-size = 44;
-        paint-icon = true;
-      };
-      Tooltips = {
-        enable = false;
-      };
-    };
+  customTheme = pkgs.stdenv.mkDerivation {
+    pname = themeName;
+    version = "1.0";
+
+    dontUnpack = true;
+
+    installPhase = ''
+      mkdir -p $out/share/sddm/themes/${themeName}
+      cp ${wallpaper} $out/share/sddm/themes/${themeName}/wallpaper.png
+      cp ${mainQml} $out/share/sddm/themes/${themeName}/Main.qml
+
+      cat > $out/share/sddm/themes/${themeName}/theme.conf <<EOF
+      [General]
+      background=wallpaper.png
+      EOF
+
+      cat > $out/share/sddm/themes/${themeName}/metadata.desktop <<EOF
+      [Desktop Entry]
+      Name=Quickshell Match
+      Comment=Clean SDDM theme matching Quickshell lock screen
+      Type=X-SDDM-QtQuick
+      EOF
+    '';
   };
 in
 {
@@ -192,8 +272,7 @@ in
   config = mkIf cfg.enable {
     environment = {
       systemPackages = with pkgs; [
-        silentTheme
-        silentTheme.test
+        customTheme
         kdePackages.qt6ct
         libsForQt5.qtstyleplugin-kvantum
         kdePackages.qtstyleplugin-kvantum
@@ -233,22 +312,12 @@ in
       enable = true;
       wayland.enable = cfg.wayland.enable;
       package = pkgs.kdePackages.sddm;
-      theme = silentTheme.pname;
+      theme = themeName;
 
-      extraPackages = silentTheme.propagatedBuildInputs ++ [ config.cfg.gtk.cursorTheme.package ];
+      extraPackages = [ config.cfg.gtk.cursorTheme.package ];
 
       settings = {
         General = {
-          GreeterEnvironment =
-            let
-              cursorTheme = config.cfg.gtk.cursorTheme.name;
-              cursorSize = toString config.cfg.gtk.cursorTheme.size;
-            in
-            "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/,"
-            + "QT_IM_MODULE=qtvirtualkeyboard,"
-            + "XCURSOR_THEME=${cursorTheme},"
-            + "XCURSOR_SIZE=${cursorSize},"
-            + "XCURSOR_PATH=/usr/share/icons:/var/lib/sddm/.icons:${config.cfg.gtk.cursorTheme.package}/share/icons";
           InputMethod = "qtvirtualkeyboard";
         };
         Theme = {
