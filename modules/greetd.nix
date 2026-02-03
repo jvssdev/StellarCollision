@@ -14,6 +14,12 @@ let
   c = config.cfg.theme.colors;
 
   wallpaper = ../assets/Wallpapers/a6116535-4a72-453e-83c9-ea97b8597d8c.png;
+  wallpaperStorePath = "${
+    pkgs.runCommand "wallpaper" { } ''
+      mkdir -p $out
+      cp ${wallpaper} $out/wallpaper.png
+    ''
+  }/wallpaper.png";
 
   mangowc = inputs.mango.packages.${pkgs.stdenv.hostPlatform.system}.mango;
   quickshell = inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default;
@@ -34,7 +40,10 @@ let
         }
         
         property string username: "${config.cfg.vars.username}"
-        property url wallpaperSource: "file://${wallpaper}"
+        
+        Component.onCompleted: {
+            console.log("Greeter started")
+        }
         
         Variants {
             model: Quickshell.screens
@@ -48,8 +57,13 @@ let
                 
                 Image {
                     anchors.fill: parent
-                    source: root.wallpaperSource
+                    source: "file://${wallpaperStorePath}"
                     fillMode: Image.PreserveAspectCrop
+                    onStatusChanged: {
+                        if (status == Image.Error) {
+                            console.log("Failed to load wallpaper")
+                        }
+                    }
                 }
                 
                 Rectangle {
@@ -267,17 +281,22 @@ let
     }
   '';
 
-  greeterPackage =
-    pkgs.runCommand "quickshell-greeter"
-      {
-        buildInputs = [ pkgs.makeWrapper ];
-      }
-      ''
+  greeterPackage = pkgs.qt6.callPackage (
+    { wrapQtAppsHook }:
+    pkgs.stdenv.mkDerivation {
+      name = "quickshell-greeter";
+      dontUnpack = true;
+      nativeBuildInputs = [ wrapQtAppsHook ];
+      buildInputs = with pkgs.qt6; [
+        qtbase
+        qtdeclarative
+      ];
+
+      installPhase = ''
         mkdir -p $out/bin
         cp ${greeterQml} $out/greeter.qml
-        cp ${wallpaper} $out/wallpaper.png
 
-        makeWrapper ${quickshell}/bin/quickshell $out/bin/quickshell-greeter \
+        makeQtWrapper ${quickshell}/bin/quickshell $out/bin/quickshell-greeter \
           --set QT_QPA_PLATFORM wayland \
           --set QT_WAYLAND_DISABLE_WINDOWDECORATION 1 \
           --set XDG_SESSION_TYPE wayland \
@@ -286,6 +305,8 @@ let
           --set XCURSOR_SIZE ${toString config.cfg.gtk.cursorTheme.size} \
           --add-flags "--config $out/greeter.qml"
       '';
+    }
+  ) { };
 
   mangoConf = pkgs.writeText "mango-greeter.conf" ''
     monitorrule=eDP-1,0.60,1,tile,0,1,0,0,1920,1080,60
@@ -302,6 +323,12 @@ let
       ''
         mkdir -p $out/bin
         makeWrapper ${mangowc}/bin/mango $out/bin/greeter-session \
+          --prefix PATH : ${
+            lib.makeBinPath [
+              greeterPackage
+              pkgs.qt6.qtbase
+            ]
+          } \
           --add-flags "-c ${mangoConf}"
       '';
 in
