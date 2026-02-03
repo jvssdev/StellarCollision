@@ -23,15 +23,11 @@ let
     dontUnpack = true;
     dontWrapQtApps = true;
 
-    buildInputs = [ pkgs.kdePackages.qtbase ];
-
     installPhase = ''
       themeDir=$out/share/sddm/themes/${themeName}
       mkdir -p $themeDir
 
-
       cp ${wallpaper} $themeDir/wallpaper.png
-
 
       cat > $themeDir/Main.qml << 'QML'
       import QtQuick 2.15
@@ -49,6 +45,7 @@ let
               source: "wallpaper.png"
               fillMode: Image.PreserveAspectCrop
               asynchronous: false
+              cache: false
           }
           
           Rectangle {
@@ -265,7 +262,6 @@ let
       }
       QML
 
-
       cat > $themeDir/metadata.desktop << EOF
       [Desktop Entry]
       Name=Quickshell SDDM
@@ -303,7 +299,6 @@ in
       settings = {
         Theme = {
           Current = themeName;
-          ThemeDir = "/run/current-system/sw/share/sddm/themes";
           CursorTheme = config.cfg.gtk.cursorTheme.name;
           CursorSize = config.cfg.gtk.cursorTheme.size;
         };
@@ -317,6 +312,18 @@ in
       };
     };
 
-    environment.etc."sddm/themes".source = "${sddmTheme}/share/sddm/themes";
+    environment.etc."sddm.conf".text = lib.mkForce ''
+      [Theme]
+      Current=${themeName}
+      CursorTheme=${config.cfg.gtk.cursorTheme.name}
+      CursorSize=${toString config.cfg.gtk.cursorTheme.size}
+
+      [General]
+      DisplayServer=${if cfg.wayland.enable then "wayland" else "x11"}
+      GreeterEnvironment=QT_QPA_PLATFORM=wayland
+
+      [Wayland]
+      CompositorCommand=${pkgs.kdePackages.kwin}/bin/kwin_wayland --drm --no-lockscreen
+    '';
   };
 }
