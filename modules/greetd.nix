@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }:
 let
@@ -13,268 +14,169 @@ let
     ;
   cfg = config.cfg.sddm;
   c = config.cfg.theme.colors;
+  inherit (inputs) silentSDDM;
 
-  wallpaper = ../assets/Wallpapers/a6116535-4a72-453e-83c9-ea97b8597d8c.png;
-  themeName = "quickshell-sddm";
+  wallpaper = ../assets/Wallpapers/nord_valley.png;
 
-  sddmTheme = pkgs.stdenvNoCC.mkDerivation {
-    pname = themeName;
-    version = "1.0.0";
-    dontUnpack = true;
-    dontWrapQtApps = true;
+  background-derivation = pkgs.runCommand "bg.jpg" { } ''
+    cp ${wallpaper} $out
+  '';
 
-    installPhase = ''
-      themeDir=$out/share/sddm/themes/${themeName}
-      mkdir -p $themeDir
-
-      cp ${wallpaper} $themeDir/wallpaper.png
-
-      cat > $themeDir/Main.qml << 'QML'
-      import QtQuick 2.15
-      import QtQuick.Layouts 1.15
-      import QtQuick.Controls 2.15
-      import SddmComponents 2.0
-
-      Rectangle {
-          id: root
-          color: "${c.base00}"
-          anchors.fill: parent
-          
-          Image {
-              anchors.fill: parent
-              source: "wallpaper.png"
-              fillMode: Image.PreserveAspectCrop
-              asynchronous: false
-              cache: false
-          }
-          
-          Rectangle {
-              anchors.fill: parent
-              color: Qt.rgba(0, 0, 0, 0.3)
-          }
-          
-          ColumnLayout {
-              anchors.centerIn: parent
-              spacing: 20
-              
-              Text {
-                  id: clockLabel
-                  text: Qt.formatTime(new Date(), "HH:mm")
-                  color: "${c.base06}"
-                  font.pixelSize: 64
-                  font.family: "${config.cfg.fonts.monospace.name}"
-                  font.bold: true
-                  Layout.alignment: Qt.AlignHCenter
-                  
-                  Timer {
-                      interval: 1000
-                      running: true
-                      repeat: true
-                      onTriggered: clockLabel.text = Qt.formatTime(new Date(), "HH:mm")
-                  }
-              }
-              
-              Text {
-                  id: dateLabel
-                  text: Qt.formatDate(new Date(), "dd/MM/yyyy")
-                  color: "${c.base04}"
-                  font.pixelSize: 20
-                  font.family: "${config.cfg.fonts.monospace.name}"
-                  Layout.alignment: Qt.AlignHCenter
-                  
-                  Timer {
-                      interval: 60000
-                      running: true
-                      repeat: true
-                      onTriggered: dateLabel.text = Qt.formatDate(new Date(), "dd/MM/yyyy")
-                  }
-              }
-              
-              Item { height: 30 }
-              
-              TextField {
-                  id: usernameField
-                  implicitWidth: 300
-                  height: 45
-                  text: sddm.lastUser || ""
-                  placeholderText: "Username"
-                  color: "${c.base05}"
-                  font.family: "${config.cfg.fonts.monospace.name}"
-                  
-                  background: Rectangle {
-                      color: Qt.rgba(0.11, 0.13, 0.18, 0.9)
-                      border.color: "${c.base0D}"
-                      border.width: 2
-                      radius: 8
-                  }
-                  
-                  Layout.alignment: Qt.AlignHCenter
-                  
-                  Keys.onReturnPressed: passwordField.forceActiveFocus()
-              }
-              
-              TextField {
-                  id: passwordField
-                  implicitWidth: 300
-                  height: 45
-                  focus: true
-                  echoMode: TextInput.Password
-                  placeholderText: "Password"
-                  color: "${c.base05}"
-                  font.family: "${config.cfg.fonts.monospace.name}"
-                  
-                  background: Rectangle {
-                      color: Qt.rgba(0.11, 0.13, 0.18, 0.9)
-                      border.color: "${c.base0D}"
-                      border.width: 2
-                      radius: 8
-                  }
-                  
-                  Layout.alignment: Qt.AlignHCenter
-                  
-                  onAccepted: {
-                      sddm.login(usernameField.text, passwordField.text, sessionCombo.currentIndex)
-                  }
-              }
-              
-              ComboBox {
-                  id: sessionCombo
-                  model: sessionModel
-                  textRole: "name"
-                  currentIndex: sessionModel.lastIndex
-                  implicitWidth: 300
-                  height: 40
-                  
-                  contentItem: Text {
-                      text: sessionCombo.displayText
-                      color: "${c.base05}"
-                      font.family: "${config.cfg.fonts.monospace.name}"
-                      horizontalAlignment: Text.AlignHCenter
-                      verticalAlignment: Text.AlignVCenter
-                  }
-                  
-                  background: Rectangle {
-                      color: Qt.rgba(0.11, 0.13, 0.18, 0.9)
-                      border.color: "${c.base0D}"
-                      border.width: 2
-                      radius: 8
-                  }
-                  
-                  Layout.alignment: Qt.AlignHCenter
-              }
-              
-              Button {
-                  id: loginButton
-                  text: "Login"
-                  implicitWidth: 300
-                  height: 45
-                  enabled: usernameField.text.length > 0 && passwordField.text.length > 0
-                  
-                  contentItem: Text {
-                      text: parent.text
-                      color: "${c.base00}"
-                      font.pixelSize: 16
-                      font.bold: true
-                      font.family: "${config.cfg.fonts.monospace.name}"
-                      horizontalAlignment: Text.AlignHCenter
-                      verticalAlignment: Text.AlignVCenter
-                  }
-                  
-                  background: Rectangle {
-                      color: parent.down ? "${c.base0B}" : (parent.hovered ? "${c.base0C}" : "${c.base0D}")
-                      radius: 8
-                  }
-                  
-                  onClicked: {
-                      sddm.login(usernameField.text, passwordField.text, sessionCombo.currentIndex)
-                  }
-                  
-                  Layout.alignment: Qt.AlignHCenter
-              }
-              
-              Text {
-                  id: errorText
-                  visible: false
-                  text: "Login failed"
-                  color: "${c.base08}"
-                  font.family: "${config.cfg.fonts.monospace.name}"
-                  Layout.alignment: Qt.AlignHCenter
-              }
-          }
-          
-          Row {
-              anchors.horizontalCenter: parent.horizontalCenter
-              anchors.bottom: parent.bottom
-              anchors.bottomMargin: 40
-              spacing: 40
-              
-              Button {
-                  visible: sddm.canPowerOff
-                  text: "⏻"
-                  flat: true
-                  
-                  contentItem: Text {
-                      text: parent.text
-                      color: parent.hovered ? "${c.base08}" : "${c.base05}"
-                      font.pixelSize: 32
-                  }
-                  
-                  onClicked: sddm.powerOff()
-              }
-              
-              Button {
-                  visible: sddm.canReboot
-                  text: "↻"
-                  flat: true
-                  
-                  contentItem: Text {
-                      text: parent.text
-                      color: parent.hovered ? "${c.base0A}" : "${c.base05}"
-                      font.pixelSize: 32
-                  }
-                  
-                  onClicked: sddm.reboot()
-              }
-              
-              Button {
-                  visible: sddm.canSuspend
-                  text: "⏾"
-                  flat: true
-                  
-                  contentItem: Text {
-                      text: parent.text
-                      color: parent.hovered ? "${c.base0E}" : "${c.base05}"
-                      font.pixelSize: 32
-                  }
-                  
-                  onClicked: sddm.suspend()
-              }
-          }
-          
-          Connections {
-              target: sddm
-              function onLoginFailed() {
-                  passwordField.text = ""
-                  errorText.visible = true
-                  passwordField.forceActiveFocus()
-              }
-          }
-      }
-      QML
-
-      cat > $themeDir/metadata.desktop << EOF
-      [Desktop Entry]
-      Name=Quickshell SDDM
-      Comment=Quickshell-styled SDDM theme
-      Type=Service
-      X-SDDM-Theme=qml
-      EOF
-
-      cat > $themeDir/theme.conf << EOF
-      [General]
-      type=qml
-      EOF
-    '';
+  silentTheme = silentSDDM.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
+    extraBackgrounds = [ background-derivation ];
+    theme-overrides = {
+      General = {
+        enable-animations = true;
+      };
+      LoginScreen = {
+        background = "${background-derivation.name}";
+        blur = 0;
+      };
+      "LoginScreen.LoginArea" = {
+        position = "center";
+        margin = -1;
+      };
+      "LoginScreen.LoginArea.Avatar" = {
+        shape = "circle";
+        active-size = 140;
+        border-radius = 1;
+        active-border-size = 2;
+        active-border-color = c.base0D;
+      };
+      "LoginScreen.LoginArea.LoginButton" = {
+        font-size = 22;
+        icon-size = 30;
+        content-color = c.base05;
+        active-content-color = c.base06;
+        background-color = c.base00;
+        background-opacity = 0.7;
+        active-background-color = c.base0D;
+        active-background-opacity = 0.7;
+        border-size = 2;
+        border-color = c.base0D;
+      };
+      "LoginScreen.LoginArea.PasswordInput" = {
+        width = 460;
+        height = 60;
+        font-size = 22;
+        display-icon = true;
+        icon-size = 30;
+        content-color = c.base05;
+        background-color = c.base00;
+        background-opacity = 0.7;
+        border-size = 2;
+        border-color = c.base0D;
+        margin-top = 20;
+      };
+      "LoginScreen.LoginArea.Spinner" = {
+        text = "Logging in";
+        font-size = 36;
+        icon-size = 72;
+        color = c.base06;
+        spacing = 1;
+      };
+      "LoginScreen.LoginArea.Username" = {
+        font-size = 40;
+        color = c.base00;
+        margin = 5;
+      };
+      "LoginScreen.LoginArea.WarningMessage" = {
+        font-size = 22;
+        normal-color = c.base06;
+        warning-color = c.base0A;
+        error-color = c.base08;
+      };
+      "LoginScreen.MenuArea.Buttons" = {
+        size = 60;
+      };
+      "LoginScreen.MenuArea.Keyboard" = {
+        display = true;
+      };
+      "LoginScreen.MenuArea.Layout" = {
+        index = 2;
+        position = "bottom-center";
+        font-size = 20;
+        icon-size = 32;
+        content-color = c.base05;
+        active-content-color = c.base06;
+        background-color = c.base00;
+        background-opacity = 0.7;
+        border-size = 2;
+        border-color = c.base0D;
+      };
+      "LoginScreen.MenuArea.Popups" = {
+        max-height = 600;
+        item-height = 60;
+        item-spacing = 1;
+        padding = 2;
+        font-size = 22;
+        icon-size = 24;
+        content-color = c.base05;
+        active-content-color = c.base06;
+        background-color = c.base00;
+        background-opacity = 0.7;
+        active-option-background-color = c.base02;
+        active-option-background-opacity = 0.7;
+        border-size = 2;
+        border-color = c.base0D;
+        display-scrollbar = true;
+      };
+      "LoginScreen.MenuArea.Power" = {
+        index = 0;
+        popup-width = 200;
+        position = "bottom-center";
+        icon-size = 32;
+        content-color = c.base05;
+        active-content-color = c.base06;
+        background-color = c.base00;
+        background-opacity = 0.7;
+        border-size = 2;
+        border-color = c.base0D;
+      };
+      "LoginScreen.MenuArea.Session" = {
+        index = 1;
+        position = "bottom-center";
+        button-width = 300;
+        popup-width = 300;
+        font-size = 25;
+        icon-size = 32;
+        content-color = c.base05;
+        active-content-color = c.base06;
+        background-color = c.base00;
+        background-opacity = 0.7;
+        active-background-opacity = 0.7;
+        border-size = 2;
+        border-color = c.base0D;
+      };
+      LockScreen = {
+        background = "${background-derivation.name}";
+        blur = 50;
+      };
+      "LockScreen.Clock" = {
+        position = "center";
+        align = "center";
+        format = "hh:mm:ss";
+        color = c.base01;
+        font-size = 92;
+      };
+      "LockScreen.Date" = {
+        margin-top = 1;
+        format = "dd/MM/yyyy";
+        locale = "pt_BR";
+        color = c.base0D;
+        font-size = 32;
+      };
+      "LockScreen.Message" = {
+        text = "Press any key";
+        font-size = 32;
+        color = c.base0D;
+        icon-size = 44;
+        paint-icon = true;
+      };
+      Tooltips = {
+        enable = false;
+      };
+    };
   };
 in
 {
@@ -288,42 +190,68 @@ in
   };
 
   config = mkIf cfg.enable {
-    environment.systemPackages = [ sddmTheme ];
+    environment = {
+      systemPackages = with pkgs; [
+        silentTheme
+        silentTheme.test
+        kdePackages.qt6ct
+        libsForQt5.qtstyleplugin-kvantum
+        kdePackages.qtstyleplugin-kvantum
+        kdePackages.qtwayland
+        qt6.qtwayland
+        config.cfg.gtk.cursorTheme.package
+      ];
+
+      etc."sddm.conf.d/cursor.conf".text = ''
+        [Theme]
+        CursorTheme=${config.cfg.gtk.cursorTheme.name}
+        CursorSize=${toString config.cfg.gtk.cursorTheme.size}
+      '';
+    };
+
+    qt.enable = true;
+
+    systemd.tmpfiles.rules =
+      let
+        cursorPkg = config.cfg.gtk.cursorTheme.package;
+        cursorName = config.cfg.gtk.cursorTheme.name;
+        themePath = "${cursorPkg}/share/icons/${cursorName}";
+      in
+      [
+        "L+ /usr/share/icons/default - - - - ${themePath}"
+        "L+ /var/lib/sddm/.icons/default - - - - ${themePath}"
+
+        "d /var/lib/sddm/.icons 0755 sddm sddm -"
+      ];
 
     services.displayManager.sddm = {
       enable = true;
-      package = pkgs.kdePackages.sddm;
-      theme = themeName;
       wayland.enable = cfg.wayland.enable;
+      package = pkgs.kdePackages.sddm;
+      theme = silentTheme.pname;
+
+      extraPackages = silentTheme.propagatedBuildInputs ++ [ config.cfg.gtk.cursorTheme.package ];
 
       settings = {
+        General = {
+          GreeterEnvironment =
+            let
+              cursorTheme = config.cfg.gtk.cursorTheme.name;
+              cursorSize = toString config.cfg.gtk.cursorTheme.size;
+              themePath = "${config.cfg.gtk.cursorTheme.package}/share/icons";
+            in
+            "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/,"
+            + "QT_IM_MODULE=qtvirtualkeyboard,"
+            + "XCURSOR_THEME=${cursorTheme},"
+            + "XCURSOR_SIZE=${cursorSize},"
+            + "XCURSOR_PATH=/usr/share/icons:/var/lib/sddm/.icons:${themePath}";
+          InputMethod = "qtvirtualkeyboard";
+        };
         Theme = {
-          Current = themeName;
           CursorTheme = config.cfg.gtk.cursorTheme.name;
           CursorSize = config.cfg.gtk.cursorTheme.size;
         };
-        General = {
-          DisplayServer = if cfg.wayland.enable then "wayland" else "x11";
-          GreeterEnvironment = "QT_QPA_PLATFORM=wayland";
-        };
-        Wayland = lib.mkIf cfg.wayland.enable {
-          CompositorCommand = "${pkgs.kdePackages.kwin}/bin/kwin_wayland --drm --no-lockscreen";
-        };
       };
     };
-
-    environment.etc."sddm.conf".text = lib.mkForce ''
-      [Theme]
-      Current=${themeName}
-      CursorTheme=${config.cfg.gtk.cursorTheme.name}
-      CursorSize=${toString config.cfg.gtk.cursorTheme.size}
-
-      [General]
-      DisplayServer=${if cfg.wayland.enable then "wayland" else "x11"}
-      GreeterEnvironment=QT_QPA_PLATFORM=wayland
-
-      [Wayland]
-      CompositorCommand=${pkgs.kdePackages.kwin}/bin/kwin_wayland --drm --no-lockscreen
-    '';
   };
 }
