@@ -76,6 +76,7 @@ in
             smartcase = true;
             copyindent = true;
             preserveindent = true;
+            hlsearch = true;
           };
 
           lsp = {
@@ -220,6 +221,12 @@ in
               mode = "n";
               key = "<Down>";
               action = ":echo 'Use j to move!!'";
+            }
+            {
+              mode = "n";
+              key = "<Esc>";
+              action = "<cmd>nohlsearch<CR>";
+              desc = "Clear search highlights";
             }
           ];
         };
