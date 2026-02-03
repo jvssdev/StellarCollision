@@ -2,372 +2,321 @@
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 let
   inherit (lib)
+    mkOption
+    types
     mkIf
     mkEnableOption
     ;
-  cfg = config.cfg.greetd;
+  cfg = config.cfg.sddm;
   c = config.cfg.theme.colors;
 
   wallpaper = ../assets/Wallpapers/a6116535-4a72-453e-83c9-ea97b8597d8c.png;
-  wallpaperStorePath = "${
-    pkgs.runCommand "wallpaper" { } ''
-      mkdir -p $out
-      cp ${wallpaper} $out/wallpaper.png
-    ''
-  }/wallpaper.png";
+  themeName = "quickshell-sddm";
 
-  mangowc = inputs.mango.packages.${pkgs.stdenv.hostPlatform.system}.mango;
-  quickshell = inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  sddmTheme = pkgs.stdenvNoCC.mkDerivation {
+    pname = themeName;
+    version = "1.0.0";
+    dontUnpack = true;
+    dontWrapQtApps = true;
 
-  greeterQml = pkgs.writeText "greeter.qml" ''
-    import QtQuick
-    import QtQuick.Layouts
-    import QtQuick.Controls
-    import Quickshell
-    import Quickshell.Services.Greetd
-    import Quickshell.Wayland
+    buildInputs = [ pkgs.kdePackages.qtbase ];
 
-    ShellRoot {
-        id: root
-        
-        Greetd {
-            id: greetd
-        }
-        
-        property string username: "${config.cfg.vars.username}"
-        
-        Component.onCompleted: {
-            console.log("Greeter started")
-        }
-        
-        Variants {
-            model: Quickshell.screens
-            PanelWindow {
-                property var modelData
-                screen: modelData
-                anchors.fill: true
-                color: "${c.base00}"
-                exclusionMode: ExclusionMode.Ignore
-                WlrLayershell.layer: WlrLayer.Background
-                
-                Image {
-                    anchors.fill: parent
-                    source: "file://${wallpaperStorePath}"
-                    fillMode: Image.PreserveAspectCrop
-                    onStatusChanged: {
-                        if (status == Image.Error) {
-                            console.log("Failed to load wallpaper")
-                        }
-                    }
-                }
-                
-                Rectangle {
-                    anchors.fill: parent
-                    color: Qt.rgba(0, 0, 0, 0.4)
-                }
-            }
-        }
-        
-        Variants {
-            model: Quickshell.screens
-            PanelWindow {
-                property var modelData
-                screen: modelData
-                anchors.centerIn: true
-                width: 420
-                height: 520
-                color: "transparent"
-                exclusionMode: ExclusionMode.Normal
-                WlrLayershell.layer: WlrLayer.Overlay
-                WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-                
-                Rectangle {
-                    anchors.fill: parent
-                    color: Qt.rgba(0.04, 0.05, 0.08, 0.95)
-                    radius: 20
-                    border.color: "${c.base0D}"
-                    border.width: 2
-                    
-                    ColumnLayout {
-                        anchors.centerIn: parent
-                        spacing: 20
-                        width: parent.width - 80
-                        
-                        Text {
-                            id: clockLabel
-                            text: Qt.formatTime(new Date(), "HH:mm")
-                            color: "${c.base06}"
-                            font.pixelSize: 56
-                            font.family: "${config.cfg.fonts.monospace.name}"
-                            font.bold: true
-                            Layout.alignment: Qt.AlignHCenter
-                            
-                            Timer {
-                                interval: 1000
-                                running: true
-                                repeat: true
-                                onTriggered: clockLabel.text = Qt.formatTime(new Date(), "HH:mm")
-                            }
-                        }
-                        
-                        Text {
-                            id: dateLabel
-                            text: Qt.formatDate(new Date(), "dd/MM/yyyy")
-                            color: "${c.base04}"
-                            font.pixelSize: 18
-                            font.family: "${config.cfg.fonts.monospace.name}"
-                            Layout.alignment: Qt.AlignHCenter
-                            
-                            Timer {
-                                interval: 60000
-                                running: true
-                                repeat: true
-                                onTriggered: dateLabel.text = Qt.formatDate(new Date(), "dd/MM/yyyy")
-                            }
-                        }
-                        
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 2
-                            color: "${c.base03}"
-                            Layout.topMargin: 10
-                            Layout.bottomMargin: 10
-                        }
-                        
-                        Text {
-                            text: "Welcome, " + root.username
-                            color: "${c.base05}"
-                            font.pixelSize: 16
-                            font.family: "${config.cfg.fonts.monospace.name}"
-                            Layout.alignment: Qt.AlignHCenter
-                        }
-                        
-                        TextField {
-                            id: passwordField
-                            Layout.fillWidth: true
-                            implicitHeight: 50
-                            echoMode: TextInput.Password
-                            placeholderText: "Password"
-                            color: "${c.base05}"
-                            font.family: "${config.cfg.fonts.monospace.name}"
-                            font.pixelSize: 14
-                            focus: true
-                            
-                            background: Rectangle {
-                                color: Qt.rgba(0.11, 0.13, 0.18, 0.9)
-                                border.color: parent.activeFocus ? "${c.base0D}" : "${c.base03}"
-                                border.width: 2
-                                radius: 8
-                            }
-                            
-                            onAccepted: loginButton.clicked()
-                        }
-                        
-                        Text {
-                            id: errorText
-                            visible: greetd.errorMessage !== ""
-                            text: greetd.errorMessage
-                            color: "${c.base08}"
-                            font.pixelSize: 12
-                            font.family: "${config.cfg.fonts.monospace.name}"
-                            Layout.alignment: Qt.AlignHCenter
-                        }
-                        
-                        Button {
-                            id: loginButton
-                            Layout.fillWidth: true
-                            implicitHeight: 50
-                            text: "Login"
-                            enabled: passwordField.text.length > 0 && !greetd.inProgress
-                            
-                            contentItem: Text {
-                                text: parent.text
-                                color: "${c.base00}"
-                                font.pixelSize: 16
-                                font.bold: true
-                                font.family: "${config.cfg.fonts.monospace.name}"
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
-                            }
-                            
-                            background: Rectangle {
-                                color: parent.down ? "${c.base0B}" : (parent.hovered ? "${c.base0C}" : "${c.base0D}")
-                                radius: 8
-                            }
-                            
-                            onClicked: {
-                                greetd.login(root.username, passwordField.text, "mangowc")
-                            }
-                        }
-                        
-                        Item { Layout.preferredHeight: 20 }
-                        
-                        RowLayout {
-                            Layout.alignment: Qt.AlignHCenter
-                            spacing: 40
-                            
-                            Button {
-                                flat: true
-                                implicitWidth: 60
-                                implicitHeight: 60
-                                
-                                contentItem: Text {
-                                    text: "⏻"
-                                    color: parent.hovered ? "${c.base08}" : "${c.base05}"
-                                    font.pixelSize: 28
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                                
-                                background: Rectangle {
-                                    color: parent.hovered ? Qt.rgba(0.8, 0.2, 0.2, 0.3) : "transparent"
-                                    radius: 30
-                                }
-                                
-                                onClicked: greetd.powerOff()
-                            }
-                            
-                            Button {
-                                flat: true
-                                implicitWidth: 60
-                                implicitHeight: 60
-                                
-                                contentItem: Text {
-                                    text: "↻"
-                                    color: parent.hovered ? "${c.base0A}" : "${c.base05}"
-                                    font.pixelSize: 28
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                                
-                                background: Rectangle {
-                                    color: parent.hovered ? Qt.rgba(0.9, 0.6, 0.2, 0.3) : "transparent"
-                                    radius: 30
-                                }
-                                
-                                onClicked: greetd.reboot()
-                            }
-                            
-                            Button {
-                                flat: true
-                                implicitWidth: 60
-                                implicitHeight: 60
-                                
-                                contentItem: Text {
-                                    text: "⏾"
-                                    color: parent.hovered ? "${c.base0E}" : "${c.base05}"
-                                    font.pixelSize: 28
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                                
-                                background: Rectangle {
-                                    color: parent.hovered ? Qt.rgba(0.2, 0.5, 0.9, 0.3) : "transparent"
-                                    radius: 30
-                                }
-                                
-                                onClicked: greetd.suspend()
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-  '';
+    installPhase = ''
+      themeDir=$out/share/sddm/themes/${themeName}
+      mkdir -p $themeDir
 
-  greeterPackage = pkgs.qt6.callPackage (
-    { wrapQtAppsHook }:
-    pkgs.stdenv.mkDerivation {
-      name = "quickshell-greeter";
-      dontUnpack = true;
-      nativeBuildInputs = [ wrapQtAppsHook ];
-      buildInputs = with pkgs.qt6; [
-        qtbase
-        qtdeclarative
-      ];
 
-      installPhase = ''
-        mkdir -p $out/bin
-        cp ${greeterQml} $out/greeter.qml
+      cp ${wallpaper} $themeDir/wallpaper.png
 
-        makeQtWrapper ${quickshell}/bin/quickshell $out/bin/quickshell-greeter \
-          --set QT_QPA_PLATFORM wayland \
-          --set QT_WAYLAND_DISABLE_WINDOWDECORATION 1 \
-          --set XDG_SESSION_TYPE wayland \
-          --set XDG_CURRENT_DESKTOP wlroots \
-          --set XCURSOR_THEME ${config.cfg.gtk.cursorTheme.name} \
-          --set XCURSOR_SIZE ${toString config.cfg.gtk.cursorTheme.size} \
-          --add-flags "--config $out/greeter.qml"
-      '';
-    }
-  ) { };
 
-  mangoConf = pkgs.writeText "mango-greeter.conf" ''
-    monitorrule=eDP-1,0.60,1,tile,0,1,0,0,1920,1080,60
-    borderpx=0
-    rootcolor=0x${lib.substring 1 6 c.base00}ff
-    exec-once=${greeterPackage}/bin/quickshell-greeter
-  '';
+      cat > $themeDir/Main.qml << 'QML'
+      import QtQuick 2.15
+      import QtQuick.Layouts 1.15
+      import QtQuick.Controls 2.15
+      import SddmComponents 2.0
 
-  greeterSession =
-    pkgs.runCommand "greeter-session"
-      {
-        buildInputs = [ pkgs.makeWrapper ];
+      Rectangle {
+          id: root
+          color: "${c.base00}"
+          anchors.fill: parent
+          
+          Image {
+              anchors.fill: parent
+              source: "wallpaper.png"
+              fillMode: Image.PreserveAspectCrop
+              asynchronous: false
+          }
+          
+          Rectangle {
+              anchors.fill: parent
+              color: Qt.rgba(0, 0, 0, 0.3)
+          }
+          
+          ColumnLayout {
+              anchors.centerIn: parent
+              spacing: 20
+              
+              Text {
+                  id: clockLabel
+                  text: Qt.formatTime(new Date(), "HH:mm")
+                  color: "${c.base06}"
+                  font.pixelSize: 64
+                  font.family: "${config.cfg.fonts.monospace.name}"
+                  font.bold: true
+                  Layout.alignment: Qt.AlignHCenter
+                  
+                  Timer {
+                      interval: 1000
+                      running: true
+                      repeat: true
+                      onTriggered: clockLabel.text = Qt.formatTime(new Date(), "HH:mm")
+                  }
+              }
+              
+              Text {
+                  id: dateLabel
+                  text: Qt.formatDate(new Date(), "dd/MM/yyyy")
+                  color: "${c.base04}"
+                  font.pixelSize: 20
+                  font.family: "${config.cfg.fonts.monospace.name}"
+                  Layout.alignment: Qt.AlignHCenter
+                  
+                  Timer {
+                      interval: 60000
+                      running: true
+                      repeat: true
+                      onTriggered: dateLabel.text = Qt.formatDate(new Date(), "dd/MM/yyyy")
+                  }
+              }
+              
+              Item { height: 30 }
+              
+              TextField {
+                  id: usernameField
+                  implicitWidth: 300
+                  height: 45
+                  text: sddm.lastUser || ""
+                  placeholderText: "Username"
+                  color: "${c.base05}"
+                  font.family: "${config.cfg.fonts.monospace.name}"
+                  
+                  background: Rectangle {
+                      color: Qt.rgba(0.11, 0.13, 0.18, 0.9)
+                      border.color: "${c.base0D}"
+                      border.width: 2
+                      radius: 8
+                  }
+                  
+                  Layout.alignment: Qt.AlignHCenter
+                  
+                  Keys.onReturnPressed: passwordField.forceActiveFocus()
+              }
+              
+              TextField {
+                  id: passwordField
+                  implicitWidth: 300
+                  height: 45
+                  focus: true
+                  echoMode: TextInput.Password
+                  placeholderText: "Password"
+                  color: "${c.base05}"
+                  font.family: "${config.cfg.fonts.monospace.name}"
+                  
+                  background: Rectangle {
+                      color: Qt.rgba(0.11, 0.13, 0.18, 0.9)
+                      border.color: "${c.base0D}"
+                      border.width: 2
+                      radius: 8
+                  }
+                  
+                  Layout.alignment: Qt.AlignHCenter
+                  
+                  onAccepted: {
+                      sddm.login(usernameField.text, passwordField.text, sessionCombo.currentIndex)
+                  }
+              }
+              
+              ComboBox {
+                  id: sessionCombo
+                  model: sessionModel
+                  textRole: "name"
+                  currentIndex: sessionModel.lastIndex
+                  implicitWidth: 300
+                  height: 40
+                  
+                  contentItem: Text {
+                      text: sessionCombo.displayText
+                      color: "${c.base05}"
+                      font.family: "${config.cfg.fonts.monospace.name}"
+                      horizontalAlignment: Text.AlignHCenter
+                      verticalAlignment: Text.AlignVCenter
+                  }
+                  
+                  background: Rectangle {
+                      color: Qt.rgba(0.11, 0.13, 0.18, 0.9)
+                      border.color: "${c.base0D}"
+                      border.width: 2
+                      radius: 8
+                  }
+                  
+                  Layout.alignment: Qt.AlignHCenter
+              }
+              
+              Button {
+                  id: loginButton
+                  text: "Login"
+                  implicitWidth: 300
+                  height: 45
+                  enabled: usernameField.text.length > 0 && passwordField.text.length > 0
+                  
+                  contentItem: Text {
+                      text: parent.text
+                      color: "${c.base00}"
+                      font.pixelSize: 16
+                      font.bold: true
+                      font.family: "${config.cfg.fonts.monospace.name}"
+                      horizontalAlignment: Text.AlignHCenter
+                      verticalAlignment: Text.AlignVCenter
+                  }
+                  
+                  background: Rectangle {
+                      color: parent.down ? "${c.base0B}" : (parent.hovered ? "${c.base0C}" : "${c.base0D}")
+                      radius: 8
+                  }
+                  
+                  onClicked: {
+                      sddm.login(usernameField.text, passwordField.text, sessionCombo.currentIndex)
+                  }
+                  
+                  Layout.alignment: Qt.AlignHCenter
+              }
+              
+              Text {
+                  id: errorText
+                  visible: false
+                  text: "Login failed"
+                  color: "${c.base08}"
+                  font.family: "${config.cfg.fonts.monospace.name}"
+                  Layout.alignment: Qt.AlignHCenter
+              }
+          }
+          
+          Row {
+              anchors.horizontalCenter: parent.horizontalCenter
+              anchors.bottom: parent.bottom
+              anchors.bottomMargin: 40
+              spacing: 40
+              
+              Button {
+                  visible: sddm.canPowerOff
+                  text: "⏻"
+                  flat: true
+                  
+                  contentItem: Text {
+                      text: parent.text
+                      color: parent.hovered ? "${c.base08}" : "${c.base05}"
+                      font.pixelSize: 32
+                  }
+                  
+                  onClicked: sddm.powerOff()
+              }
+              
+              Button {
+                  visible: sddm.canReboot
+                  text: "↻"
+                  flat: true
+                  
+                  contentItem: Text {
+                      text: parent.text
+                      color: parent.hovered ? "${c.base0A}" : "${c.base05}"
+                      font.pixelSize: 32
+                  }
+                  
+                  onClicked: sddm.reboot()
+              }
+              
+              Button {
+                  visible: sddm.canSuspend
+                  text: "⏾"
+                  flat: true
+                  
+                  contentItem: Text {
+                      text: parent.text
+                      color: parent.hovered ? "${c.base0E}" : "${c.base05}"
+                      font.pixelSize: 32
+                  }
+                  
+                  onClicked: sddm.suspend()
+              }
+          }
+          
+          Connections {
+              target: sddm
+              function onLoginFailed() {
+                  passwordField.text = ""
+                  errorText.visible = true
+                  passwordField.forceActiveFocus()
+              }
+          }
       }
-      ''
-        mkdir -p $out/bin
-        makeWrapper ${mangowc}/bin/mango $out/bin/greeter-session \
-          --prefix PATH : ${
-            lib.makeBinPath [
-              greeterPackage
-              pkgs.qt6.qtbase
-            ]
-          } \
-          --add-flags "-c ${mangoConf}"
-      '';
+      QML
+
+
+      cat > $themeDir/metadata.desktop << EOF
+      [Desktop Entry]
+      Name=Quickshell SDDM
+      Comment=Quickshell-styled SDDM theme
+      Type=Service
+      X-SDDM-Theme=qml
+      EOF
+
+      cat > $themeDir/theme.conf << EOF
+      [General]
+      type=qml
+      EOF
+    '';
+  };
 in
 {
-  options.cfg.greetd = {
-    enable = mkEnableOption "Enable greetd display manager with Quickshell greeter.";
+  options.cfg.sddm = {
+    enable = mkEnableOption "Enable SDDM configuration.";
+    wayland.enable = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Enable Wayland for SDDM.";
+    };
   };
 
   config = mkIf cfg.enable {
+    environment.systemPackages = [ sddmTheme ];
 
-    users.users.greeter = {
-      isSystemUser = true;
-      group = "greeter";
-      home = "/var/lib/greeter";
-      createHome = true;
-    };
-    users.groups.greeter = { };
-    services = {
-      displayManager.sddm.enable = lib.mkForce false;
+    services.displayManager.sddm = {
+      enable = true;
+      package = pkgs.kdePackages.sddm;
+      theme = themeName;
+      wayland.enable = cfg.wayland.enable;
 
-      greetd = {
-        enable = true;
-        settings = {
-          default_session = {
-            command = "${greeterSession}/bin/greeter-session";
-            user = "greeter";
-          };
+      settings = {
+        Theme = {
+          Current = themeName;
+          ThemeDir = "/run/current-system/sw/share/sddm/themes";
+          CursorTheme = config.cfg.gtk.cursorTheme.name;
+          CursorSize = config.cfg.gtk.cursorTheme.size;
+        };
+        General = {
+          DisplayServer = if cfg.wayland.enable then "wayland" else "x11";
+          GreeterEnvironment = "QT_QPA_PLATFORM=wayland";
+        };
+        Wayland = lib.mkIf cfg.wayland.enable {
+          CompositorCommand = "${pkgs.kdePackages.kwin}/bin/kwin_wayland --drm --no-lockscreen";
         };
       };
-
-      udev.extraRules = ''
-        KERNEL=="tty[0-9]*", TAG+="uaccess", TAG+="seat"
-        KERNEL=="drm/card[0-9]*", TAG+="uaccess", TAG+="seat"
-      '';
     };
 
-    environment.systemPackages = [
-      greeterPackage
-      greeterSession
-    ];
+    environment.etc."sddm/themes".source = "${sddmTheme}/share/sddm/themes";
   };
 }
