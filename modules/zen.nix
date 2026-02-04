@@ -176,6 +176,7 @@ let
     "zen.tabs.vertical.right-side" = true;
     "zen.view.use-single-toolbar" = false;
     "zen.workspaces.continue-where-left-off" = true;
+    "browser.startup.page" = true;
     "zen.view.window.scheme" = 0;
     "devtools.theme" = "dark";
     "layout.css.prefers-color-scheme.content-override" = 0;
