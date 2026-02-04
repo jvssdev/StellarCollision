@@ -176,11 +176,11 @@ let
     "zen.tabs.vertical.right-side" = true;
     "zen.view.use-single-toolbar" = false;
     "zen.workspaces.continue-where-left-off" = true;
-    "browser.startup.page" = true;
+    "browser.startup.page" = 3;
     "zen.view.window.scheme" = 0;
     "devtools.theme" = "dark";
     "layout.css.prefers-color-scheme.content-override" = 0;
-    "zen.theme.accent-color" = "#${c.base0D}";
+    "zen.theme.accent-color" = "${c.base0D}";
 
     "browser.search.defaultenginename" = "DuckDuckGo";
     "browser.search.defaultenginename.private" = "DuckDuckGo";
@@ -234,170 +234,169 @@ in
         '';
 
         ".zen/default/user.js".text = ''
-          // Configurações adaptadas do seu profile original
           ${userJsContent}
         '';
 
         ".zen/default/chrome/userChrome.css".text = ''
           @-moz-document url("about:blank") {
             :root {
-              background-color: #${c.base00} !important;
+              background-color: ${c.base00} !important;
             }
           }
 
           @-moz-document url-prefix("about:") {
             :root {
-              --zen-colors-border: #${c.base03} !important;
-              --zen-colors-secondary: #${c.base02} !important;
-              --zen-colors-tertiary: #${c.base03} !important;
-              --zen-primary-color: #${c.base0D} !important;
-              --in-content-page-background: #${c.base00} !important;
-              --in-content-box-background: #${c.base01} !important;
-              --in-content-box-border-color: #${c.base03} !important;
+              --zen-colors-border: ${c.base03} !important;
+              --zen-colors-secondary: ${c.base02} !important;
+              --zen-colors-tertiary: ${c.base03} !important;
+              --zen-primary-color: ${c.base0D} !important;
+              --in-content-page-background: ${c.base00} !important;
+              --in-content-box-background: ${c.base01} !important;
+              --in-content-box-border-color: ${c.base03} !important;
             }
           }
 
           @-moz-document url("about:newtab"), url("about:home") {
             :root {
-              --newtab-background-color: #${c.base00} !important;
-              --newtab-background-color-secondary: #${c.base01} !important;
-              --newtab-element-hover-color: #${c.base02} !important;
-              --newtab-text-primary-color: #${c.base05} !important;
-              --newtab-wordmark-color: #${c.base05} !important;
-              --newtab-primary-action-background: #${c.base0D} !important;
+              --newtab-background-color: ${c.base00} !important;
+              --newtab-background-color-secondary: ${c.base01} !important;
+              --newtab-element-hover-color: ${c.base02} !important;
+              --newtab-text-primary-color: ${c.base05} !important;
+              --newtab-wordmark-color: ${c.base05} !important;
+              --newtab-primary-action-background: ${c.base0D} !important;
             }
 
             body {
-              background-color: #${c.base00} !important;
+              background-color: ${c.base00} !important;
             }
 
             .icon {
-              color: #${c.base0D} !important;
+              color: ${c.base0D} !important;
             }
 
             .card-outer:is(:hover, :focus, .active):not(.placeholder) .card-title {
-              color: #${c.base0D} !important;
+              color: ${c.base0D} !important;
             }
 
             .top-site-outer .search-topsite {
-              background-color: #${c.base0D} !important;
+              background-color: ${c.base0D} !important;
             }
 
             .compact-cards .card-outer .card-context .card-context-icon.icon-download {
-              fill: #${c.base0B} !important;
+              fill: ${c.base0B} !important;
             }
 
             .top-sites-list .top-site-outer .tile {
-              background-color: #${c.base01} !important;
+              background-color: ${c.base01} !important;
             }
           }
 
           @-moz-document url-prefix("about:preferences") {
             :root {
-              --zen-colors-tertiary: #${c.base03} !important;
-              --in-content-text-color: #${c.base05} !important;
-              --link-color: #${c.base0D} !important;
-              --link-color-hover: #${c.base0C} !important;
-              --zen-colors-primary: #${c.base01} !important;
-              --in-content-box-background: #${c.base01} !important;
-              --zen-primary-color: #${c.base0D} !important;
+              --zen-colors-tertiary: ${c.base03} !important;
+              --in-content-text-color: ${c.base05} !important;
+              --link-color: ${c.base0D} !important;
+              --link-color-hover: ${c.base0C} !important;
+              --zen-colors-primary: ${c.base01} !important;
+              --in-content-box-background: ${c.base01} !important;
+              --zen-primary-color: ${c.base0D} !important;
             }
 
             groupbox, moz-card {
-              background: #${c.base01} !important;
-              border: 1px solid #${c.base03} !important;
+              background: ${c.base01} !important;
+              border: 1px solid ${c.base03} !important;
             }
 
             button,
             groupbox menulist {
-              background: #${c.base02} !important;
-              color: #${c.base05} !important;
-              border: 1px solid #${c.base03} !important;
+              background: ${c.base02} !important;
+              color: ${c.base05} !important;
+              border: 1px solid ${c.base03} !important;
             }
 
             button:hover {
-              background: #${c.base03} !important;
+              background: ${c.base03} !important;
             }
 
             .main-content {
-              background-color: #${c.base00} !important;
+              background-color: ${c.base00} !important;
             }
 
             .identity-color-blue {
-              --identity-tab-color: #${c.base0D} !important;
-              --identity-icon-color: #${c.base0D} !important;
+              --identity-tab-color: ${c.base0D} !important;
+              --identity-icon-color: ${c.base0D} !important;
             }
 
             .identity-color-turquoise {
-              --identity-tab-color: #${c.base0C} !important;
-              --identity-icon-color: #${c.base0C} !important;
+              --identity-tab-color: ${c.base0C} !important;
+              --identity-icon-color: ${c.base0C} !important;
             }
 
             .identity-color-green {
-              --identity-tab-color: #${c.base0B} !important;
-              --identity-icon-color: #${c.base0B} !important;
+              --identity-tab-color: ${c.base0B} !important;
+              --identity-icon-color: ${c.base0B} !important;
             }
 
             .identity-color-yellow {
-              --identity-tab-color: #${c.base0A} !important;
-              --identity-icon-color: #${c.base0A} !important;
+              --identity-tab-color: ${c.base0A} !important;
+              --identity-icon-color: ${c.base0A} !important;
             }
 
             .identity-color-orange {
-              --identity-tab-color: #${c.base09} !important;
-              --identity-icon-color: #${c.base09} !important;
+              --identity-tab-color: ${c.base09} !important;
+              --identity-icon-color: ${c.base09} !important;
             }
 
             .identity-color-red {
-              --identity-tab-color: #${c.base08} !important;
-              --identity-icon-color: #${c.base08} !important;
+              --identity-tab-color: ${c.base08} !important;
+              --identity-icon-color: ${c.base08} !important;
             }
 
             .identity-color-pink {
-              --identity-tab-color: #${c.base0E} !important;
-              --identity-icon-color: #${c.base0E} !important;
+              --identity-tab-color: ${c.base0E} !important;
+              --identity-icon-color: ${c.base0E} !important;
             }
 
             .identity-color-purple {
-              --identity-tab-color: #${c.base0F} !important;
-              --identity-icon-color: #${c.base0F} !important;
+              --identity-tab-color: ${c.base0F} !important;
+              --identity-icon-color: ${c.base0F} !important;
             }
           }
 
           @-moz-document url-prefix("about:addons") {
             :root {
-              --zen-dark-color-mix-base: #${c.base01} !important;
-              --background-color-box: #${c.base00} !important;
-              --in-content-box-background: #${c.base01} !important;
+              --zen-dark-color-mix-base: ${c.base01} !important;
+              --background-color-box: ${c.base00} !important;
+              --in-content-box-background: ${c.base01} !important;
             }
 
             .addon-card {
-              background-color: #${c.base01} !important;
-              border: 1px solid #${c.base03} !important;
+              background-color: ${c.base01} !important;
+              border: 1px solid ${c.base03} !important;
             }
           }
 
           @-moz-document url-prefix("about:protections") {
             :root {
-              --zen-primary-color: #${c.base0D} !important;
-              --social-color: #${c.base0E} !important;
-              --coockie-color: #${c.base0D} !important;
-              --fingerprinter-color: #${c.base0A} !important;
-              --cryptominer-color: #${c.base0F} !important;
-              --tracker-color: #${c.base0B} !important;
-              --in-content-primary-button-background-hover: #${c.base03} !important;
-              --in-content-primary-button-text-color-hover: #${c.base05} !important;
-              --in-content-primary-button-background: #${c.base02} !important;
-              --in-content-primary-button-text-color: #${c.base05} !important;
+              --zen-primary-color: ${c.base0D} !important;
+              --social-color: ${c.base0E} !important;
+              --coockie-color: ${c.base0D} !important;
+              --fingerprinter-color: ${c.base0A} !important;
+              --cryptominer-color: ${c.base0F} !important;
+              --tracker-color: ${c.base0B} !important;
+              --in-content-primary-button-background-hover: ${c.base03} !important;
+              --in-content-primary-button-text-color-hover: ${c.base05} !important;
+              --in-content-primary-button-background: ${c.base02} !important;
+              --in-content-primary-button-text-color: ${c.base05} !important;
             }
 
             .card {
-              background-color: #${c.base01} !important;
-              border: 1px solid #${c.base03} !important;
+              background-color: ${c.base01} !important;
+              border: 1px solid ${c.base03} !important;
             }
 
             body {
-              background-color: #${c.base00} !important;
+              background-color: ${c.base00} !important;
             }
           }
         '';
