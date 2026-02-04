@@ -61,6 +61,30 @@ in
           '${c.base0C}',
           '${c.base07}',
         },
+
+        tab_bar = {
+          background = '${c.base00}',
+          active_tab = {
+            bg_color = '${c.base0D}',
+            fg_color = '${c.base00}',
+          },
+          inactive_tab = {
+            bg_color = '${c.base00}',
+            fg_color = '${c.base05}',
+          },
+          inactive_tab_hover = {
+            bg_color = '${c.base01}',
+            fg_color = '${c.base05}',
+          },
+          new_tab = {
+            bg_color = '${c.base00}',
+            fg_color = '${c.base0C}',
+          },
+          new_tab_hover = {
+            bg_color = '${c.base01}',
+            fg_color = '${c.base0C}',
+          },
+        },
       }
       config.keys = {
          {
