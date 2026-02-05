@@ -76,7 +76,7 @@ in
             property int focusedIndex: -1
             property color backgroundColor: "#80${substring 1 6 c.base00}"
             property color buttonColor: "transparent"
-            property color buttonHoverColor: "${c.base0D}"
+            property color buttonHoverColor: theme.darkBlue
             default property list<PowerButton> buttons
             model: Quickshell.screens
             onShownChanged: if (shown) focusedIndex = 0; else focusedIndex = -1;
@@ -145,7 +145,7 @@ in
                                     Layout.preferredHeight: 180
                                     color: ma.containsMouse || (index == root.focusedIndex) ? root.buttonHoverColor : root.buttonColor
                                     radius: 10
-                                    border.color: "${c.base03}"
+                                    border.color: theme.fgSubtle
                                     border.width: 2
                                     MouseArea {
                                         id: ma
@@ -211,13 +211,13 @@ in
                                   Rectangle {
                                       anchors.fill: parent
                                       anchors.margins: 2
-                                      color: model.isUrgent ? "${c.base0D}" : (model.isActive ? "${c.base0D}" : (model.isOccupied ? "${c.base02}" : "transparent"))
+                                      color: model.isUrgent ? theme.darkBlue : (model.isActive ? theme.darkBlue : (model.isOccupied ? theme.bgLighter : "transparent"))
                                       radius: 10
                                       Text {
                                           text: model.tagId
-                                          color: (model.isActive || model.isUrgent) ? "${c.base00}" : "${c.base05}"
+                                          color: (model.isActive || model.isUrgent) ? theme.bg : theme.fg
                                           font.pixelSize: 11
-                                          font.family: "${config.cfg.fonts.monospace.name}"
+                                          font.family: theme.fontFamily
                                           font.bold: model.isActive
                                           anchors.centerIn: parent
                                       }
@@ -228,7 +228,7 @@ in
                       Text {
                           id: dwlLayoutText
                           text: ""
-                          color: "${c.base0C}"
+                          color: theme.cyan
                           font.pixelSize: 11
                           font.family: "${config.cfg.fonts.monospace.name}"
                           font.bold: true
@@ -414,7 +414,7 @@ in
                 readonly property color red: "${c.base08}"
                 readonly property color green: "${c.base0B}"
                 readonly property color yellow: "${c.base0A}"
-                readonly property color blue: "${c.base0D}"
+                readonly property color blue: "${c.base0F}"
                 readonly property color darkBlue: "${c.base0D}"
                 readonly property color magenta: "${c.base0E}"
                 readonly property color cyan: "${c.base0C}"
@@ -633,7 +633,7 @@ in
                         Text {
                             id: clockText
                             text: Qt.formatDateTime(new Date(), "HH:mm dd/MM")
-                            color: theme.cyan
+                            color: theme.darkBlue
                             font {
                                 family: theme.fontFamily
                                 pixelSize: theme.fontPixelSize
@@ -667,7 +667,7 @@ in
                         }
                         Text {
                             text: " " + mem.percent + "%"
-                            color: mem.percent > 85 ? theme.red : theme.cyan
+                            color: mem.percent > 85 ? theme.red : theme.green
                             font {
                                 family: theme.fontFamily
                                 pixelSize: theme.fontPixelSize
@@ -710,7 +710,7 @@ in
                                 if (connectedCount > 0) return "󰂯 " + connectedCount;
                                 return "󰂯";
                             }
-                            color: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? theme.cyan : theme.fgMuted
+                            color: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? theme.darkBlue : theme.blue
                             font {
                                 family: theme.fontFamily
                                 pixelSize: theme.fontPixelSize
@@ -725,7 +725,7 @@ in
                         }
                         Text {
                             text: network.icon
-                            color: network.icon === "󰤬" ? theme.red : theme.blue
+                            color: network.icon === "󰤬" ? theme.red : theme.darkBlue
                             font {
                                 family: theme.fontFamily
                                 pixelSize: theme.fontPixelSize
@@ -765,7 +765,7 @@ in
                         }
                         Text {
                             text: "⏻"
-                            color: theme.fg
+                            color: theme.cyan
                             font {
                                 family: theme.fontFamily
                                 pixelSize: theme.fontPixelSize
@@ -876,7 +876,7 @@ in
             id: root
             required property LockContext context
 
-            color: "${c.base00}"
+            color: theme.bg
             Image {
                 anchors.fill: parent
                 source: "wallpaper.png"
@@ -891,9 +891,9 @@ in
                     id: clockLabel
                     property var currentDate: new Date()
                     text: Qt.formatTime(currentDate, "HH:mm")
-                    color: "${c.base06}"
+                    color: theme.darkBlue
                     font.pixelSize: 72
-                    font.family: "${config.cfg.fonts.monospace.name}"
+                    font.family: theme.fontFamily
                     font.bold: true
                     style: Text.Outline
                     styleColor: Qt.rgba(0, 0, 0, 0.8)
@@ -911,9 +911,9 @@ in
                     id: dateLabel
                     property var currentDate: new Date()
                     text: Qt.formatDate(currentDate, "dd/MM/yyyy")
-                    color: "${c.base04}"
+                    color: theme.darkBlue
                     font.pixelSize: 24
-                    font.family: "${config.cfg.fonts.monospace.name}"
+                    font.family: theme.fontFamily
                     Layout.alignment: Qt.AlignHCenter
 
                     Timer {
@@ -926,9 +926,9 @@ in
 
                 Text {
                     text: "Enter Password"
-                    color: "${c.base05}"
+                    color: theme.fg
                     font.pixelSize: 18
-                    font.family: "${config.cfg.fonts.monospace.name}"
+                    font.family: theme.fontFamily
                     Layout.alignment: Qt.AlignHCenter
                 }
 
@@ -944,10 +944,10 @@ in
                         enabled: !root.context.unlockInProgress
                         echoMode: TextInput.Password
                         inputMethodHints: Qt.ImhSensitiveData
-                        color: "${c.base05}"
+                        color: theme.fg
                         background: Rectangle {
                             color: Qt.rgba(46/255, 52/255, 64/255, 0.85)
-                            border.color: "${c.base0D}"
+                            border.color: theme.darkBlue
                             border.width: 2
                             radius: 10
                         }
@@ -970,15 +970,15 @@ in
                         onClicked: root.context.tryUnlock();
                         contentItem: Text {
                             text: parent.text
-                            color: "${c.base00}"
+                            color: theme.bg
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
                             font.pixelSize: 16
                             font.bold: true
-                            font.family: "${config.cfg.fonts.monospace.name}"
+                            font.family: theme.fontFamily
                         }
                         background: Rectangle {
-                            color: parent.down ? "${c.base0B}" : (parent.hovered ? "${c.base0C}" : "${c.base0D}")
+                            color: parent.down ? theme.green : (parent.hovered ? theme.cyan : theme.darkBlue)
                             radius: 8
                         }
                     }
@@ -987,9 +987,9 @@ in
                 Text {
                     visible: root.context.showFailure
                     text: "Incorrect password"
-                    color: "${c.base08}"
+                    color: theme.red
                     font.pixelSize: 14
-                    font.family: "${config.cfg.fonts.monospace.name}"
+                    font.family: theme.fontFamily
                     Layout.alignment: Qt.AlignHCenter
                 }
             }

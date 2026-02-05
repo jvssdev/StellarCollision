@@ -32,7 +32,7 @@ in
       base09 = mkColor "#C97E4F";
       base0A = mkColor "#E1C084";
       base0B = mkColor "#0EA2AB";
-      base0C = mkColor "#67BBB9";
+      base0C = mkColor "#9FF7FF";
       base0D = mkColor "#597BC0";
       base0E = mkColor "#8666B2";
       base0F = mkColor "#81A1C1";
