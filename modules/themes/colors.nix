@@ -35,7 +35,7 @@ in
       base0C = mkColor "#67BBB9";
       base0D = mkColor "#597BC0";
       base0E = mkColor "#8666B2";
-      base0F = mkColor "#BB5D7D";
+      base0F = mkColor "#81A1C1";
     };
   };
 }
