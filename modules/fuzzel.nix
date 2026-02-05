@@ -42,8 +42,7 @@ in
             icons-enabled=yes
             icon-theme=${config.cfg.gtk.iconTheme.name}
             lines=15
-            prompt="󰍉  "
-            monospace=${name}
+            prompt=󰍉
             width=40
             terminal=${config.cfg.vars.terminal}
 
@@ -57,10 +56,6 @@ in
             selection=${strip c.base0D}ff
             selection-text=${strip c.base00}ff
             text=${strip c.base05}ff
-
-            [dmenu]
-            lines=25
-            width=70
           '';
         };
       };
