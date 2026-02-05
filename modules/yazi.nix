@@ -88,7 +88,7 @@ in
           run = "git"
 
           [[opener.play]]
-          run = "mpv \"$@\""
+          run = "haruna \"$@\""
           orphan = true
           for = "unix"
 

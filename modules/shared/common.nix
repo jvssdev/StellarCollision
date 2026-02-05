@@ -33,7 +33,7 @@
     pkgs.p7zip
     pkgs.appimage-run
     pkgs.nh
-    pkgs.mpv
+    pkgs.haruna
     pkgs.imv
     pkgs.grim
     pkgs.slurp

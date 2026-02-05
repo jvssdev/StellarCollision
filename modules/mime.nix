@@ -49,9 +49,9 @@ in
 
         "application/pdf" = "org.pwmt.zathura.desktop";
 
-        "video/mp4" = "mpv.desktop";
-        "video/x-matroska" = "mpv.desktop";
-        "audio/mpeg" = "mpv.desktop";
+        "video/mp4" = "org.kde.haruna.desktop";
+        "video/x-matroska" = "org.kde.haruna.desktop";
+        "audio/mpeg" = "org.kde.haruna.desktop";
       };
     };
   };
