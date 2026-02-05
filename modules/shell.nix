@@ -130,7 +130,7 @@ in
         "starship.toml".text = ''
           add_newline = true
           format = """
-          [░▒▓](${c.base03})[ ](bg:${c.base03} fg:${c.base06})[](bg:${c.base0D} fg:${c.base03})$nix_shell$directory[](fg:${c.base0D} bg:${c.base01})$git_branch$git_status[](fg:${c.base01} bg:${c.base02})$nodejs$rust$golang$php[](fg:${c.base02} bg:${c.base03})$time[](fg:${c.base03})
+          [░▒▓](${c.base02})[ ](bg:${c.base02} fg:${c.base06})[](bg:${c.base0D} fg:${c.base02})$nix_shell$directory[](fg:${c.base0D} bg:${c.base02})$git_branch$git_status[](fg:${c.base02} bg:${c.base03})$time[](fg:${c.base03})
           $character
           """
 
@@ -140,15 +140,19 @@ in
           style = "bold fg:${c.base06} bg:${c.base0D}"
 
           [directory]
-          style = "fg:${c.base03} bg:${c.base0D}"
+          style = "fg:${c.base01} bg:${c.base0D}"
           format = "[ $path ]($style)"
           truncation_length = 3
           truncation_symbol = "…/"
 
           [git_branch]
           symbol = ""
-          style = "bg:${c.base01}"
-          format = "[[ $symbol $branch ](fg:${c.base04} bg:${c.base01})]($style)"
+          style = "bg:${c.base02}"
+          format = "[[ $symbol $branch ](fg:${c.base04} bg:${c.base02})]($style)"
+
+          [git_status]
+          style = "bold red bg:${c.base02}"
+          format = "([\\[$all_status$ahead_behind\\] ]($style))"
 
           [time]
           disabled = false
