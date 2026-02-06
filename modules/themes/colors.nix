@@ -20,7 +20,7 @@ in
 
     colors = {
       base00 = mkColor "#000000";
-      base01 = mkColor "#002147";
+      base01 = mkColor "#0A0F1A";
       base02 = mkColor "#2D3D60";
       base03 = mkColor "#485A82";
       base04 = mkColor "#BADEFC";
@@ -29,11 +29,11 @@ in
       base07 = mkColor "#A7AAE7";
 
       base08 = mkColor "#CC1512";
-      base09 = mkColor "#F29A8A";
+      base09 = mkColor "#FF8E7A";
       base0A = mkColor "#FCE570";
       base0B = mkColor "#23CFBD";
-      base0C = mkColor "#089B96";
-      base0D = mkColor "#246BCE";
+      base0C = mkColor "#00B8A9";
+      base0D = mkColor "#2A73D9";
       base0E = mkColor "#9D91F8";
       base0F = mkColor "#6699CC";
     };

@@ -192,6 +192,7 @@ in
       set_hl("NvimTreeFolderIcon", { fg = colors.base0E })
       set_hl("NvimTreeFolderName", { fg = colors.base05 })
       set_hl("NvimTreeNormal", { fg = colors.base06 })
+      set_hl("@lsp.type.variable.nix", { fg = colors.base0F })
 
       -- Lualine configuration (using the same colors table)
       vim.opt.laststatus = 3
