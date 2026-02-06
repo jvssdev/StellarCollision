@@ -23,7 +23,7 @@ in
       base01 = mkColor "#04080F";
       base02 = mkColor "#2D3D60";
       base03 = mkColor "#485A82";
-      base04 = mkColor "#C3DDF9";
+      base04 = mkColor "#BADEFC";
       base05 = mkColor "#485A82";
       base06 = mkColor "#E0DEF4";
       base07 = mkColor "#A7AAE7";
