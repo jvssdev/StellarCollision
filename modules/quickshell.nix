@@ -211,11 +211,11 @@ in
                                   Rectangle {
                                       anchors.fill: parent
                                       anchors.margins: 2
-                                      color: model.isUrgent ? theme.darkBlue : (model.isActive ? theme.darkBlue : (model.isOccupied ? theme.bgLighter : "transparent"))
+                                      color: model.isUrgent ? theme.darkBlue : (model.isActive ? theme.darkBlue : (model.isOccupied ? theme.fgSubtle : "transparent"))
                                       radius: 10
                                       Text {
                                           text: model.tagId
-                                          color: (model.isActive || model.isUrgent) ? theme.bg : theme.fg
+                                          color: (model.isActive || model.isUrgent) ? theme.bg : theme.bgAlt
                                           font.pixelSize: 11
                                           font.family: theme.fontFamily
                                           font.bold: model.isActive
@@ -228,7 +228,7 @@ in
                       Text {
                           id: dwlLayoutText
                           text: ""
-                          color: theme.cyan
+                          color: theme.blue
                           font.pixelSize: 11
                           font.family: "${config.cfg.fonts.monospace.name}"
                           font.bold: true
@@ -417,7 +417,7 @@ in
                 readonly property color blue: "${c.base0F}"
                 readonly property color darkBlue: "${c.base0D}"
                 readonly property color magenta: "${c.base0E}"
-                readonly property color cyan: "${c.base0C}"
+                readonly property color cyan: "${c.base04}"
                 readonly property color orange: "${c.base09}"
                 readonly property int radius: 10
                 readonly property int borderWidth: 2
@@ -685,7 +685,7 @@ in
                         }
                         Text {
                             text: volume.muted ? " Muted " : " " + " " + volume.level + "%"
-                            color: volume.muted ? theme.fgSubtle : theme.darkBlue
+                            color: volume.muted ? theme.fgSubtle : theme.blue
                             font {
                                 family: theme.fontFamily
                                 pixelSize: theme.fontPixelSize

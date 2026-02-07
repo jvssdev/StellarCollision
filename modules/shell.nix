@@ -151,7 +151,7 @@ in
           format = "[[ $symbol $branch ](fg:${c.base04} bg:${c.base02})]($style)"
 
           [git_status]
-          style = "bold red bg:${c.base02}"
+          style = "bold fg:${c.base0A} bg:${c.base02}"
           format = "([\\[$all_status$ahead_behind\\] ]($style))"
 
           [time]
