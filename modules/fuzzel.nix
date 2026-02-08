@@ -42,7 +42,7 @@ in
             icons-enabled=yes
             icon-theme=${config.cfg.gtk.iconTheme.name}
             lines=15
-            prompt=󰍉
+            prompt="󰍉  "
             width=40
             terminal=${config.cfg.vars.terminal}
 

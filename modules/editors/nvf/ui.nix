@@ -138,7 +138,7 @@ in
       set_hl("PMenuSel", { fg = colors.base01, bg = colors.base05 })
       set_hl("TabLine", { fg = colors.base04, bg = colors.base01 })
       set_hl("TabLineFill", { fg = colors.base04, bg = colors.base01 })
-      set_hl("TabLineSel", { fg = colors.base0F, bg = colors.base01 })
+      set_hl("TabLineSel", { fg = colors.base0D, bg = colors.base01 })
       set_hl("Boolean", { fg = colors.base09 })
       set_hl("Character", { fg = colors.base0D })
       set_hl("Comment", { fg = colors.base04 })

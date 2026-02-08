@@ -215,7 +215,7 @@ in
                                       radius: 10
                                       Text {
                                           text: model.tagId
-                                          color: (model.isActive || model.isUrgent) ? theme.bg : theme.bgAlt
+                                          color: (model.isActive || model.isUrgent) ? theme.bg : theme.fgMuted
                                           font.pixelSize: 11
                                           font.family: theme.fontFamily
                                           font.bold: model.isActive

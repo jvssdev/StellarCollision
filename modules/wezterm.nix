@@ -35,6 +35,7 @@ in
       config.font_size = 15
       config.enable_wayland = true
       config.check_for_updates = false
+      config.warn_about_missing_glyphs = false
       config.colors = {
         foreground = '${c.base05}',
         background = '${c.base00}',
