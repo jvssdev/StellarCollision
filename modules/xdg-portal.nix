@@ -8,11 +8,52 @@ let
   inherit (lib)
     mkEnableOption
     mkIf
-    getExe
-    getExe'
     ;
+
   homeDir = config.cfg.vars.homeDirectory;
+  inherit (config.cfg.vars) username;
   cfg = config.cfg.portals;
+
+  xdg-desktop-portal-termfilechooser-mango =
+    pkgs.xdg-desktop-portal-termfilechooser.overrideAttrs
+      (oldAttrs: {
+        postInstall = ''
+          ${oldAttrs.postInstall or ""}
+          sed -i 's/UseIn=/UseIn=mango;/' $out/share/xdg-desktop-portal/portals/termfilechooser.portal
+        '';
+      });
+
+  yazi-wrapper = pkgs.writeShellScript "yazi-filechooser-wrapper" ''
+    #!/usr/bin/env bash
+    set -e
+
+    out="$5"
+    path="$4"
+    USER_ID=$(${pkgs.coreutils}/bin/id -u)
+
+    if [ ! -d "$path" ]; then
+      path="${homeDir}"
+    fi
+
+    cd "$path"
+
+    export HOME="${homeDir}"
+    export USER="${username}"
+    export XDG_CONFIG_HOME="${homeDir}/.config"
+    export XDG_DATA_HOME="${homeDir}/.local/share"
+    export XDG_CACHE_HOME="${homeDir}/.cache"
+    export YAZI_CONFIG_HOME="${homeDir}/.config/yazi"
+    export XDG_RUNTIME_DIR="/run/user/$USER_ID"
+    export WAYLAND_DISPLAY="wayland-0"
+
+    # PATH completo para garantir que tudo seja encontrado
+    export PATH="${pkgs.coreutils}/bin:${pkgs.bash}/bin:${pkgs.wezterm}/bin:${pkgs.yazi}/bin:/run/current-system/sw/bin:$PATH"
+
+    exec ${pkgs.wezterm}/bin/wezterm start \
+      --always-new-process \
+      --class filechooser \
+      -- ${pkgs.yazi}/bin/yazi --chooser-file="$out" "$path" 2>&1
+  '';
 in
 {
   options.cfg.portals = {
@@ -20,15 +61,24 @@ in
   };
 
   config = mkIf cfg.enable {
+    systemd.user.services.xdg-desktop-portal.environment = {
+      NIX_XDG_DESKTOP_PORTAL_DIR = "/run/current-system/sw/share/xdg-desktop-portal/portals";
+    };
+
+    systemd.user.services.xdg-desktop-portal-termfilechooser.environment = {
+      WAYLAND_DISPLAY = "wayland-0";
+      XDG_RUNTIME_DIR = "/run/user/%U";
+    };
+
     xdg = {
       portal = {
         enable = true;
         wlr.enable = true;
         xdgOpenUsePortal = true;
         extraPortals = [
+          xdg-desktop-portal-termfilechooser-mango
           pkgs.xdg-desktop-portal-wlr
           pkgs.xdg-desktop-portal-gtk
-          pkgs.xdg-desktop-portal-termfilechooser
         ];
         config = {
           common = {
@@ -47,59 +97,10 @@ in
       };
     };
 
-    hj.xdg.config.files."xdg-desktop-portal-termfilechooser/config" = {
-      text = ''
-        [filechooser]
-        cmd=${getExe pkgs.bash} ${homeDir}/.config/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh
-        default_dir=${homeDir}
-      '';
-    };
-
-    hj.xdg.config.files."xdg-desktop-portal-termfilechooser/yazi-wrapper.sh" = {
-      executable = true;
-      text = ''
-        #!${getExe pkgs.bash}
-        set -e
-
-        out="$5"
-        path="$4"
-
-        export PATH="${
-          lib.makeBinPath [
-            pkgs.wezterm
-            pkgs.yazi
-            pkgs.coreutils
-          ]
-        }:$PATH"
-
-        USER_ID=$(${getExe' pkgs.coreutils "id"} -u)
-        export USER=$(${getExe' pkgs.coreutils "id"} -un)
-        export HOME="${homeDir}"
-        export XDG_RUNTIME_DIR="/run/user/$USER_ID"
-
-        export WAYLAND_DISPLAY="wayland-0"
-        unset DISPLAY
-
-        unset GTK_IM_MODULE
-        unset QT_IM_MODULE
-        export XMODIFIERS="@im=fcitx"
-        export GLFW_IM_MODULE="ibus"
-
-        export LD_LIBRARY_PATH="${lib.makeLibraryPath [ pkgs.libxkbcommon ]}:$LD_LIBRARY_PATH"
-        export XKB_CONFIG_ROOT="${pkgs.xkeyboard_config}/share/X11/xkb"
-        export XKB_DEFAULT_LAYOUT="br"
-
-        if [ ! -d "$path" ]; then
-          path="$HOME"
-        fi
-
-        exec ${getExe pkgs.wezterm} start \
-          --always-new-process \
-          --class filechooser \
-          -- ${getExe pkgs.yazi} \
-          --chooser-file="$out" \
-          "$path" >> /tmp/portal-debug.log 2>&1
-      '';
-    };
+    hj.xdg.config.files."xdg-desktop-portal-termfilechooser/config".text = ''
+      [filechooser]
+      cmd=${yazi-wrapper}
+      default_dir=${homeDir}
+    '';
   };
 }

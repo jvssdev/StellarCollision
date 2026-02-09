@@ -251,6 +251,7 @@ in
       enable_hotarea = 0
 
       windowrule=isnamedscratchpad:1,width:1900,height:1600,appid:wezterm-yazi-nvim
+      windowrule=isnamedscratchpad:1,width:1900,height:1600,appid:filechooser
       layerrule=noblur:1,layer_name:selection
     '';
 

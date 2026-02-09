@@ -13,6 +13,7 @@
     wezterm.enable = true;
     zsh.enable = true;
     nvf.enable = true;
+    opencode.enable = true;
     zen-browser.enable = true;
     zed.enable = true;
     keyring.enable = true;
