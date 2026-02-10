@@ -331,7 +331,7 @@ in
             }
             Process { id: wlopmOffProc; command: ["${getExe pkgs.wlopm}", "--off", "*"] }
             Process { id: wlopmOnProc; command: ["${getExe pkgs.wlopm}", "--on", "*"] }
-            Process { id: lockProc; command: ["${getExe pkgs.quickshell}", "ipc", "call", "lockScreen", "toggle"] }
+            Process { id: lockProc; command: ["${cfg.package}/bin/quickshell", "ipc", "call", "lockScreen", "toggle"] }
             Process { id: suspendProc; command: ["${getExe' pkgs.systemd "systemctl"}", "suspend"] }
             Process {
                 id: logindMonitor
@@ -353,7 +353,7 @@ in
                 ]
                 IdleMonitor {
                     required property var modelData
-                    enabled: !audioPlaying.isPlaying && !manualInhibit
+                    enabled: !manualInhibit
                     respectInhibitors: true
                     timeout: modelData.timeout
                     onIsIdleChanged: idleScope.handleIdleAction(isIdle ? modelData.idleAction : modelData.returnAction, isIdle)
