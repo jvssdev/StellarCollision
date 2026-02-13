@@ -5,8 +5,8 @@
 
   cfg = {
     drivers.intel.enable = true;
-    mango.enable = true;
-    niri.enable = false;
+    mango.enable = false;
+    niri.enable = true;
     quickshell.enable = true;
     sessionVariables.enable = true;
     portals.enable = true;

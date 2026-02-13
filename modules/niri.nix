@@ -53,16 +53,16 @@ in
       spawn-at-startup "${getExe' pkgs.dbus "dbus-update-activation-environment"}" "--systemd" "WAYLAND_DISPLAY" "XDG_CURRENT_DESKTOP"
 
       spawn-sh-at-startup "${getExe pkgs.fcitx5} -d --replace"
+      spawn-sh-at-startup "${getExe' pkgs.networkmanagerapplet "nm-applet"} --indicator"
+      spawn-sh-at-startup "${getExe' pkgs.blueman "blueman-applet"}"
       spawn-at-startup "${getExe quickshell}"
-
+      spawn-at-startup "${getExe pkgs.gammastep} ${
+        if config.cfg.gammastep.tray then "-indicator" else ""
+      }"
+      spawn-sh-at-startup "${getExe pkgs.wpaperd}"
       spawn-sh-at-startup "${getExe' pkgs.wl-clipboard "wl-paste"} --type text --watch ${getExe pkgs.cliphist} store"
       spawn-sh-at-startup "${getExe' pkgs.wl-clipboard "wl-paste"} --type image --watch ${getExe pkgs.cliphist} store"
-
-      spawn-sh-at-startup "${getExe pkgs.wpaperd}"
-      spawn-sh-at-startup "${getExe pkgs.brightnessctl} set 10%"
-
-      spawn-sh-at-startup "niri msg action focus-workspace main"
-
+      spawn-sh-at-startup "${getExe pkgs.wl-clip-persist} --clipboard regular --reconnect-tries 0"
 
       screenshot-path "~/Pictures/Screenshots from %Y-%m-%d %H-%M-%S.png"
 
@@ -70,8 +70,8 @@ in
 
       input {
           keyboard {
-              repeat-delay 300
-              repeat-rate 30
+              repeat-delay 220
+              repeat-rate 35
               xkb {
                   layout "br"
                   variant "abnt2"
@@ -81,14 +81,12 @@ in
 
           touchpad {
               tap
-              accel-speed 0.4
+              accel-speed 0.7
           }
           focus-follows-mouse
-          workspace-auto-back-and-forth
       }
 
       output "eDP-1" {
-          scale 1.5
           mode "1920x1080@59.934"
       }
 
@@ -121,6 +119,14 @@ in
               off
           }
       }
+
+      recent-windows {
+          binds {
+              Mod+Tab { next-window; }
+              Mod+Shift+Tab { previous-window; }
+          }
+      }
+
 
       environment {
           QT_QPA_PLATFORM "wayland;xcb"
@@ -179,7 +185,7 @@ in
           Mod+Shift+Slash { show-hotkey-overlay; }
 
           Mod+T { spawn "${getExe pkgs.${config.cfg.vars.terminal}}"; }
-          Mod+B { spawn "${getExe pkgs.${config.cfg.vars.browser}}}"; }
+          Mod+B { spawn "${config.cfg.vars.browser}"; }
           Mod+A repeat=false { spawn "${getExe pkgs.fuzzel}"; }
           Mod+v repeat=false { spawn-sh "${getExe clipboard.fuzzel-clipboard}"; }
           Mod+Shift+v repeat=false { spawn-sh "${getExe clipboard.fuzzel-clipboard-clear}"; }
@@ -190,13 +196,13 @@ in
 
           Mod+X { spawn "${getExe quickshell} ipc call powerMenu toggle"; }
           Mod+N { spawn "${getExe quickshell} ipc call notificationCenter toggle"; }
-          Mod+W { close-window; }
+          Mod+Q { close-window; }
+          Mod+W { toggle-column-tabbed-display ; }
           Mod+Shift+C { quit; }
           Mod+Space { toggle-window-floating; }
           Mod+F { maximize-column; }
           Mod+Shift+F { fullscreen-window; }
           Mod+R { toggle-column-tabbed-display; }
-          Alt+Tab {}
 
             // === Window Movement ===
             Mod+Shift+Left  { move-column-left; }
@@ -262,8 +268,7 @@ in
             Mod+Period { expel-window-from-column; }
 
             // === Sizing & Layout ===
-            Mod+R { switch-preset-column-width; }
-            Mod+Shift+R { switch-preset-window-height; }
+            Mod+Shift+R { switch-preset-column-width; }
             Mod+Ctrl+R { reset-window-height; }
             Mod+Ctrl+F { expand-column-to-available-width; }
             Mod+C { center-column; }

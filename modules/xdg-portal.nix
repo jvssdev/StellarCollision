@@ -87,7 +87,6 @@ in
             "org.freedesktop.impl.portal.Inhibit" = [ ];
           };
           niri = {
-            default = [ "gtk" ];
             "org.freedesktop.impl.portal.Access" = "gtk";
             "org.freedesktop.impl.portal.FileChooser" = [ "termfilechooser" ];
             "org.freedesktop.impl.portal.Notification" = "gtk";
