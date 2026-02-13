@@ -16,7 +16,6 @@ let
   c = config.cfg.theme.colors;
 
   screenshot = pkgs.callPackage ./_screenshot.nix { };
-  dunst-fuzzel = pkgs.callPackage ./_dunst-fuzzel.nix { };
   clipboard = pkgs.callPackage ./_fuzzel-clipboard.nix { };
 
   strip = color: lib.substring 1 6 color;
@@ -40,7 +39,6 @@ in
 
     hj.packages = [
       screenshot
-      dunst-fuzzel
       clipboard.fuzzel-clipboard
       clipboard.fuzzel-clipboard-clear
     ];
@@ -55,7 +53,6 @@ in
       exec-once = "${getExe' pkgs.blueman "blueman-applet"}"
       exec-once = "${getExe quickshell}"
       exec-once = "${getExe pkgs.gammastep} ${if config.cfg.gammastep.tray then "-indicator" else ""}"
-      exec-once = "${getExe pkgs.dunst}"
       exec-once = "${getExe pkgs.wpaperd}"
       exec-once = ${getExe' pkgs.wl-clipboard "wl-paste"} --type text --watch ${getExe pkgs.cliphist} store
       exec-once = ${getExe' pkgs.wl-clipboard "wl-paste"} --type image --watch ${getExe pkgs.cliphist} store
@@ -166,7 +163,7 @@ in
       bind=SUPER,r,reload_config
       bind=SUPER,t,spawn,${getExe pkgs.${config.cfg.vars.terminal}}
       bind=SUPER,a,spawn,${getExe pkgs.fuzzel}
-      bind=SUPER,n,spawn,${getExe dunst-fuzzel}
+      bind=SUPER,n,spawn,${getExe quickshell} ipc call notificationCenter toggle
       bind=SUPER,b,spawn,${config.cfg.vars.browser}
       bind=SUPER,x,spawn,${getExe quickshell} ipc call powerMenu toggle
       bind=SUPER,p,spawn,${getExe screenshot}

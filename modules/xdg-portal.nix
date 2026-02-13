@@ -8,20 +8,12 @@ let
   inherit (lib)
     mkEnableOption
     mkIf
+    optional
     ;
 
   homeDir = config.cfg.vars.homeDirectory;
   inherit (config.cfg.vars) username;
   cfg = config.cfg.portals;
-
-  xdg-desktop-portal-termfilechooser-mango =
-    pkgs.xdg-desktop-portal-termfilechooser.overrideAttrs
-      (oldAttrs: {
-        postInstall = ''
-          ${oldAttrs.postInstall or ""}
-          sed -i 's/UseIn=/UseIn=mango;/' $out/share/xdg-desktop-portal/portals/termfilechooser.portal
-        '';
-      });
 
   yazi-wrapper = pkgs.writeShellScript "yazi-filechooser-wrapper" ''
     #!/usr/bin/env bash
@@ -46,7 +38,6 @@ let
     export XDG_RUNTIME_DIR="/run/user/$USER_ID"
     export WAYLAND_DISPLAY="wayland-0"
 
-    # PATH completo para garantir que tudo seja encontrado
     export PATH="${pkgs.coreutils}/bin:${pkgs.bash}/bin:${pkgs.wezterm}/bin:${pkgs.yazi}/bin:/run/current-system/sw/bin:$PATH"
 
     exec ${pkgs.wezterm}/bin/wezterm start \
@@ -76,10 +67,12 @@ in
         wlr.enable = true;
         xdgOpenUsePortal = true;
         extraPortals = [
-          xdg-desktop-portal-termfilechooser-mango
-          pkgs.xdg-desktop-portal-wlr
           pkgs.xdg-desktop-portal-gtk
-        ];
+          pkgs.xdg-desktop-portal-termfilechooser
+        ]
+        ++ (optional (config.niri.enable or false) pkgs.xdg-desktop-portal-gnome)
+        ++ (optional (config.mango.enable or false) pkgs.xdg-desktop-portal-wlr);
+
         config = {
           common = {
             default = [ "gtk" ];
@@ -92,6 +85,13 @@ in
             "org.freedesktop.impl.portal.FileChooser" = [ "termfilechooser" ];
             "org.freedesktop.impl.portal.Screenshot" = [ "wlr" ];
             "org.freedesktop.impl.portal.Inhibit" = [ ];
+          };
+          niri = {
+            default = [ "gtk" ];
+            "org.freedesktop.impl.portal.Access" = "gtk";
+            "org.freedesktop.impl.portal.FileChooser" = [ "termfilechooser" ];
+            "org.freedesktop.impl.portal.Notification" = "gtk";
+            "org.freedesktop.impl.portal.Secret" = "gnome-keyring";
           };
         };
       };
