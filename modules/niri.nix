@@ -172,6 +172,24 @@ in
       }
 
       window-rule {
+          match app-id=r#"^nm-connection-editor$"#
+          open-floating true
+      }
+
+      window-rule {
+          match app-id=r#"(?i)(blueman-manager|blueberry)"#
+          open-floating true
+      }
+
+
+      window-rule {
+          match app-id=r#"(?i)(wezterm-yazi-nvim|filechooser)"#
+          open-floating true
+          default-window-height { proportion 0.8; }
+          default-column-width { proportion 0.8; }
+      }
+
+      window-rule {
           match app-id="org.keepassxc.KeePassXC"
           open-floating true
       }
@@ -189,9 +207,9 @@ in
           Mod+A repeat=false { spawn "${getExe pkgs.fuzzel}"; }
           Mod+v repeat=false { spawn-sh "${getExe clipboard.fuzzel-clipboard}"; }
           Mod+Shift+v repeat=false { spawn-sh "${getExe clipboard.fuzzel-clipboard-clear}"; }
-
+          Mod+O { toggle-overview; }
           Print { screenshot-screen; }
-          Ctrl+Print { screenshot; }
+          Mod+P { screenshot; }
           Alt+Print { screenshot-window; }
 
           Mod+X { spawn "quickshell" "ipc" "call" "powerMenu" "toggle"; }
