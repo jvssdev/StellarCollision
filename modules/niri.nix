@@ -172,15 +172,11 @@ in
       }
 
       window-rule {
-          match app-id=r#"^nm-connection-editor$"#
+          match app-id=r#"(?i)(blueman-manager|blueberry|nm-connection-editor|pavucontrol)"#
           open-floating true
+          default-window-height { proportion 0.8; }
+          default-column-width { proportion 0.8; }
       }
-
-      window-rule {
-          match app-id=r#"(?i)(blueman-manager|blueberry)"#
-          open-floating true
-      }
-
 
       window-rule {
           match app-id=r#"(?i)(wezterm-yazi-nvim|filechooser)"#
