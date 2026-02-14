@@ -36,7 +36,26 @@ let
     export XDG_CACHE_HOME="${homeDir}/.cache"
     export YAZI_CONFIG_HOME="${homeDir}/.config/yazi"
     export XDG_RUNTIME_DIR="/run/user/$USER_ID"
-    export WAYLAND_DISPLAY="wayland-0"
+    export XDG_SESSION_TYPE="wayland"
+    export MOZ_ENABLE_WAYLAND="1"
+
+    # Detect the correct Wayland display dynamically
+    if [ -n "$WAYLAND_DISPLAY" ] && [ -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ]; then
+      # Use existing WAYLAND_DISPLAY if valid
+      :
+    elif [ -S "$XDG_RUNTIME_DIR/wayland-2" ]; then
+      export WAYLAND_DISPLAY="wayland-2"
+    elif [ -S "$XDG_RUNTIME_DIR/wayland-1" ]; then
+      export WAYLAND_DISPLAY="wayland-1"
+    elif [ -S "$XDG_RUNTIME_DIR/wayland-0" ]; then
+      export WAYLAND_DISPLAY="wayland-0"
+    else
+      # Fallback to any available wayland socket
+      export WAYLAND_DISPLAY=$(${pkgs.coreutils}/bin/ls -t $XDG_RUNTIME_DIR/wayland-* 2>/dev/null | ${pkgs.coreutils}/bin/head -n1 | ${pkgs.coreutils}/bin/xargs ${pkgs.coreutils}/bin/basename 2>/dev/null || echo "wayland-2")
+    fi
+
+    # Ensure wezterm uses Wayland
+    export WEZTERM_BACKEND="wayland"
 
     export PATH="${pkgs.coreutils}/bin:${pkgs.bash}/bin:${pkgs.wezterm}/bin:${pkgs.yazi}/bin:/run/current-system/sw/bin:$PATH"
 
@@ -57,8 +76,8 @@ in
     };
 
     systemd.user.services.xdg-desktop-portal-termfilechooser.environment = {
-      WAYLAND_DISPLAY = "wayland-0";
       XDG_RUNTIME_DIR = "/run/user/%U";
+      XDG_SESSION_TYPE = "wayland";
     };
 
     xdg = {
