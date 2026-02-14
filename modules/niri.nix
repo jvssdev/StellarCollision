@@ -265,6 +265,12 @@ in
             Mod+8 { focus-workspace 8; }
             Mod+9 { focus-workspace 9; }
 
+
+            Mod+H { focus-column-left; }
+            Mod+L { focus-column-right; }
+            Mod+K { focus-workspace-up; }
+            Mod+J { focus-workspace-down; }
+
             // === Move to Numbered Workspaces ===
             Mod+Shift+1 { move-column-to-workspace 1; }
             Mod+Shift+2 { move-column-to-workspace 2; }

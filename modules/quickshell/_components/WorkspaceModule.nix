@@ -13,10 +13,10 @@ if isNiri then
     RowLayout {
         id: workspaceModule
         spacing: 4
-        
+
+        // Array de workspaces: cada elemento é {idx, hasWindows, isActive}
         property var workspaces: []
-        property int focusedWorkspace: 1
-        
+
         RowLayout {
             spacing: 12
             Row {
@@ -25,21 +25,33 @@ if isNiri then
                     model: 9
                     Rectangle {
                         required property int index
-                        property int wsId: index + 1
-                        property bool isActive: workspaceModule.focusedWorkspace === wsId
-                        property bool isOccupied: workspaceModule.workspaces.includes(wsId)
-                        
-                        visible: isActive || isOccupied
+                        property int wsNum: index + 1
+
+                        // Procura o workspace correspondente no array
+                        property var wsData: {
+                            for (let i = 0; i < workspaceModule.workspaces.length; i++) {
+                                if (workspaceModule.workspaces[i].idx === wsNum)
+                                    return workspaceModule.workspaces[i];
+                            }
+                            return null;
+                        }
+
+                        property bool isOccupied: wsData !== null && wsData.hasWindows
+                        property bool isActive: wsData !== null && wsData.isActive
+                        property bool isVisible: isOccupied || isActive
+
+                        visible: isVisible
                         width: visible ? 20 : 0
                         height: 20
                         color: "transparent"
+
                         Rectangle {
                             anchors.fill: parent
                             anchors.margins: 2
                             color: isActive ? theme.darkBlue : (isOccupied ? theme.fgSubtle : "transparent")
                             radius: 10
                             Text {
-                                text: wsId.toString()
+                                text: wsNum.toString()
                                 color: isActive ? theme.bg : theme.fgMuted
                                 font.pixelSize: 11
                                 font.family: theme.fontFamily
@@ -51,32 +63,44 @@ if isNiri then
                 }
             }
         }
-        
+
         Process {
             id: niriWorkspacesProc
             command: ["niri", "msg", "--json", "workspaces"]
+            running: true
+
             stdout: SplitParser {
                 onRead: data => {
                     if (!data) return;
                     try {
-                        const result = JSON.parse(data.trim());
-                        if (result.Ok && result.Ok.Workspaces) {
-                            const wsList = result.Ok.Workspaces;
-                            workspaceModule.workspaces = wsList.map(ws => ws.id);
-                            const focused = wsList.find(ws => ws.is_focused);
-                            if (focused) {
-                                workspaceModule.focusedWorkspace = focused.id;
-                            }
+                        const wsList = JSON.parse(data.trim());
+                        if (!Array.isArray(wsList)) return;
+
+                        // Constrói o array de workspaces
+                        const newWorkspaces = [];
+                        for (let i = 0; i < wsList.length; i++) {
+                            const ws = wsList[i];
+                            newWorkspaces.push({
+                                idx: ws.idx,
+                                hasWindows: ws.active_window_id !== null && ws.active_window_id !== undefined,
+                                isActive: ws.is_active === true
+                            });
                         }
+
+                        workspaceModule.workspaces = newWorkspaces;
                     } catch (e) {
                         console.log("Failed to parse niri workspaces:", e);
                     }
                 }
             }
+
+            onRunningChanged: {
+                if (!running) running = true;
+            }
         }
-        
+
         Timer {
-            interval: 500
+            interval: 100
             running: true
             repeat: true
             triggeredOnStart: true
