@@ -81,7 +81,7 @@ in
 
           touchpad {
               tap
-              accel-speed 0.7
+              accel-speed 0.35
           }
           focus-follows-mouse
       }
@@ -194,8 +194,8 @@ in
           Ctrl+Print { screenshot; }
           Alt+Print { screenshot-window; }
 
-          Mod+X { spawn "${getExe quickshell} ipc call powerMenu toggle"; }
-          Mod+N { spawn "${getExe quickshell} ipc call notificationCenter toggle"; }
+          Mod+X { spawn "quickshell" "ipc" "call" "powerMenu" "toggle"; }
+          Mod+N { spawn "quickshell" "ipc" "call" "notificationCenter" "toggle"; }
           Mod+Q { close-window; }
           Mod+W { toggle-column-tabbed-display ; }
           Mod+Shift+C { quit; }

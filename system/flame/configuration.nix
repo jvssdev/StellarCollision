@@ -22,7 +22,7 @@
     fonts.enable = true;
     gtk.enable = true;
     qt.enable = true;
-    dunst.enable = true;
+    dunst.enable = false;
     fuzzel.enable = true;
     btop.enable = true;
     zathura.enable = true;

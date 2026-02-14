@@ -62,7 +62,7 @@ in
       IpcHandler {
           target: "notificationCenter"
           function toggle(): void {
-              notificationCenter.shown = !notificationCenter.shown
+              notificationCenter.toggle()
           }
       }
 

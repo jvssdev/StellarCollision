@@ -17,9 +17,20 @@ in
       screen: Quickshell.screens[0]
       color: "transparent"
       
+      // FIX: Only visible when there are notification children
+      visible: notificationColumn.children.length > 0
+      
       WlrLayershell.layer: WlrLayer.Overlay
       WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
       exclusionMode: ExclusionMode.Ignore
+      
+      // FIX: Allow clickthrough when no notifications
+      mask: notificationColumn.children.length > 0 ? popupMask : null
+      
+      Region {
+          id: popupMask
+          item: notificationColumn
+      }
       
       anchors {
           top: true

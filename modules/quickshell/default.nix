@@ -32,6 +32,7 @@ let
     base07 = c.base07;
   };
   WorkspaceModule = import (componentsDir + "/WorkspaceModule.nix") {
+    inherit isNiri isMango;
     fontFamily = config.cfg.fonts.monospace.name;
   };
   IdleMonitors = import (componentsDir + "/IdleMonitors.nix") {
