@@ -2,10 +2,12 @@
   pkgs,
   lib,
   quickshellPackage,
+  isNiri,
   ...
 }:
 let
   inherit (lib) getExe getExe';
+  useNiriDPMS = isNiri;
 in
 ''
   import QtQuick
@@ -41,11 +43,36 @@ in
           if (!action) return;
           if (action === "lock" && isIdle) lockProc.running = true;
           if (action === "suspend" && isIdle) suspendProc.running = true;
-          if (action === "dpms off" && isIdle) wlopmOffProc.running = true;
-          if (action === "dpms on" && !isIdle) wlopmOnProc.running = true;
+          if (action === "dpms off" && isIdle) dpmsOffProc.running = true;
+          if (action === "dpms on" && !isIdle) dpmsOnProc.running = true;
       }
-      Process { id: wlopmOffProc; command: ["${getExe pkgs.wlopm}", "--off", "*"] }
-      Process { id: wlopmOnProc; command: ["${getExe pkgs.wlopm}", "--on", "*"] }
+      Process { 
+          id: dpmsOffProc; 
+          command: ${
+            if useNiriDPMS then
+              ''["niri", "msg", "action", "power-off-monitors"]''
+            else
+              ''["${getExe pkgs.wlopm}", "--off", "*"]''
+          }
+          stderr: SplitParser {
+              onRead: data => console.log("[dpms off] stderr:", data)
+          }
+          onRunningChanged: running => {
+              if (!running) console.log("[dpms off] exited with code:", dpmsOffProc.exitCode, "exitStatus:", dpmsOffProc.exitStatus)
+          }
+      }
+      Process { 
+          id: dpmsOnProc; 
+          command: ${
+            if useNiriDPMS then
+              ''["niri", "msg", "action", "power-on-monitors"]''
+            else
+              ''["${getExe pkgs.wlopm}", "--on", "*"]''
+          }
+          stderr: SplitParser {
+              onRead: data => console.log("[dpms on] stderr:", data)
+          }
+      }
       Process { id: lockProc; command: ["${quickshellPackage}/bin/quickshell", "ipc", "call", "lockScreen", "toggle"] }
       Process { id: suspendProc; command: ["${getExe' pkgs.systemd "systemctl"}", "suspend"] }
       Process {

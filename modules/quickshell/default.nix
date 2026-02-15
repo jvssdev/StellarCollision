@@ -36,7 +36,7 @@ let
     fontFamily = config.cfg.fonts.monospace.name;
   };
   IdleMonitors = import (componentsDir + "/IdleMonitors.nix") {
-    inherit pkgs lib;
+    inherit pkgs lib isNiri;
     quickshellPackage = cfg.package;
   };
   LockContext = import (componentsDir + "/LockContext.nix") { };
