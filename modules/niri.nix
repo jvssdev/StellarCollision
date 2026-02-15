@@ -101,13 +101,13 @@ in
           default-column-width { proportion 0.5; }
 
           preset-column-widths {
-              proportion 0.33333
+              proportion 0.25
               proportion 0.5
-              proportion 0.66667
+              proportion 0.75
           }
 
           focus-ring {
-              width 2
+              width 0
               active-color "${c.base0D}"
               inactive-color "${c.base02}"
           }
@@ -203,12 +203,10 @@ in
       window-rule {
           match app-id="org.keepassxc.KeePassXC"
           open-floating true
+          default-window-height { proportion 0.8; }
+          default-column-width { proportion 0.8; }
       }
 
-      window-rule {
-          match app-id=r#"^org\.wezfurlong\.wezterm$"#
-          default-column-width {}
-      }
 
       binds {
           Mod+Shift+Slash { show-hotkey-overlay; }
