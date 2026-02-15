@@ -34,6 +34,7 @@ in
         [any]
         path = "${wallpapers}"
         duration = "10m"
+        namespace = "wallpaper"
       '';
     };
   };

@@ -15,6 +15,7 @@ in
 ''
   import QtQuick
   import QtQuick.Layouts
+  import QtQuick.Effects
   import Quickshell
   import Quickshell.Io
   import Quickshell.Wayland
@@ -474,6 +475,17 @@ in
               text: "Reboot"
               icon: "reboot"
           }
+      }
+      
+      // Wallpaper daemon components
+      Loader {
+          id: wallpaperLoader
+          source: "Wallpaper.qml"
+      }
+      
+      Loader {
+          id: overviewWallpaperLoader
+          source: "OverviewWallpaper.qml"
       }
   }
 ''

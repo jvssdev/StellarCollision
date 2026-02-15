@@ -59,7 +59,6 @@ in
       spawn-at-startup "${getExe pkgs.gammastep} ${
         if config.cfg.gammastep.tray then "-indicator" else ""
       }"
-      spawn-sh-at-startup "${getExe pkgs.wpaperd}"
       spawn-sh-at-startup "${getExe' pkgs.wl-clipboard "wl-paste"} --type text --watch ${getExe pkgs.cliphist} store"
       spawn-sh-at-startup "${getExe' pkgs.wl-clipboard "wl-paste"} --type image --watch ${getExe pkgs.cliphist} store"
       spawn-sh-at-startup "${getExe pkgs.wl-clip-persist} --clipboard regular --reconnect-tries 0"
@@ -67,6 +66,10 @@ in
       screenshot-path "~/Pictures/Screenshots from %Y-%m-%d %H-%M-%S.png"
 
       prefer-no-csd
+
+      hotkey-overlay {
+          skip-at-startup
+      }
 
       input {
           keyboard {
@@ -139,13 +142,25 @@ in
       }
 
       overview {
+          backdrop-color "${c.base01}"
           workspace-shadow {
               off
               softness 40
               spread 10
               offset x=0 y=10
-              color "#00000050"
+              color "${c.base01}"
           }
+      }
+
+      gestures {
+          hot-corners {
+              off
+          }
+      }
+
+      layer-rule {
+          match namespace="^wallpaper$"
+          place-within-backdrop true
       }
 
       xwayland-satellite {

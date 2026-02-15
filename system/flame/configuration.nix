@@ -28,7 +28,7 @@
     zathura.enable = true;
     keepassxc.enable = true;
     gammastep.enable = true;
-    wpaperd.enable = true;
+    wpaperd.enable = false;
     locale.enable = true;
     editorPackages.enable = true;
     yazi.enable = true;

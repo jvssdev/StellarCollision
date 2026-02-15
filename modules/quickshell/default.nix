@@ -47,6 +47,14 @@ let
     fontFamily = config.cfg.fonts.monospace.name;
     colors = c;
   };
+
+  Wallpaper = import (componentsDir + "/Wallpaper.nix") {
+    inherit pkgs lib;
+  };
+
+  OverviewWallpaper = import (componentsDir + "/OverviewWallpaper.nix") {
+    inherit pkgs lib;
+  };
 in
 {
   options.cfg.quickshell = {
@@ -83,6 +91,8 @@ in
       "quickshell/WorkspaceModule.qml".text = WorkspaceModule;
       "quickshell/IdleMonitors.qml".text = IdleMonitors;
       "quickshell/shell.qml".text = Shell;
+      "quickshell/Wallpaper.qml".text = Wallpaper;
+      "quickshell/OverviewWallpaper.qml".text = OverviewWallpaper;
       "quickshell/wallpaper.png".source =
         ../../assets/Wallpapers/a6116535-4a72-453e-83c9-ea97b8597d8c.png;
       "quickshell/pam/password.conf".text = ''
