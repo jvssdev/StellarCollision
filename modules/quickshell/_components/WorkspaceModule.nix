@@ -14,7 +14,6 @@ if isNiri then
         id: workspaceModule
         spacing: 4
 
-        // Array de workspaces: cada elemento é {idx, hasWindows, isActive}
         property var workspaces: []
 
         RowLayout {
@@ -27,7 +26,6 @@ if isNiri then
                         required property int index
                         property int wsNum: index + 1
 
-                        // Procura o workspace correspondente no array
                         property var wsData: {
                             for (let i = 0; i < workspaceModule.workspaces.length; i++) {
                                 if (workspaceModule.workspaces[i].idx === wsNum)
@@ -226,6 +224,5 @@ else
     RowLayout {
         id: workspaceModule
         spacing: 4
-        // No compositor detected
     }
   ''

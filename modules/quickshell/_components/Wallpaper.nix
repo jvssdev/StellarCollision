@@ -1,10 +1,10 @@
 {
-  pkgs,
   lib,
+  wallpapersList,
   ...
 }:
 let
-  inherit (lib) getExe;
+  wallpapersArray = lib.concatStringsSep ", " (map (w: "\"${w}\"") wallpapersList);
 in
 ''
   import QtQuick
@@ -12,7 +12,6 @@ in
   import Quickshell
   import Quickshell.Wayland
 
-  // Wallpaper normal para o desktop
   Variants {
     model: Quickshell.screens
 
@@ -22,8 +21,7 @@ in
 
       color: "transparent"
       screen: modelData
-      
-      // Layer shell configuration
+
       WlrLayershell.layer: WlrLayer.Background
       WlrLayershell.exclusionMode: ExclusionMode.Ignore
       WlrLayershell.namespace: "quickshell-wallpaper-" + (screen?.name || "unknown")
@@ -35,15 +33,80 @@ in
         right: true
       }
 
-      // Wallpaper Image - usa o arquivo na pasta quickshell
+      property var wallpapers: [${wallpapersArray}]
+      property int currentIndex: 0
+      property real transitionProgress: 0
+
+      Component.onCompleted: {
+        if (wallpapers.length > 0) {
+          currentWallpaper.source = wallpapers[0]
+        }
+      }
+
+      Timer {
+        id: wallpaperTimer
+        interval: 600000
+        running: root.wallpapers.length > 1
+        repeat: true
+        onTriggered: root.nextWallpaper()
+      }
+
+      NumberAnimation {
+        id: transitionAnimation
+        target: root
+        property: "transitionProgress"
+        from: 0.0
+        to: 1.0
+        duration: 1000
+        easing.type: Easing.InOutCubic
+        onFinished: {
+          currentWallpaper.source = nextWallpaperImage.source
+          root.transitionProgress = 0.0
+        }
+      }
+
+      function nextWallpaper() {
+        if (wallpapers.length <= 1) return
+
+        currentIndex = (currentIndex + 1) % wallpapers.length
+        nextWallpaperImage.source = wallpapers[currentIndex]
+
+        if (nextWallpaperImage.status === Image.Ready) {
+          transitionAnimation.start()
+        } else {
+          nextWallpaperImage.onStatusChanged.connect(function() {
+            if (nextWallpaperImage.status === Image.Ready) {
+              transitionAnimation.start()
+            }
+          })
+        }
+      }
+
       Image {
-        id: wallpaperImage
+        id: currentWallpaper
         anchors.fill: parent
-        source: Quickshell.shellDir + "/wallpaper.png"
         fillMode: Image.PreserveAspectCrop
         smooth: true
         asynchronous: true
         cache: true
+        opacity: 1 - root.transitionProgress
+        visible: source !== ""
+      }
+
+      Image {
+        id: nextWallpaperImage
+        anchors.fill: parent
+        fillMode: Image.PreserveAspectCrop
+        smooth: true
+        asynchronous: true
+        cache: false
+        opacity: root.transitionProgress
+        visible: source !== "" && root.transitionProgress > 0
+        onStatusChanged: {
+          if (status === Image.Ready && !transitionAnimation.running && source !== currentWallpaper.source) {
+            transitionAnimation.start()
+          }
+        }
       }
     }
   }

@@ -1,8 +1,6 @@
 {
   pkgs,
   lib,
-  quickshellPackage,
-  config,
   fontFamily,
   colors,
   ...
@@ -10,7 +8,6 @@
 let
   inherit (lib) getExe getExe';
   c = colors;
-  inherit (builtins) substring;
 in
 ''
   import QtQuick
@@ -476,13 +473,12 @@ in
               icon: "reboot"
           }
       }
-      
-      // Wallpaper daemon components
+
       Loader {
           id: wallpaperLoader
           source: "Wallpaper.qml"
       }
-      
+
       Loader {
           id: overviewWallpaperLoader
           source: "OverviewWallpaper.qml"

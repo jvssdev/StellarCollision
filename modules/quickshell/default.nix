@@ -48,12 +48,21 @@ let
     colors = c;
   };
 
+  # Listar todos os wallpapers disponíveis
+  wallpapersDir = ../../assets/Wallpapers;
+  wallpapersFiles = lib.filterAttrs (
+    name: type:
+    type == "regular"
+    && (lib.hasSuffix ".png" name || lib.hasSuffix ".jpg" name || lib.hasSuffix ".jpeg" name)
+  ) (builtins.readDir wallpapersDir);
+  wallpapersList = lib.mapAttrsToList (name: _: toString wallpapersDir + "/" + name) wallpapersFiles;
+
   Wallpaper = import (componentsDir + "/Wallpaper.nix") {
-    inherit pkgs lib;
+    inherit pkgs lib wallpapersList;
   };
 
   OverviewWallpaper = import (componentsDir + "/OverviewWallpaper.nix") {
-    inherit pkgs lib;
+    inherit pkgs lib wallpapersList;
   };
 in
 {

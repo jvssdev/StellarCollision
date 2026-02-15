@@ -43,6 +43,13 @@ in
           }
         '';
 
+        "opencode/AGENTS.md".text = ''
+          # Rules
+
+          - Do not put comments inside the code.
+
+        '';
+
         "opencode/themes/theme.json".text = ''
           {
             "$schema": "https://opencode.ai/theme.json",
