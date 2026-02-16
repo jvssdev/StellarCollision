@@ -11,24 +11,84 @@ let
     types
     listToAttrs
     ;
+
   cfg = config.cfg.yazi;
   c = config.cfg.theme.colors;
 
-  patched-yatline-githead = pkgs.yaziPlugins.yatline-githead.overrideAttrs (old: {
-    postPatch = (old.postPatch or "") + ''
-      find . -type f -name "*.lua" -exec sed -i -e 's/ya\.render(/ui.render(/g' {} +
-      find . -type f -name "*.lua" -exec sed -i -e 's/ya\.hide(/ui.hide(/g' {} +
-      find . -type f -name "*.lua" -exec sed -i -e 's/ya\.truncate(/ui.truncate(/g' {} +
-    '';
-  });
+  mkYaziPlugin =
+    {
+      shortName,
+      owner,
+      repo,
+      rev ? "main",
+      hash,
+    }:
+    pkgs.stdenv.mkDerivation {
+      name = shortName;
 
-  plugins = with pkgs.yaziPlugins; [
-    full-border
-    yatline
-    patched-yatline-githead
+      src = pkgs.fetchFromGitHub {
+        inherit
+          owner
+          repo
+          rev
+          hash
+          ;
+      };
+
+      dontUnpack = true;
+      dontBuild = true;
+      dontFixup = true;
+
+      installPhase = ''
+        mkdir -p $out
+        cp -r $src/* $out/
+      '';
+    };
+
+  yatline = mkYaziPlugin {
+    shortName = "yatline";
+    owner = "imsi32";
+    repo = "yatline.yazi";
+    hash = "sha256-HjTRAfUHs6vlEWKruQWeA2wT/Mcd+WEHM90egFTYcWQ=";
+  };
+
+  yatlineGithead = mkYaziPlugin {
+    shortName = "yatline-githead";
+    owner = "imsi32";
+    repo = "yatline-githead.yazi";
+    hash = "sha256-1r7AY0Yzr32YZl2g74ylx+1vGoNg04PMkDXnaB0X+lk=";
+  };
+
+  fullBorder = pkgs.stdenv.mkDerivation {
+    name = "full-border";
+
+    src = pkgs.fetchFromGitHub {
+      owner = "yazi-rs";
+      repo = "plugins";
+      rev = "main";
+      hash = "sha256-TzHJNIFZjUOImZ4dRC0hnB4xsDZCOuEjfXRi2ZXr8QE=";
+    };
+
+    dontUnpack = false;
+    dontBuild = true;
+    dontFixup = true;
+
+    installPhase = ''
+      mkdir -p $out
+      cp -r $src/full-border.yazi/* $out/
+    '';
+  };
+
+  nixpkgsPlugins = with pkgs.yaziPlugins; [
     chmod
     git
     restore
+  ];
+
+  allPlugins = nixpkgsPlugins ++ [
+    fullBorder
+    yatline
+    yatlineGithead
   ];
 in
 {
@@ -257,12 +317,19 @@ in
         '';
       }
       // (listToAttrs (
-        map (plugin: {
-          name = "yazi/plugins/${plugin.pname or plugin.name}";
-          value = {
-            source = plugin;
-          };
-        }) plugins
+        map (
+          plugin:
+          let
+            pluginName = plugin.pname or plugin.name;
+            dirName = if lib.hasSuffix ".yazi" pluginName then pluginName else "${pluginName}.yazi";
+          in
+          {
+            name = "yazi/plugins/${dirName}";
+            value = {
+              source = plugin;
+            };
+          }
+        ) allPlugins
       ));
     };
   };
