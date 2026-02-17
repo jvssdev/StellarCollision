@@ -12,34 +12,34 @@ if isNiri then
         property bool shown: false
         property var notifServer: null
         property var theme: null
-        
+
         function toggle() {
             shown = !shown
         }
-        
+
         PanelWindow {
             id: ncWindow
             visible: root.shown
             screen: Quickshell.screens[0]
             color: "transparent"
-            
+
             implicitWidth: 400
             implicitHeight: Math.min(600, Quickshell.screens[0]?.height * 0.8 || 600)
-            
+
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
             exclusionMode: ExclusionMode.Ignore
-            
+
             anchors {
                 top: true
                 right: true
             }
-            
+
             margins {
                 top: 40
                 right: 20
             }
-            
+
             contentItem {
                 focus: true
                 Keys.onPressed: event => {
@@ -49,22 +49,22 @@ if isNiri then
                     }
                 }
             }
-            
+
             Rectangle {
                 anchors.fill: parent
                 color: root.theme?.bg || "#2E3440"
                 border.color: root.theme?.fgSubtle || "#4C566A"
                 border.width: 2
-                radius: 10
-                
+                radius: 12
+
                 ColumnLayout {
                     anchors.fill: parent
                     anchors.margins: 14
                     spacing: 10
-                    
+
                     RowLayout {
                         Layout.fillWidth: true
-                        
+
                         Text {
                             text: "Notifications"
                             color: root.theme?.darkBlue || "#5E81AC"
@@ -72,14 +72,14 @@ if isNiri then
                             font.bold: true
                             font.family: root.theme?.fontFamily || "monospace"
                         }
-                        
+
                         Item { Layout.fillWidth: true }
-                        
+
                         Text {
                             text: "Clear"
                             color: clearMa.containsMouse ? root.theme?.red : root.theme?.fgMuted
                             font.pixelSize: 11
-                            
+
                             MouseArea {
                                 id: clearMa
                                 anchors.fill: parent
@@ -93,12 +93,12 @@ if isNiri then
                                 }
                             }
                         }
-                        
+
                         Text {
                             text: "X"
                             color: closeMa.containsMouse ? root.theme?.darkBlue : root.theme?.fg
                             font.pixelSize: 14
-                            
+
                             MouseArea {
                                 id: closeMa
                                 anchors.fill: parent
@@ -107,13 +107,13 @@ if isNiri then
                             }
                         }
                     }
-                    
+
                     Rectangle {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 1
                         color: root.theme?.fgSubtle || "#4C566A"
                     }
-                    
+
                     ListView {
                         id: notificationList
                         Layout.fillWidth: true
@@ -121,22 +121,22 @@ if isNiri then
                         spacing: 10
                         clip: true
                         model: root.notifServer?.trackedNotifications
-                        
+
                         delegate: Rectangle {
                             required property var modelData
                             required property int index
-                            
+
                             width: notificationList.width
                             height: 70
                             color: index % 2 === 0 ? (root.theme?.bgAlt || "#3B4252") : (root.theme?.bg || "#2E3440")
                             radius: 8
                             visible: modelData !== null
-                            
+
                             Row {
                                 anchors.fill: parent
                                 anchors.margins: 10
                                 spacing: 10
-                                
+
                                 Text {
                                     text: modelData && modelData.appName ? modelData.appName[0].toUpperCase() : "N"
                                     color: root.theme?.darkBlue || "#5E81AC"
@@ -144,11 +144,11 @@ if isNiri then
                                     font.bold: true
                                     width: 30
                                 }
-                                
+
                                 Column {
                                     width: parent.width - 50
                                     spacing: 4
-                                    
+
                                     Text {
                                         text: modelData ? modelData.summary : ""
                                         color: root.theme?.fg || "#D8DEE9"
@@ -156,7 +156,7 @@ if isNiri then
                                         font.bold: true
                                         elide: Text.ElideRight
                                     }
-                                    
+
                                     Text {
                                         text: modelData ? modelData.body : ""
                                         color: root.theme?.fgMuted || "#434C5E"
@@ -165,12 +165,12 @@ if isNiri then
                                         maximumLineCount: 2
                                     }
                                 }
-                                
+
                                 Text {
                                     text: "x"
                                     color: dismissMa.containsMouse ? root.theme?.red : root.theme?.fgMuted
                                     font.pixelSize: 12
-                                    
+
                                     MouseArea {
                                         id: dismissMa
                                         anchors.fill: parent
@@ -180,7 +180,7 @@ if isNiri then
                                 }
                             }
                         }
-                        
+
                         Text {
                             anchors.centerIn: parent
                             text: "No notifications"
@@ -203,7 +203,7 @@ else if isMango then
         property bool shown: false
         property var notifServer: null
         property var theme: null
-        
+
         function toggle() {
             shown = !shown
         }
@@ -218,7 +218,7 @@ else
         property bool shown: false
         property var notifServer: null
         property var theme: null
-        
+
         function toggle() {
             shown = !shown
         }

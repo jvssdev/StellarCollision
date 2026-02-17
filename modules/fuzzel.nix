@@ -47,7 +47,7 @@ in
             terminal=${config.cfg.vars.terminal}
 
             [border]
-            radius=10
+            radius=12
             width=2
 
             [colors]

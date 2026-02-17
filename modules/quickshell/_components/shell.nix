@@ -99,7 +99,7 @@ in
           readonly property color magenta: "${c.base0E}"
           readonly property color cyan: "${c.base04}"
           readonly property color orange: "${c.base09}"
-          readonly property int radius: 10
+          readonly property int radius: 12
           readonly property int borderWidth: 2
           readonly property int padding: 14
           readonly property int spacing: 10

@@ -95,7 +95,7 @@ in
         layer.enabled: true
         layer.smooth: false
         layer.effect: MultiEffect {
-          blurEnabled: true
+          blurEnabled: false
           blur: 0.6
           blurMax: 64
         }

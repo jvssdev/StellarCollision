@@ -47,7 +47,7 @@ if isNiri then
                             anchors.fill: parent
                             anchors.margins: 2
                             color: isActive ? theme.darkBlue : (isOccupied ? theme.fgSubtle : "transparent")
-                            radius: 10
+                            radius: 12
                             Text {
                                 text: wsNum.toString()
                                 color: isActive ? theme.bg : theme.fgMuted

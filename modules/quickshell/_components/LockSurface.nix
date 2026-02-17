@@ -82,7 +82,7 @@
                       color: Qt.rgba(46/255, 52/255, 64/255, 0.85)
                       border.color: theme.darkBlue
                       border.width: 2
-                      radius: 10
+                      radius: 12
                   }
                   onTextChanged: root.context.currentText = this.text;
                   onAccepted: root.context.tryUnlock();
