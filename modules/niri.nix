@@ -172,6 +172,11 @@ in
        }
 
        window-rule {
+           geometry-corner-radius 10
+           clip-to-geometry true
+       }
+
+       window-rule {
            match app-id=r#"(?i)(firefox|zen|zen-browser|zen-beta|chromium)"#
            default-column-width { proportion 1.0; }
        }
@@ -209,10 +214,7 @@ in
 
       window-rule {
              match app-id=r#"^org\.wezfurlong\.wezterm$"#
-
              draw-border-with-background false
-             clip-to-geometry true
-             geometry-corner-radius 0
       }
 
 
