@@ -48,7 +48,7 @@ in
       exec-once=systemctl --user reset-failed
       exec-once=systemctl --user start mango-session.target
       exec-once = "${getExe pkgs.xwayland-satellite}"
-      exec-once = "sh -c 'sleep 1; echo \"Xft.dpi: 140\" | ${getExe' pkgs.xorg.xrdb "xrdb"} -merge'"
+      exec-once = "sh -c 'sleep 1; echo \"Xft.dpi: 140\" | ${getExe' pkgs.xrdb "xrdb"} -merge'"
       exec-once = "${getExe' pkgs.networkmanagerapplet "nm-applet"} --indicator"
       exec-once = "${getExe' pkgs.blueman "blueman-applet"}"
       exec-once = "${getExe quickshell}"

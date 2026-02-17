@@ -59,7 +59,7 @@
 
     pkgs.lxqt.lxqt-policykit
 
-    pkgs.xorg.xrdb
+    pkgs.xrdb
   ];
 
   security = {
