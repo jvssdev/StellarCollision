@@ -12,6 +12,7 @@ if isNiri then
   ''
     import QtQuick
     import QtQuick.Layouts
+    import QtQuick.Controls
     import Quickshell
     import Quickshell.Wayland
     import Quickshell.Io
@@ -30,13 +31,14 @@ if isNiri then
 
         // Night Light state
         property bool nightLightEnabled: false
+        property int nightLightTemperature: 4500
         
         // Toggle Night Light
         function toggleNightLight() {
             console.log("Toggle night light called, current state:", root.nightLightEnabled)
             root.nightLightEnabled = !root.nightLightEnabled
             if (root.nightLightEnabled) {
-                console.log("Starting gammastep...")
+                console.log("Starting gammastep at " + root.nightLightTemperature + "K...")
                 nightLightOn.startDetached()
             } else {
                 console.log("Stopping gammastep...")
@@ -44,16 +46,47 @@ if isNiri then
             }
         }
 
-        // Process to start night light
+        // Process to start night light (default 4500K)
         Process {
             id: nightLightOn
             command: ["${getExe pkgs.bash}", "-c", "pkill gammastep 2>/dev/null; sleep 0.2; ${getExe pkgs.gammastep} -P -O 4500 &"]
+        }
+
+        // Process to set night light temperature
+        Process {
+            id: nightLightWarm
+            command: ["${getExe pkgs.bash}", "-c", "pkill gammastep 2>/dev/null; sleep 0.2; ${getExe pkgs.gammastep} -P -O 3500 &"]
+        }
+        
+        Process {
+            id: nightLightNormal
+            command: ["${getExe pkgs.bash}", "-c", "pkill gammastep 2>/dev/null; sleep 0.2; ${getExe pkgs.gammastep} -P -O 4500 &"]
+        }
+        
+        Process {
+            id: nightLightCool
+            command: ["${getExe pkgs.bash}", "-c", "pkill gammastep 2>/dev/null; sleep 0.2; ${getExe pkgs.gammastep} -P -O 5500 &"]
         }
         
         // Process to stop night light
         Process {
             id: nightLightOff
             command: ["${getExe pkgs.bash}", "-c", "pkill gammastep 2>/dev/null; sleep 0.2; ${getExe pkgs.gammastep} -x 2>/dev/null"]
+        }
+
+        // Set temperature preset
+        function setNightLightTemp(temp) {
+            root.nightLightTemperature = temp
+            if (!root.nightLightEnabled) {
+                root.nightLightEnabled = true
+            }
+            if (temp === 3500) {
+                nightLightWarm.startDetached()
+            } else if (temp === 4500) {
+                nightLightNormal.startDetached()
+            } else if (temp === 5500) {
+                nightLightCool.startDetached()
+            }
         }
 
         // Process to check status
@@ -88,6 +121,7 @@ if isNiri then
             property bool isOn: false
             property color accentColor: controlTheme?.green || "#A3BE8C"
             property var controlTheme: null
+            property var onClick: null
 
             Layout.fillWidth: true
             height: 60
@@ -128,7 +162,11 @@ if isNiri then
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
-                    toggle.isOn = !toggle.isOn
+                    if (toggle.onClick) {
+                        toggle.onClick()
+                    } else {
+                        toggle.isOn = !toggle.isOn
+                    }
                 }
             }
         }
@@ -564,49 +602,14 @@ if isNiri then
                             controlTheme: root.theme
                         }
 
-                        // Night Toggle - Componente especial que não usa o QuickToggle padrão
-                        Rectangle {
-                            id: nightToggleRect
-                            Layout.fillWidth: true
-                            height: 60
-                            radius: 8
-                            color: root.nightLightEnabled ? Qt.rgba(nightToggleRect.accentColor.r, nightToggleRect.accentColor.g, nightToggleRect.accentColor.b, 0.2) : (root.theme?.bgAlt || "#3B4252")
-                            border.width: root.nightLightEnabled ? 2 : 0
-                            border.color: nightToggleRect.accentColor
-                            property color accentColor: root.theme?.yellow || "#EBCB8B"
-
-                            Behavior on color { ColorAnimation { duration: 150 } }
-                            Behavior on border.width { NumberAnimation { duration: 150 } }
-
-                            ColumnLayout {
-                                anchors.centerIn: parent
-                                spacing: 4
-
-                                Text {
-                                    text: root.nightLightEnabled ? "󰖨" : "󱩌"
-                                    font.family: root.theme?.fontFamily || "monospace"
-                                    font.pixelSize: 18
-                                    color: root.nightLightEnabled ? nightToggleRect.accentColor : (root.theme?.fgMuted || "#434C5E")
-                                    Layout.alignment: Qt.AlignHCenter
-                                }
-
-                                Text {
-                                    text: "Night"
-                                    font.family: root.theme?.fontFamily || "monospace"
-                                    font.pixelSize: 10
-                                    color: root.nightLightEnabled ? (root.theme?.fg || "#D8DEE9") : (root.theme?.fgMuted || "#434C5E")
-                                    Layout.alignment: Qt.AlignHCenter
-                                }
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    console.log("Night toggle clicked!")
-                                    root.toggleNightLight()
-                                }
-                            }
+                        QuickToggle {
+                            icon: "󰖨"
+                            iconOff: "󱩌"
+                            label: "Night"
+                            isOn: root.nightLightEnabled
+                            accentColor: root.theme?.yellow || "#EBCB8B"
+                            controlTheme: root.theme
+                            onClick: () => root.toggleNightLight()
                         }
 
                         QuickToggle {
@@ -627,11 +630,124 @@ if isNiri then
                             controlTheme: root.theme
                         }
                     }
-
+                    
+                    // Night Light Temperature Card
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 1
-                        color: root.theme?.fgSubtle || "#4C566A"
+                        height: 60
+                        radius: 8
+                        color: root.theme?.bgAlt || "#3B4252"
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 12
+                            spacing: 8
+
+                            RowLayout {
+                                Text {
+                                    text: "Night Light Temperature"
+                                    font.family: root.theme?.fontFamily || "monospace"
+                                    font.pixelSize: 12
+                                    color: root.theme?.fg || "#D8DEE9"
+                                }
+                                Item { Layout.fillWidth: true }
+                                Text {
+                                    text: root.nightLightTemperature + "K"
+                                    font.family: root.theme?.fontFamily || "monospace"
+                                    font.pixelSize: 12
+                                    font.bold: true
+                                    color: root.theme?.yellow || "#EBCB8B"
+                                }
+                            }
+
+                            RowLayout {
+                                Text {
+                                    text: "2500"
+                                    font.family: root.theme?.fontFamily || "monospace"
+                                    font.pixelSize: 9
+                                    color: root.theme?.fgMuted || "#434C5E"
+                                }
+                                
+                                Slider {
+                                    id: nightTempSlider
+                                    Layout.fillWidth: true
+                                    from: 2500
+                                    to: 6500
+                                    value: root.nightLightTemperature
+                                    onValueChanged: root.nightLightTemperature = value
+                                }
+                                
+                                Text {
+                                    text: "6500"
+                                    font.family: root.theme?.fontFamily || "monospace"
+                                    font.pixelSize: 9
+                                    color: root.theme?.fgMuted || "#434C5E"
+                                }
+                            }
+
+                            // Temperature Presets
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 8
+
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    height: 28
+                                    radius: 6
+                                    color: root.theme?.bg || "#2E3440"
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "Warm"
+                                        font.family: root.theme?.fontFamily || "monospace"
+                                        font.pixelSize: 10
+                                        color: root.theme?.fg || "#D8DEE9"
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.setNightLightTemp(3500)
+                                    }
+                                }
+
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    height: 28
+                                    radius: 6
+                                    color: root.theme?.bg || "#2E3440"
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "Normal"
+                                        font.family: root.theme?.fontFamily || "monospace"
+                                        font.pixelSize: 10
+                                        color: root.theme?.fg || "#D8DEE9"
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.setNightLightTemp(4500)
+                                    }
+                                }
+
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    height: 28
+                                    radius: 6
+                                    color: root.theme?.bg || "#2E3440"
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "Cool"
+                                        font.family: root.theme?.fontFamily || "monospace"
+                                        font.pixelSize: 10
+                                        color: root.theme?.fg || "#D8DEE9"
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.setNightLightTemp(5500)
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     SliderCard {
