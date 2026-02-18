@@ -549,6 +549,168 @@ if isNiri then
                     anchors.margins: 14
                     spacing: 12
 
+                    // Show Bluetooth page as full overlay when visible
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: 600
+                        radius: 8
+                        color: root.theme?.bg || "#2E3440"
+                        visible: root.bluetoothPageVisible
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 12
+                            spacing: 8
+
+                            RowLayout {
+                                Layout.fillWidth: true
+
+                                Text {
+                                    text: "Bluetooth"
+                                    font.family: root.theme?.fontFamily || "monospace"
+                                    font.pixelSize: 14
+                                    font.bold: true
+                                    color: root.theme?.darkBlue || "#5E81AC"
+                                }
+
+                                Item { Layout.fillWidth: true }
+
+                                Text {
+                                    text: "Power"
+                                    color: root.theme?.fgMuted || "#434C5E"
+                                    font.pixelSize: 10
+                                }
+
+                                Rectangle {
+                                    width: 44
+                                    height: 24
+                                    radius: 12
+                                    color: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? (root.theme?.green || "#A3BE8C") : (root.theme?.fgMuted || "#434C5E")
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            if (Bluetooth.defaultAdapter) {
+                                                Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
+                                            }
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        x: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? 22 : 2
+                                        y: 2
+                                        width: 20
+                                        height: 20
+                                        radius: 10
+                                        color: "#FFFFFF"
+                                    }
+                                }
+
+                                Text {
+                                    text: "X"
+                                    color: btCloseMa.containsMouse ? root.theme?.darkBlue : root.theme?.fg
+                                    font.pixelSize: 12
+
+                                    MouseArea {
+                                        id: btCloseMa
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        onClicked: root.bluetoothPageVisible = false
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                height: 1
+                                color: root.theme?.fgSubtle || "#4C566A"
+                            }
+
+                            ListView {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                clip: true
+
+                                model: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? Bluetooth.defaultAdapter.devices : []
+
+                                delegate: Rectangle {
+                                    width: ListView.view.width
+                                    height: 50
+                                    radius: 8
+                                    color: root.theme?.bgAlt || "#3B4252"
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.margins: 10
+
+                                        Text {
+                                            text: modelData.icon || "󰂯"
+                                            font.family: root.theme?.fontFamily || "monospace"
+                                            font.pixelSize: 18
+                                            color: modelData.connected ? (root.theme?.blue || "#81A1C1") : (root.theme?.fgMuted || "#434C5E")
+                                        }
+
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            Text {
+                                                text: modelData.name || modelData.address || "Unknown"
+                                                font.family: root.theme?.fontFamily || "monospace"
+                                                font.pixelSize: 12
+                                                color: root.theme?.fg || "#D8DEE9"
+                                                elide: Text.ElideRight
+                                            }
+                                            Text {
+                                                text: {
+                                                    if (modelData.state === 1) return "Connected"
+                                                    if (modelData.state === 2) return "Connecting..."
+                                                    if (modelData.state === 3) return "Disconnecting..."
+                                                    return modelData.paired ? "Paired" : ""
+                                                }
+                                                font.family: root.theme?.fontFamily || "monospace"
+                                                font.pixelSize: 10
+                                                color: root.theme?.fgMuted || "#434C5E"
+                                            }
+                                        }
+
+                                        Text {
+                                            text: modelData.connected ? "󰤬" : "󰛲"
+                                            font.family: root.theme?.fontFamily || "monospace"
+                                            font.pixelSize: 16
+                                            color: modelData.connected ? (root.theme?.green || "#A3BE8C") : (root.theme?.fgMuted || "#434C5E")
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            if (modelData.connected) {
+                                                modelData.disconnect()
+                                            } else {
+                                                modelData.connect()
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            Text {
+                                visible: !Bluetooth.defaultAdapter || !Bluetooth.defaultAdapter.enabled
+                                text: !Bluetooth.defaultAdapter ? "No adapter" : "Bluetooth is off"
+                                font.family: root.theme?.fontFamily || "monospace"
+                                font.pixelSize: 12
+                                color: root.theme?.fgMuted || "#434C5E"
+                                Layout.alignment: Qt.AlignHCenter
+                            }
+                        }
+                    }
+
+                    // Regular content (hidden when Bluetooth page is visible)
+                    ColumnLayout {
+                        visible: !root.bluetoothPageVisible
+                        spacing: 12
+
                     RowLayout {
                         Layout.fillWidth: true
 
@@ -642,156 +804,6 @@ if isNiri then
                             isOn: false
                             accentColor: root.theme?.cyan || "#8FBCBB"
                             controlTheme: root.theme
-                        }
-                    }
-
-                    // Bluetooth Devices Page (inside ControlCenter)
-                    Rectangle {
-                        Layout.fillWidth: true
-                        implicitHeight: btPageInner.implicitHeight
-                        radius: 8
-                        color: root.theme?.bgAlt || "#3B4252"
-                        visible: root.bluetoothPageVisible
-
-                        ColumnLayout {
-                            id: btPageInner
-                            anchors.fill: parent
-                            anchors.margins: 12
-                            spacing: 8
-
-                            RowLayout {
-                                Text {
-                                    text: "Bluetooth"
-                                    font.family: root.theme?.fontFamily || "monospace"
-                                    font.pixelSize: 12
-                                    font.bold: true
-                                    color: root.theme?.fg || "#D8DEE9"
-                                }
-
-                                Item { Layout.fillWidth: true }
-
-                                Text {
-                                    text: "Power"
-                                    color: root.theme?.fgMuted || "#434C5E"
-                                    font.pixelSize: 10
-                                }
-
-                                Rectangle {
-                                    width: 44
-                                    height: 24
-                                    radius: 12
-                                    color: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? (root.theme?.green || "#A3BE8C") : (root.theme?.fgMuted || "#434C5E")
-
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: {
-                                            if (Bluetooth.defaultAdapter) {
-                                                Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
-                                            }
-                                        }
-                                    }
-
-                                    Rectangle {
-                                        x: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? 22 : 2
-                                        y: 2
-                                        width: 20
-                                        height: 20
-                                        radius: 10
-                                        color: "#FFFFFF"
-                                    }
-                                }
-
-                                Text {
-                                    text: "X"
-                                    color: btCloseMa.containsMouse ? root.theme?.darkBlue : root.theme?.fg
-                                    font.pixelSize: 12
-
-                                    MouseArea {
-                                        id: btCloseMa
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        onClicked: root.bluetoothPageVisible = false
-                                    }
-                                }
-                            }
-
-                            ListView {
-                                Layout.fillWidth: true
-                                height: 120
-                                clip: true
-
-                                model: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? Bluetooth.defaultAdapter.devices : []
-
-                                delegate: Rectangle {
-                                    width: ListView.view.width
-                                    height: 44
-                                    radius: 6
-                                    color: root.theme?.bg || "#2E3440"
-
-                                    RowLayout {
-                                        anchors.fill: parent
-                                        anchors.margins: 8
-
-                                        Text {
-                                            text: modelData.icon || "󰂯"
-                                            font.family: root.theme?.fontFamily || "monospace"
-                                            font.pixelSize: 16
-                                            color: modelData.connected ? (root.theme?.blue || "#81A1C1") : (root.theme?.fgMuted || "#434C5E")
-                                        }
-
-                                        ColumnLayout {
-                                            Layout.fillWidth: true
-                                            Text {
-                                                text: modelData.name || modelData.address || "Unknown"
-                                                font.family: root.theme?.fontFamily || "monospace"
-                                                font.pixelSize: 11
-                                                color: root.theme?.fg || "#D8DEE9"
-                                                elide: Text.ElideRight
-                                            }
-                                            Text {
-                                                text: {
-                                                    if (modelData.state === 1) return "Connected"
-                                                    if (modelData.state === 2) return "Connecting..."
-                                                    if (modelData.state === 3) return "Disconnecting..."
-                                                    return modelData.paired ? "Paired" : ""
-                                                }
-                                                font.family: root.theme?.fontFamily || "monospace"
-                                                font.pixelSize: 9
-                                                color: root.theme?.fgMuted || "#434C5E"
-                                            }
-                                        }
-
-                                        Text {
-                                            text: modelData.connected ? "󰤬" : "󰛲"
-                                            font.family: root.theme?.fontFamily || "monospace"
-                                            font.pixelSize: 14
-                                            color: modelData.connected ? (root.theme?.green || "#A3BE8C") : (root.theme?.fgMuted || "#434C5E")
-                                        }
-                                    }
-
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: {
-                                            if (modelData.connected) {
-                                                modelData.disconnect()
-                                            } else {
-                                                modelData.connect()
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            Text {
-                                visible: !Bluetooth.defaultAdapter || !Bluetooth.defaultAdapter.enabled
-                                text: !Bluetooth.defaultAdapter ? "No adapter" : "Bluetooth is off"
-                                font.family: root.theme?.fontFamily || "monospace"
-                                font.pixelSize: 10
-                                color: root.theme?.fgMuted || "#434C5E"
-                                Layout.alignment: Qt.AlignHCenter
-                            }
                         }
                     }
 
@@ -958,6 +970,7 @@ if isNiri then
                     MediaCard {
                         Layout.fillWidth: true
                         controlTheme: root.theme
+                    }
                     }
                 }
             }
