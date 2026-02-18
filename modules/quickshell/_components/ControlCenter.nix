@@ -506,7 +506,7 @@ if isNiri then
             color: "transparent"
 
             implicitWidth: 380
-            implicitHeight: contentColumn.implicitHeight + 60
+            implicitHeight: 600
 
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
@@ -549,83 +549,93 @@ if isNiri then
                     anchors.margins: 14
                     spacing: 12
 
-                    // Show Bluetooth page as full overlay when visible
+                    // Fixed Header - shows Control Center or Bluetooth
+                    RowLayout {
+                        Layout.fillWidth: true
+
+                        Text {
+                            text: root.bluetoothPageVisible ? "Bluetooth" : "Control Center"
+                            color: root.theme?.darkBlue || "#5E81AC"
+                            font.pixelSize: 16
+                            font.bold: true
+                            font.family: root.theme?.fontFamily || "monospace"
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        // Show Power toggle when Bluetooth page is visible
+                        Text {
+                            visible: root.bluetoothPageVisible
+                            text: "Power"
+                            color: root.theme?.fgMuted || "#434C5E"
+                            font.pixelSize: 10
+                        }
+
+                        Rectangle {
+                            visible: root.bluetoothPageVisible
+                            width: 44
+                            height: 24
+                            radius: 12
+                            color: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? (root.theme?.green || "#A3BE8C") : (root.theme?.fgMuted || "#434C5E")
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    if (Bluetooth.defaultAdapter) {
+                                        Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                x: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? 22 : 2
+                                y: 2
+                                width: 20
+                                height: 20
+                                radius: 10
+                                color: "#FFFFFF"
+                            }
+                        }
+
+                        Text {
+                            text: "X"
+                            color: closeMa.containsMouse ? root.theme?.darkBlue : root.theme?.fg
+                            font.pixelSize: 14
+
+                            MouseArea {
+                                id: closeMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                onClicked: {
+                                    if (root.bluetoothPageVisible) {
+                                        root.bluetoothPageVisible = false
+                                    } else {
+                                        root.shown = false
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     Rectangle {
                         Layout.fillWidth: true
-                        implicitHeight: 600
+                        height: 1
+                        color: root.theme?.fgSubtle || "#4C566A"
+                    }
+
+                    // Show Bluetooth page as full content when visible
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: 520
                         radius: 8
-                        color: root.theme?.bg || "#2E3440"
+                        color: root.theme?.bgAlt || "#3B4252"
                         visible: root.bluetoothPageVisible
 
                         ColumnLayout {
                             anchors.fill: parent
                             anchors.margins: 12
                             spacing: 8
-
-                            RowLayout {
-                                Layout.fillWidth: true
-
-                                Text {
-                                    text: "Bluetooth"
-                                    font.family: root.theme?.fontFamily || "monospace"
-                                    font.pixelSize: 14
-                                    font.bold: true
-                                    color: root.theme?.darkBlue || "#5E81AC"
-                                }
-
-                                Item { Layout.fillWidth: true }
-
-                                Text {
-                                    text: "Power"
-                                    color: root.theme?.fgMuted || "#434C5E"
-                                    font.pixelSize: 10
-                                }
-
-                                Rectangle {
-                                    width: 44
-                                    height: 24
-                                    radius: 12
-                                    color: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? (root.theme?.green || "#A3BE8C") : (root.theme?.fgMuted || "#434C5E")
-
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: {
-                                            if (Bluetooth.defaultAdapter) {
-                                                Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
-                                            }
-                                        }
-                                    }
-
-                                    Rectangle {
-                                        x: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? 22 : 2
-                                        y: 2
-                                        width: 20
-                                        height: 20
-                                        radius: 10
-                                        color: "#FFFFFF"
-                                    }
-                                }
-
-                                Text {
-                                    text: "X"
-                                    color: btCloseMa.containsMouse ? root.theme?.darkBlue : root.theme?.fg
-                                    font.pixelSize: 12
-
-                                    MouseArea {
-                                        id: btCloseMa
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        onClicked: root.bluetoothPageVisible = false
-                                    }
-                                }
-                            }
-
-                            Rectangle {
-                                Layout.fillWidth: true
-                                height: 1
-                                color: root.theme?.fgSubtle || "#4C566A"
-                            }
 
                             ListView {
                                 Layout.fillWidth: true
@@ -638,7 +648,7 @@ if isNiri then
                                     width: ListView.view.width
                                     height: 50
                                     radius: 8
-                                    color: root.theme?.bgAlt || "#3B4252"
+                                    color: root.theme?.bg || "#2E3440"
 
                                     RowLayout {
                                         anchors.fill: parent
@@ -710,39 +720,6 @@ if isNiri then
                     ColumnLayout {
                         visible: !root.bluetoothPageVisible
                         spacing: 12
-
-                    RowLayout {
-                        Layout.fillWidth: true
-
-                        Text {
-                            text: "Control Center"
-                            color: root.theme?.darkBlue || "#5E81AC"
-                            font.pixelSize: 16
-                            font.bold: true
-                            font.family: root.theme?.fontFamily || "monospace"
-                        }
-
-                        Item { Layout.fillWidth: true }
-
-                        Text {
-                            text: "X"
-                            color: closeMa.containsMouse ? root.theme?.darkBlue : root.theme?.fg
-                            font.pixelSize: 14
-
-                            MouseArea {
-                                id: closeMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                onClicked: root.shown = false
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 1
-                        color: root.theme?.fgSubtle || "#4C566A"
-                    }
 
                     GridLayout {
                         Layout.fillWidth: true
