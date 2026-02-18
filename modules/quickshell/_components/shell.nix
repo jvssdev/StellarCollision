@@ -57,10 +57,24 @@ in
           theme: theme
       }
 
+      ControlCenter {
+          id: controlCenter
+          theme: theme
+          volumeObj: volume
+          batteryObj: battery
+      }
+
       IpcHandler {
           target: "notificationCenter"
           function toggle(): void {
               notificationCenter.toggle()
+          }
+      }
+
+      IpcHandler {
+          target: "controlCenter"
+          function toggle(): void {
+              controlCenter.toggle()
           }
       }
 
@@ -415,6 +429,21 @@ in
                           anchors.fill: parent
                           cursorShape: Qt.PointingHandCursor
                           onClicked: notificationCenter.shown = !notificationCenter.shown
+                      }
+                  }
+                  Text {
+                      text: "󰜎"
+                      color: controlCenter.shown ? theme.darkBlue : theme.fgMuted
+                      font {
+                          family: theme.fontFamily
+                          pixelSize: theme.fontPixelSize
+                          bold: controlCenter.shown
+                      }
+                      Layout.rightMargin: theme.spacing / 2
+                      MouseArea {
+                          anchors.fill: parent
+                          cursorShape: Qt.PointingHandCursor
+                          onClicked: controlCenter.toggle()
                       }
                   }
                   Text {

@@ -26,6 +26,15 @@ let
   componentsDir = ./_components;
   NotificationPopups = import (componentsDir + "/NotificationPopups.nix") { inherit pkgs lib; };
   NotificationCenter = import (componentsDir + "/NotificationCenter.nix") { inherit isNiri isMango; };
+  ControlCenter = import (componentsDir + "/ControlCenter.nix") {
+    inherit
+      isNiri
+      isMango
+      pkgs
+      lib
+      config
+      ;
+  };
   PowerButton = import (componentsDir + "/PowerButton.nix") { inherit pkgs lib; };
   PowerMenu = import (componentsDir + "/PowerMenu.nix") {
     backgroundColor = "#80${substring 1 6 c.base00}";
@@ -95,6 +104,7 @@ in
       "quickshell/icons".source = ../../assets/icons;
       "quickshell/NotificationPopups.qml".text = NotificationPopups;
       "quickshell/NotificationCenter.qml".text = NotificationCenter;
+      "quickshell/ControlCenter.qml".text = ControlCenter;
       "quickshell/PowerButton.qml".text = PowerButton;
       "quickshell/PowerMenu.qml".text = PowerMenu;
       "quickshell/WorkspaceModule.qml".text = WorkspaceModule;

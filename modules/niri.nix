@@ -56,9 +56,6 @@ in
        spawn-sh-at-startup "${getExe' pkgs.networkmanagerapplet "nm-applet"} --indicator"
        spawn-sh-at-startup "${getExe' pkgs.blueman "blueman-applet"}"
        spawn-at-startup "${getExe quickshell}"
-       spawn-at-startup "${getExe pkgs.gammastep} ${
-         if config.cfg.gammastep.tray then "-indicator" else ""
-       }"
        spawn-sh-at-startup "${getExe' pkgs.wl-clipboard "wl-paste"} --type text --watch ${getExe pkgs.cliphist} store"
        spawn-sh-at-startup "${getExe' pkgs.wl-clipboard "wl-paste"} --type image --watch ${getExe pkgs.cliphist} store"
        spawn-sh-at-startup "${getExe pkgs.wl-clip-persist} --clipboard regular --reconnect-tries 0"
