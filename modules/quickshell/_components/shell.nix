@@ -282,7 +282,6 @@ in
           implicitHeight: 20
           color: "transparent"
           Process { id: pavuProcess; command: ["${getExe pkgs.pavucontrol}"] }
-          Process { id: bluemanProcess; command: ["${getExe' pkgs.blueman "blueman-manager"}"] }
           Process { id: networkManagerProcess; command: ["${getExe' pkgs.networkmanagerapplet "nm-connection-editor"}"] }
           Rectangle {
               anchors.fill: parent
@@ -395,11 +394,6 @@ in
                           bold: true
                       }
                       Layout.rightMargin: theme.spacing / 2
-                      MouseArea {
-                          anchors.fill: parent
-                          cursorShape: Qt.PointingHandCursor
-                          onClicked: bluemanProcess.running = true
-                      }
                   }
                   Text {
                       text: network.icon
@@ -432,7 +426,7 @@ in
                       }
                   }
                   Text {
-                      text: "󰜎"
+                      text: ""
                       color: controlCenter.shown ? theme.darkBlue : theme.fgMuted
                       font {
                           family: theme.fontFamily

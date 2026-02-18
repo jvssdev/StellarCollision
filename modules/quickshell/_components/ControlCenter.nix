@@ -16,6 +16,7 @@ if isNiri then
     import Quickshell
     import Quickshell.Wayland
     import Quickshell.Io
+    import Quickshell.Bluetooth
 
     Scope {
         id: root
@@ -24,6 +25,7 @@ if isNiri then
         property var volumeObj: null
         property var batteryObj: null
         property int brightnessLevel: 50
+        property bool bluetoothPageVisible: false
 
         function toggle() {
             shown = !shown
@@ -46,10 +48,15 @@ if isNiri then
             }
         }
 
-        // Process to start night light (default 4500K)
+        // Initial check disabled - only check on toggle
+        Component.onCompleted: {
+            checkNightLightProc.running = true
+        }
+
+        // Process to start night light (uses current temperature)
         Process {
             id: nightLightOn
-            command: ["${getExe pkgs.bash}", "-c", "pkill gammastep 2>/dev/null; sleep 0.2; ${getExe pkgs.gammastep} -P -O 4500 &"]
+            command: ["${getExe pkgs.bash}", "-c", "pkill gammastep 2>/dev/null; sleep 0.2; ${getExe pkgs.gammastep} -P -O " + root.nightLightTemperature + " &"]
         }
 
         // Process to set night light temperature
@@ -57,17 +64,17 @@ if isNiri then
             id: nightLightWarm
             command: ["${getExe pkgs.bash}", "-c", "pkill gammastep 2>/dev/null; sleep 0.2; ${getExe pkgs.gammastep} -P -O 3500 &"]
         }
-        
+
         Process {
             id: nightLightNormal
             command: ["${getExe pkgs.bash}", "-c", "pkill gammastep 2>/dev/null; sleep 0.2; ${getExe pkgs.gammastep} -P -O 4500 &"]
         }
-        
+
         Process {
             id: nightLightCool
             command: ["${getExe pkgs.bash}", "-c", "pkill gammastep 2>/dev/null; sleep 0.2; ${getExe pkgs.gammastep} -P -O 5500 &"]
         }
-        
+
         // Process to stop night light
         Process {
             id: nightLightOff
@@ -93,21 +100,21 @@ if isNiri then
         Process {
             id: checkNightLightProc
             running: true
-            command: ["pidof", "gammastep"]
+            command: ["${getExe pkgs.bash}", "-c", "pgrep gammastep > /dev/null && echo 1 || echo 0"]
             stdout: SplitParser {
                 onRead: data => {
-                    console.log("Night light check:", data.length > 0 ? "running" : "not found")
-                    root.nightLightEnabled = data.length > 0
+                    console.log("Night light check:", data.trim() === "1" ? "running" : "not found")
+                    root.nightLightEnabled = data.trim() === "1"
                 }
             }
         }
 
-        // Timer to check status periodically
+        // Timer to check status periodically (disabled for now)
         Timer {
-            interval: 5000
-            running: true
+            interval: 10000
+            running: false
             repeat: true
-            triggeredOnStart: true
+            triggeredOnStart: false
             onTriggered: checkNightLightProc.running = true
         }
 
@@ -519,7 +526,11 @@ if isNiri then
                 focus: true
                 Keys.onPressed: event => {
                     if (event.key === Qt.Key_Escape) {
-                        root.shown = false
+                        if (root.bluetoothPageVisible) {
+                            root.bluetoothPageVisible = false
+                        } else {
+                            root.shown = false
+                        }
                         event.accepted = true
                     }
                 }
@@ -589,8 +600,11 @@ if isNiri then
                             icon: "󰂯"
                             iconOff: "󰂲"
                             label: "Bluetooth"
-                            isOn: false
+                            isOn: Bluetooth.defaultAdapter ? Bluetooth.defaultAdapter.enabled : false
                             controlTheme: root.theme
+                            onClick: () => {
+                                root.bluetoothPageVisible = !root.bluetoothPageVisible
+                            }
                         }
 
                         QuickToggle {
@@ -630,13 +644,164 @@ if isNiri then
                             controlTheme: root.theme
                         }
                     }
-                    
+
+                    // Bluetooth Devices Page (inside ControlCenter)
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: btPageInner.implicitHeight
+                        radius: 8
+                        color: root.theme?.bgAlt || "#3B4252"
+                        visible: root.bluetoothPageVisible
+
+                        ColumnLayout {
+                            id: btPageInner
+                            anchors.fill: parent
+                            anchors.margins: 12
+                            spacing: 8
+
+                            RowLayout {
+                                Text {
+                                    text: "Bluetooth"
+                                    font.family: root.theme?.fontFamily || "monospace"
+                                    font.pixelSize: 12
+                                    font.bold: true
+                                    color: root.theme?.fg || "#D8DEE9"
+                                }
+
+                                Item { Layout.fillWidth: true }
+
+                                Text {
+                                    text: "Power"
+                                    color: root.theme?.fgMuted || "#434C5E"
+                                    font.pixelSize: 10
+                                }
+
+                                Rectangle {
+                                    width: 44
+                                    height: 24
+                                    radius: 12
+                                    color: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? (root.theme?.green || "#A3BE8C") : (root.theme?.fgMuted || "#434C5E")
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            if (Bluetooth.defaultAdapter) {
+                                                Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
+                                            }
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        x: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? 22 : 2
+                                        y: 2
+                                        width: 20
+                                        height: 20
+                                        radius: 10
+                                        color: "#FFFFFF"
+                                    }
+                                }
+
+                                Text {
+                                    text: "X"
+                                    color: btCloseMa.containsMouse ? root.theme?.darkBlue : root.theme?.fg
+                                    font.pixelSize: 12
+
+                                    MouseArea {
+                                        id: btCloseMa
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        onClicked: root.bluetoothPageVisible = false
+                                    }
+                                }
+                            }
+
+                            ListView {
+                                Layout.fillWidth: true
+                                height: 120
+                                clip: true
+
+                                model: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? Bluetooth.defaultAdapter.devices : []
+
+                                delegate: Rectangle {
+                                    width: ListView.view.width
+                                    height: 44
+                                    radius: 6
+                                    color: root.theme?.bg || "#2E3440"
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.margins: 8
+
+                                        Text {
+                                            text: modelData.icon || "󰂯"
+                                            font.family: root.theme?.fontFamily || "monospace"
+                                            font.pixelSize: 16
+                                            color: modelData.connected ? (root.theme?.blue || "#81A1C1") : (root.theme?.fgMuted || "#434C5E")
+                                        }
+
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            Text {
+                                                text: modelData.name || modelData.address || "Unknown"
+                                                font.family: root.theme?.fontFamily || "monospace"
+                                                font.pixelSize: 11
+                                                color: root.theme?.fg || "#D8DEE9"
+                                                elide: Text.ElideRight
+                                            }
+                                            Text {
+                                                text: {
+                                                    if (modelData.state === 1) return "Connected"
+                                                    if (modelData.state === 2) return "Connecting..."
+                                                    if (modelData.state === 3) return "Disconnecting..."
+                                                    return modelData.paired ? "Paired" : ""
+                                                }
+                                                font.family: root.theme?.fontFamily || "monospace"
+                                                font.pixelSize: 9
+                                                color: root.theme?.fgMuted || "#434C5E"
+                                            }
+                                        }
+
+                                        Text {
+                                            text: modelData.connected ? "󰤬" : "󰛲"
+                                            font.family: root.theme?.fontFamily || "monospace"
+                                            font.pixelSize: 14
+                                            color: modelData.connected ? (root.theme?.green || "#A3BE8C") : (root.theme?.fgMuted || "#434C5E")
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            if (modelData.connected) {
+                                                modelData.disconnect()
+                                            } else {
+                                                modelData.connect()
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            Text {
+                                visible: !Bluetooth.defaultAdapter || !Bluetooth.defaultAdapter.enabled
+                                text: !Bluetooth.defaultAdapter ? "No adapter" : "Bluetooth is off"
+                                font.family: root.theme?.fontFamily || "monospace"
+                                font.pixelSize: 10
+                                color: root.theme?.fgMuted || "#434C5E"
+                                Layout.alignment: Qt.AlignHCenter
+                            }
+                        }
+                    }
+
                     // Night Light Temperature Card
                     Rectangle {
                         Layout.fillWidth: true
                         height: 60
                         radius: 8
                         color: root.theme?.bgAlt || "#3B4252"
+                        visible: root.nightLightEnabled
 
                         ColumnLayout {
                             anchors.fill: parent
@@ -667,16 +832,26 @@ if isNiri then
                                     font.pixelSize: 9
                                     color: root.theme?.fgMuted || "#434C5E"
                                 }
-                                
+
                                 Slider {
                                     id: nightTempSlider
                                     Layout.fillWidth: true
                                     from: 2500
                                     to: 6500
                                     value: root.nightLightTemperature
-                                    onValueChanged: root.nightLightTemperature = value
+                                    onValueChanged: {
+                                        root.nightLightTemperature = Math.round(value)
+                                        nightLightSetProc.running = false
+                                        nightLightSetProc.command = ["${getExe pkgs.bash}", "-c", "pkill gammastep 2>/dev/null; ${getExe pkgs.gammastep} -P -O " + root.nightLightTemperature + " &"]
+                                        nightLightSetProc.running = true
+                                    }
                                 }
-                                
+
+                                Process {
+                                    id: nightLightSetProc
+                                    running: false
+                                }
+
                                 Text {
                                     text: "6500"
                                     font.family: root.theme?.fontFamily || "monospace"
@@ -784,46 +959,8 @@ if isNiri then
                         Layout.fillWidth: true
                         controlTheme: root.theme
                     }
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 1
-                        color: root.theme?.fgSubtle || "#4C566A"
-                    }
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 10
-
-                        ActionButton {
-                            Layout.fillWidth: true
-                            icon: "󰌾"
-                            label: "Lock"
-                            onClicked: lockProcess.running = true
-                            controlTheme: root.theme
-                        }
-
-                        ActionButton {
-                            Layout.fillWidth: true
-                            icon: "󰐥"
-                            label: "Power"
-                            accentColor: root.theme?.red || "#BF616A"
-                            onClicked: powerProcess.running = true
-                            controlTheme: root.theme
-                        }
-                    }
                 }
             }
-        }
-
-        Process {
-            id: lockProcess
-            command: ["hyprlock"]
-        }
-
-        Process {
-            id: powerProcess
-            command: ["wlogout"]
         }
 
         Process {

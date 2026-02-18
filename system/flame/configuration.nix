@@ -16,7 +16,7 @@
     nvf.enable = true;
     opencode.enable = true;
     zen-browser.enable = true;
-    helium.enable = false;
+    helium.enable = true;
     zed.enable = true;
     keyring.enable = true;
     git.enable = true;
