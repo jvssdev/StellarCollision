@@ -6,7 +6,7 @@
   ...
 }:
 let
-  inherit (lib) getExe getExe';
+  inherit (lib) getExe;
 in
 if isNiri then
   ''
@@ -17,6 +17,7 @@ if isNiri then
     import Quickshell.Wayland
     import Quickshell.Io
     import Quickshell.Bluetooth
+    import Quickshell.Services.Mpris
 
     Scope {
         id: root
@@ -34,7 +35,7 @@ if isNiri then
         // Night Light state
         property bool nightLightEnabled: false
         property int nightLightTemperature: 4500
-        
+
         // Toggle Night Light
         function toggleNightLight() {
             console.log("Toggle night light called, current state:", root.nightLightEnabled)
@@ -51,6 +52,33 @@ if isNiri then
         // Initial check disabled - only check on toggle
         Component.onCompleted: {
             checkNightLightProc.running = true
+        }
+
+        // MPRIS for media control
+        property var mprisPlayers: Mpris.players.values
+        property var activePlayer: Mpris.players.values.length > 0 ? Mpris.players.values[0] : null
+        property bool hasMediaPlayer: activePlayer !== null
+        property string mediaTitle: activePlayer?.trackTitle || "No media playing"
+        property string mediaArtist: activePlayer?.trackArtist || ""
+        property bool mediaPlaying: activePlayer?.isPlaying || false
+
+        function getActivePlayer() {
+            var players = Mpris.players.values;
+            if (players.length === 0) return null;
+            for (var i = 0; i < players.length; i++) {
+                if (players[i].isPlaying) return players[i];
+            }
+            return players[0];
+        }
+
+        // Update media properties when players change
+        Timer {
+            interval: 1000
+            running: true
+            repeat: true
+            onTriggered: {
+                root.activePlayer = root.getActivePlayer()
+            }
         }
 
         // Process to start night light (uses current temperature)
@@ -288,10 +316,13 @@ if isNiri then
         component MediaCard: Rectangle {
             id: mediaCard
 
-            property string title: "No media playing"
-            property string artist: ""
-            property bool isPlaying: false
+            property string title: root.mediaTitle
+            property string artist: root.mediaArtist
+            property bool isPlaying: root.mediaPlaying
+            property bool hasPlayer: root.hasMediaPlayer
             property var controlTheme: null
+
+            visible: hasPlayer
 
             height: 80
             radius: 8
@@ -363,7 +394,7 @@ if isNiri then
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: mediaPrev.running = true
+                            onClicked: root.activePlayer?.previous()
                         }
                     }
 
@@ -385,8 +416,11 @@ if isNiri then
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
-                                mediaCard.isPlaying = !mediaCard.isPlaying
-                                mediaToggle.running = true
+                                if (mediaCard.isPlaying) {
+                                    root.activePlayer?.pause()
+                                } else {
+                                    root.activePlayer?.play()
+                                }
                             }
                         }
                     }
@@ -410,7 +444,7 @@ if isNiri then
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: mediaNext.running = true
+                            onClicked: root.activePlayer?.next()
                         }
                     }
                 }
@@ -951,21 +985,6 @@ if isNiri then
                     }
                 }
             }
-        }
-
-        Process {
-            id: mediaToggle
-            command: ["playerctl", "play-pause"]
-        }
-
-        Process {
-            id: mediaPrev
-            command: ["playerctl", "previous"]
-        }
-
-        Process {
-            id: mediaNext
-            command: ["playerctl", "next"]
         }
     }
   ''
