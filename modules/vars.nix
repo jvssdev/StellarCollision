@@ -31,7 +31,7 @@ in
 
     browser = mkOption {
       type = types.str;
-      default = "zen-beta";
+      default = "helium";
     };
 
     stateVersion = mkOption {

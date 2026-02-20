@@ -20,16 +20,16 @@ in
     xdg.mime = {
       enable = true;
       defaultApplications = {
-        "x-scheme-handler/http" = "zen-browser.desktop";
-        "x-scheme-handler/https" = "zen-browser.desktop";
-        "x-scheme-handler/chrome" = "zen-browser.desktop";
-        "text/html" = "zen-browser.desktop";
-        "application/x-extension-htm" = "zen-browser.desktop";
-        "application/x-extension-html" = "zen-browser.desktop";
-        "application/x-extension-shtml" = "zen-browser.desktop";
-        "application/xhtml+xml" = "zen-browser.desktop";
-        "application/x-extension-xhtml" = "zen-browser.desktop";
-        "application/x-extension-xht" = "zen-browser.desktop";
+        "x-scheme-handler/http" = "helium.desktop";
+        "x-scheme-handler/https" = "helium.desktop";
+        "x-scheme-handler/chrome" = "helium.desktop";
+        "text/html" = "helium.desktop";
+        "application/x-extension-htm" = "helium.desktop";
+        "application/x-extension-html" = "helium.desktop";
+        "application/x-extension-shtml" = "helium.desktop";
+        "application/xhtml+xml" = "helium.desktop";
+        "application/x-extension-xhtml" = "helium.desktop";
+        "application/x-extension-xht" = "helium.desktop";
 
         "inode/directory" = "yazi-open.desktop";
 

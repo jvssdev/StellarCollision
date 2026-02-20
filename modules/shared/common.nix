@@ -56,7 +56,6 @@
     pkgs.kdePackages.qt5compat
     pkgs.kdePackages.qtbase
     pkgs.kdePackages.qtdeclarative
-
     pkgs.lxqt.lxqt-policykit
 
     pkgs.xrdb

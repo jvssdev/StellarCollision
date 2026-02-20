@@ -179,7 +179,7 @@ in
        }
 
        window-rule {
-           match app-id=r#"(?i)(firefox|zen|zen-browser|zen-beta|chromium)"#
+           match app-id=r#"(?i)(firefox|zen|zen-browser|zen-beta|chromium|helium)"#
            open-maximized true
       }
 

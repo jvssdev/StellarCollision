@@ -2,44 +2,88 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }:
 let
   cfg = config.cfg.helium;
 
-  pname = "helium-browser";
-  version = "0.9.1.1";
+  inherit (lib) fix;
+  inherit (lib.attrsets) attrNames mapAttrsToList;
+  inherit (lib.lists) elem singleton;
+  inherit (lib.strings) hasInfix;
 
-  src = pkgs.fetchurl {
-    url = "https://github.com/imputnet/helium-linux/releases/download/${version}/helium-${version}-x86_64.AppImage";
-    hash = "sha256-0Kw8Ko41Gdz4xLn62riYAny99Hd0s7/75h8bz4LUuCE=";
-  };
-
-  appimageContents = pkgs.appimageTools.extractType2 {
-    inherit pname version src;
-  };
-
-  helium-browser = pkgs.appimageTools.wrapType2 {
-    inherit pname version src;
-
-    extraInstallCommands = ''
-      install -Dm444 ${appimageContents}/helium.desktop -t $out/share/applications
-      substituteInPlace $out/share/applications/helium.desktop \
-        --replace-fail 'Exec=AppRun' 'Exec=${pname}'
-      install -Dm444 ${appimageContents}/helium.png $out/share/pixmaps/helium.png
-    '';
-
-    passthru.updateScript = pkgs.nix-update-script {
-      attrPath = "packages.${pkgs.system}.helium-browser";
+  extensions = {
+    dark-reader = {
+      id = "eimadpbcbfnmbkopoojfekhnkhdbieeh";
     };
+    sponsorblock = {
+      id = "mnjggcdmjocbbbhaepdhchncahnbgone";
+    };
+    ublock-origin = fix (self: {
+      id = "cjpalhdlnbpafiamejdnhcphjbkeiagm";
+      filters = {
 
-    meta = {
-      description = "Helium web browser";
-      homepage = "https://github.com/imputnet/helium-linux";
-      platforms = [ "x86_64-linux" ];
-      mainProgram = pname;
+        internal = attrNames (builtins.fromJSON (builtins.readFile "${inputs.ublock}/assets/assets.json"));
+
+        wanted = [
+          "user-filters"
+          "ublock-filters"
+          "ublock-badware"
+          "ublock-privacy"
+          "ublock-abuse"
+          "ublock-unbreak"
+          "easylist"
+          "easyprivacy"
+          "urlhaus-1"
+          "plowe-0"
+
+          "https://raw.githubusercontent.com/DandelionSprout/adfilt/refs/heads/master/ClearURLs%20for%20uBo/clear_urls_uboified.txt"
+          "https://raw.githubusercontent.com/yokoffing/filterlists/refs/heads/main/privacy_essentials.txt"
+          "https://raw.githubusercontent.com/DandelionSprout/adfilt/refs/heads/master/LegitimateURLShortener.txt"
+          "https://raw.githubusercontent.com/yokoffing/filterlists/refs/heads/main/annoyance_list.txt"
+          "https://raw.githubusercontent.com/DandelionSprout/adfilt/refs/heads/master/BrowseWebsitesWithoutLoggingIn.txt"
+        ];
+
+        warnings = builtins.filter (
+          name: !(hasInfix "://" name || elem name self.filters.internal)
+        ) self.filters.wanted;
+      };
+    });
+    violentmonkey = {
+      id = "jinjaccalgkegednnccohejagnlnfdag";
+    };
+    vimium = {
+      id = "dbepggeogbaibhgnhhndojpepiihcmeb";
+    };
+    bettertv = {
+      id = "ajopnjidmegmdimjlfnijceegpefgped";
     };
   };
+
+  policy = {
+    ExtensionInstallForcelist = mapAttrsToList (
+      _: ext: "${ext.id};https://services.helium.imput.net/ext"
+    ) extensions;
+    ExtensionInstallAllowlist = mapAttrsToList (_: ext: ext.id) extensions;
+    ExtensionInstallSources = singleton "https://services.helium.imput.net/*";
+
+    "3rdparty".extensions.${extensions.ublock-origin.id}.toOverwrite.filterLists =
+      extensions.ublock-origin.filters.wanted;
+
+    DefaultBrowserSettingEnabled = false;
+    RestoreOnStartup = 1; # 5 = Open New Tab Page, 1 = Restore the last session, 4 = Open list of URLs, 6 = 1 + 4
+    DnsOverHttpsMode = "secure";
+    HttpsOnlyMode = "allowed";
+    GtkThemeModeEnabled = true;
+    DefaultSearchProviderEnabled = true;
+    DefaultSearchProviderName = "DuckDuckGo";
+    DefaultSearchProviderSearchURL = "https://duckduckgo.com/?q={searchTerms}";
+    DefaultSearchProviderSuggestURL = "https://duckduckgo.com/ac/?q={searchTerms}";
+    SearchSuggestEnabled = true;
+  };
+
+  helium-unwrapped = inputs.helium-browser.packages.${pkgs.stdenv.hostPlatform.system}.helium;
 in
 {
   options.cfg.helium = {
@@ -50,12 +94,16 @@ in
     };
     package = lib.mkOption {
       type = lib.types.package;
-      default = helium-browser;
+      default = helium-unwrapped;
       description = "The Helium browser package to install.";
     };
   };
 
   config = lib.mkIf cfg.enable {
-    hj.packages = [ cfg.package ];
+    hj = {
+      packages = [ cfg.package ];
+    };
+
+    environment.etc."chromium/policies/managed/policies.json".text = lib.generators.toJSON { } policy;
   };
 }
