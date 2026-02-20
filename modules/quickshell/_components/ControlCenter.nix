@@ -60,6 +60,8 @@ if isNiri then
         property bool hasMediaPlayer: activePlayer !== null
         property string mediaTitle: activePlayer?.trackTitle || "No media playing"
         property string mediaArtist: activePlayer?.trackArtist || ""
+        property string mediaAlbum: activePlayer?.trackAlbum || ""
+        property string mediaArtUrl: activePlayer?.trackArtUrl || ""
         property bool mediaPlaying: activePlayer?.isPlaying || false
 
         function getActivePlayer() {
@@ -318,13 +320,15 @@ if isNiri then
 
             property string title: root.mediaTitle
             property string artist: root.mediaArtist
+            property string album: root.mediaAlbum
+            property string artUrl: root.mediaArtUrl
             property bool isPlaying: root.mediaPlaying
             property bool hasPlayer: root.hasMediaPlayer
             property var controlTheme: null
 
             visible: hasPlayer
 
-            height: 80
+            height: 90
             radius: 8
             color: controlTheme?.bgAlt || "#3B4252"
 
@@ -339,12 +343,20 @@ if isNiri then
                     radius: 6
                     color: controlTheme?.bg || "#2E3440"
 
+                    Image {
+                        anchors.fill: parent
+                        source: mediaCard.artUrl
+                        fillMode: Image.PreserveAspectCrop
+                        visible: mediaCard.artUrl !== ""
+                    }
+
                     Text {
                         anchors.centerIn: parent
                         text: "󰝚"
                         font.family: mediaCard.controlTheme?.fontFamily || "monospace"
                         font.pixelSize: 24
                         color: mediaCard.controlTheme?.fgMuted || "#434C5E"
+                        visible: mediaCard.artUrl === ""
                     }
                 }
 
@@ -369,6 +381,16 @@ if isNiri then
                         color: mediaCard.controlTheme?.fgMuted || "#434C5E"
                         elide: Text.ElideRight
                         Layout.fillWidth: true
+                    }
+
+                    Text {
+                        text: mediaCard.album || ""
+                        font.family: mediaCard.controlTheme?.fontFamily || "monospace"
+                        font.pixelSize: 9
+                        color: mediaCard.controlTheme?.fgMuted || "#434C5E"
+                        elide: Text.ElideRight
+                        Layout.fillWidth: true
+                        visible: mediaCard.album !== ""
                     }
                 }
 
