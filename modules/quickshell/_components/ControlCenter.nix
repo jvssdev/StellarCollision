@@ -25,10 +25,11 @@ if isNiri then
         property bool shown: false
         property var theme: null
         property var batteryObj: null
+        property var networkObj: null
         property int brightnessLevel: 50
         property bool bluetoothPageVisible: false
         property bool wifiPageVisible: false
-        property bool wifiEnabled: true
+        property bool wifiEnabled: false
         property bool wifiScanning: false
         property var wifiNetworks: []
         property string currentWifiSsid: ""
@@ -37,8 +38,18 @@ if isNiri then
         property bool wifiPasswordPageVisible: false
 
         onWifiPageVisibleChanged: {
-            if (wifiPageVisible && wifiEnabled) {
-                scanWifi()
+            if (wifiPageVisible) {
+                if (networkObj) {
+                    root.wifiEnabled = networkObj.type === "wifi"
+                }
+                wifiListProc.running = true
+            }
+        }
+
+        onNetworkObjChanged: {
+            if (networkObj) {
+                root.wifiEnabled = networkObj.type === "wifi"
+                root.currentWifiSsid = networkObj.ssid || ""
             }
         }
 
@@ -54,26 +65,8 @@ if isNiri then
             objects: [audioSink]
         }
 
-        // WiFi processes
-        Process {
-            id: wifiStatusProc
-            running: true
-            command: ["${getExe pkgs.bash}", "-c", "nmcli -t -f WIFI,SSID dev status | head -1"]
-            stdout: SplitParser {
-                onRead: data => {
-                    var line = data.trim()
-                    if (line) {
-                        var parts = line.split(":")
-                        if (parts.length >= 2) {
-                            root.wifiEnabled = parts[0] === "yes"
-                            root.currentWifiSsid = parts[1] || ""
-                        }
-                    }
-                }
-            }
-        }
-
-        Process {
+    // WiFi processes
+    Process {
             id: wifiListProc
             running: false
             command: ["${getExe pkgs.bash}", "-c", "nmcli -t -f SSID,SIGNAL,SECURITY,ACTIVE dev wifi list 2>/dev/null | head -20"]
@@ -140,11 +133,10 @@ if isNiri then
         Process {
             id: wifiToggleProc
             running: false
-            command: ["${getExe pkgs.bash}", "-c", "nmcli radio wifi " + (root.wifiEnabled ? "off" : "on")]
+            command: ["${getExe pkgs.bash}", "-c", ""]
             onRunningChanged: if (!running) {
-                wifiStatusProc.running = true
                 if (root.wifiEnabled) {
-                    wifiScanProc.running = true
+                    wifiListProc.running = true
                 }
             }
         }
@@ -155,7 +147,8 @@ if isNiri then
             command: ["${getExe pkgs.bash}", "-c", ""]
             onRunningChanged: if (!running) {
                 root.wifiConnecting = false
-                wifiStatusProc.running = true
+                root.wifiPasswordPageVisible = false
+                wifiListProc.running = true
             }
         }
 
@@ -164,8 +157,22 @@ if isNiri then
             running: false
             command: ["${getExe pkgs.bash}", "-c", "nmcli dev disconnect iface wlan0"]
             onRunningChanged: if (!running) {
-                wifiStatusProc.running = true
+                wifiListProc.running = true
             }
+        }
+
+        Process {
+            id: wifiForgetProc
+            running: false
+            command: ["${getExe pkgs.bash}", "-c", ""]
+            onRunningChanged: if (!running) {
+                wifiListProc.running = true
+            }
+        }
+
+        function forgetWifi(ssid) {
+            wifiForgetProc.command = ["${getExe pkgs.bash}", "-c", "nmcli connection delete id '" + ssid + "'"]
+            wifiForgetProc.running = true
         }
 
         function scanWifi() {
@@ -173,7 +180,9 @@ if isNiri then
         }
 
         function toggleWifi() {
-            root.wifiEnabled = !root.wifiEnabled
+            var newState = !root.wifiEnabled
+            root.wifiEnabled = newState
+            wifiToggleProc.command = ["${getExe pkgs.bash}", "-c", "busctl set-property org.freedesktop.NetworkManager /org/freedesktop/NetworkManager org.freedesktop.NetworkManager.Wireless Enabled b " + (newState ? "true" : "false")]
             wifiToggleProc.running = true
         }
 
@@ -199,20 +208,7 @@ if isNiri then
             return "󰤟"
         }
 
-        Timer {
-            interval: 30000
-            running: true
-            repeat: true
-            triggeredOnStart: true
-            onTriggered: {
-                wifiStatusProc.running = true
-                if (root.wifiEnabled) {
-                    scanWifi()
-                }
-            }
-        }
-
-        function setVolume(newVal) {
+        function setVolume(newVal: int) {
             if (audioReady && audioObj) {
                 audioObj.muted = false
                 audioObj.volume = newVal / 100
@@ -801,6 +797,49 @@ if isNiri then
                         root.connectWifi(wifiCard.ssid, "")
                     }
                 }
+                onPressAndHold: {
+                    if (wifiCard.active || wifiCard.saved) {
+                        contextMenu.wifiSsid = wifiCard.ssid
+                        contextMenu.visible = true
+                    }
+                }
+            }
+
+            Rectangle {
+                id: contextMenu
+                property string wifiSsid: ""
+                visible: false
+                width: 140
+                height: 36
+                radius: 8
+                color: controlTheme?.bg || "#2E3440"
+                z: 1000
+
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: 3
+                    radius: 6
+                    color: menuMouse.containsMouse ? (controlTheme?.bgAlt || "#3B4252") : "transparent"
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "Forget Network"
+                        font.family: controlTheme?.fontFamily || "monospace"
+                        font.pixelSize: 11
+                        color: controlTheme?.red || "#BF616A"
+                    }
+
+                    MouseArea {
+                        id: menuMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            root.forgetWifi(contextMenu.wifiSsid)
+                            contextMenu.visible = false
+                        }
+                    }
+                }
             }
         }
 
@@ -867,9 +906,8 @@ if isNiri then
             property string targetSsid: ""
             property var controlTheme: null
 
-            Layout.fillWidth: true
-            Layout.fillHeight: true
             color: controlTheme?.bgAlt || "#3B4252"
+            radius: 12
 
             ColumnLayout {
                 anchors.centerIn: parent
@@ -1065,7 +1103,7 @@ if isNiri then
             implicitHeight: 600
 
             WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+            WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
             exclusionMode: ExclusionMode.Ignore
 
             anchors {
@@ -1610,23 +1648,166 @@ if isNiri then
                 }
             }
 
-            // WiFi password overlay - appears on top of any page
+            // WiFi password overlay - inside the main content
             Rectangle {
+                id: passwordOverlay
+                z: 100
                 visible: root.wifiPasswordPageVisible
                 anchors.fill: parent
-                color: Qt.rgba(0, 0, 0, 0.5)
+                color: Qt.rgba(0, 0, 0, 0.6)
 
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: root.wifiPasswordPageVisible = false
+                    onClicked: {
+                        if (mouse.target === passwordOverlay) {
+                            root.wifiPasswordPageVisible = false
+                        }
+                    }
                 }
 
-                WifiPasswordPage {
+                Timer {
+                    running: root.wifiPasswordPageVisible
+                    interval: 100
+                    onTriggered: passField.forceActiveFocus()
+                }
+
+                ColumnLayout {
                     anchors.centerIn: parent
                     width: parent.width * 0.85
-                    height: 250
-                    targetSsid: root.pendingWifiSsid
-                    controlTheme: root.theme
+                    spacing: 20
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 250
+                        radius: 12
+                        color: root.theme?.bgAlt || "#3B4252"
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 20
+                            spacing: 15
+
+                            Text {
+                                text: "󰤁"
+                                font.family: root.theme?.fontFamily || "monospace"
+                                font.pixelSize: 36
+                                color: root.theme?.blue || "#81A1C1"
+                                Layout.alignment: Qt.AlignHCenter
+                            }
+
+                            Text {
+                                text: "Password Required"
+                                font.family: root.theme?.fontFamily || "monospace"
+                                font.pixelSize: 12
+                                color: root.theme?.fgMuted || "#434C5E"
+                                Layout.alignment: Qt.AlignHCenter
+                            }
+
+                            Text {
+                                text: root.pendingWifiSsid
+                                font.family: root.theme?.fontFamily || "monospace"
+                                font.pixelSize: 14
+                                font.bold: true
+                                color: root.theme?.fg || "#D8DEE9"
+                                Layout.alignment: Qt.AlignHCenter
+                                elide: Text.ElideRight
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                height: 40
+                                radius: 8
+                                color: root.theme?.bg || "#2E3440"
+
+                                TextInput {
+                                    id: passField
+                                    anchors.fill: parent
+                                    verticalAlignment: TextInput.AlignVCenter
+                                    leftPadding: 15
+                                    rightPadding: 40
+                                    echoMode: passShow.checked ? TextInput.Normal : TextInput.Password
+                                    color: root.theme?.fg || "#D8DEE9"
+                                    font.family: root.theme?.fontFamily || "monospace"
+                                    font.pixelSize: 12
+
+                                    Text {
+                                        anchors.right: parent.right
+                                        anchors.rightMargin: 10
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: passShow.checked ? "󰤁" : "󰤂"
+                                        font.family: root.theme?.fontFamily || "monospace"
+                                        font.pixelSize: 14
+                                        color: root.theme?.fgMuted || "#434C5E"
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: passShow.checked = !passShow.checked
+                                        }
+                                    }
+                                }
+
+                                Item {
+                                    id: passShow
+                                    property bool checked: false
+                                }
+                            }
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 15
+
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    height: 36
+                                    radius: 8
+                                    color: root.theme?.bg || "#2E3440"
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "Cancel"
+                                        font.family: root.theme?.fontFamily || "monospace"
+                                        font.pixelSize: 12
+                                        color: root.theme?.fg || "#D8DEE9"
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            passField.text = ""
+                                            root.wifiPasswordPageVisible = false
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    height: 36
+                                    radius: 8
+                                    color: root.theme?.blue || "#81A1C1"
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "Connect"
+                                        font.family: root.theme?.fontFamily || "monospace"
+                                        font.pixelSize: 12
+                                        font.bold: true
+                                        color: root.theme?.bg || "#2E3440"
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            root.connectWifi(root.pendingWifiSsid, passField.text)
+                                            passField.text = ""
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
