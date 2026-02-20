@@ -27,6 +27,20 @@ if isNiri then
         property var batteryObj: null
         property int brightnessLevel: 50
         property bool bluetoothPageVisible: false
+        property bool wifiPageVisible: false
+        property bool wifiEnabled: true
+        property bool wifiScanning: false
+        property var wifiNetworks: []
+        property string currentWifiSsid: ""
+        property bool wifiConnecting: false
+        property string pendingWifiSsid: ""
+        property bool wifiPasswordPageVisible: false
+
+        onWifiPageVisibleChanged: {
+            if (wifiPageVisible && wifiEnabled) {
+                scanWifi()
+            }
+        }
 
         // Pipewire audio
         property var audioSink: Pipewire.defaultAudioSink
@@ -38,6 +52,164 @@ if isNiri then
         // Keep audio sink alive
         PwObjectTracker {
             objects: [audioSink]
+        }
+
+        // WiFi processes
+        Process {
+            id: wifiStatusProc
+            running: true
+            command: ["${getExe pkgs.bash}", "-c", "nmcli -t -f WIFI,SSID dev status | head -1"]
+            stdout: SplitParser {
+                onRead: data => {
+                    var line = data.trim()
+                    if (line) {
+                        var parts = line.split(":")
+                        if (parts.length >= 2) {
+                            root.wifiEnabled = parts[0] === "yes"
+                            root.currentWifiSsid = parts[1] || ""
+                        }
+                    }
+                }
+            }
+        }
+
+        Process {
+            id: wifiListProc
+            running: false
+            command: ["${getExe pkgs.bash}", "-c", "nmcli -t -f SSID,SIGNAL,SECURITY,ACTIVE dev wifi list 2>/dev/null | head -20"]
+            property string buffer: ""
+            onRunningChanged: {
+                if (running) {
+                    root.wifiScanning = true
+                }
+                if (!running && buffer) {
+                    var lines = buffer.trim().split("\n")
+                    console.log("WiFi lines:", lines.length, lines)
+                    var uniqueSsids = {}
+                    var networks = []
+                    for (var i = 0; i < lines.length; i++) {
+                        var line = lines[i].trim()
+                        if (!line) continue
+                        var parts = line.split(":")
+                        if (parts.length < 4) continue
+                        var active = parts[parts.length - 1] === "yes"
+                        var security = parts[parts.length - 2]
+                        var signal = parseInt(parts[parts.length - 3])
+                        var ssid = parts.slice(0, parts.length - 3).join(":")
+                        if (isNaN(signal)) signal = 0
+                        if (ssid && !uniqueSsids[ssid]) {
+                            uniqueSsids[ssid] = true
+                            networks.push({
+                                ssid: ssid,
+                                signal: signal,
+                                security: security,
+                                active: active,
+                                saved: false
+                            })
+                        }
+                    }
+                    networks.sort((a, b) => {
+                        if (a.active) return -1
+                        if (b.active) return 1
+                        return b.signal - a.signal
+                    })
+                    console.log("WiFi networks:", networks.length, networks)
+                    root.wifiNetworks = networks
+                    root.wifiScanning = false
+                    buffer = ""
+                }
+            }
+            stdout: SplitParser {
+                onRead: data => {
+                    wifiListProc.buffer += data + "\n"
+                }
+            }
+        }
+
+        Process {
+            id: wifiRescanProc
+            running: false
+            command: ["${getExe pkgs.bash}", "-c", "nmcli device wifi rescan 2>/dev/null"]
+            onRunningChanged: {
+                if (!running) {
+                    wifiListProc.running = true
+                }
+            }
+        }
+
+        Process {
+            id: wifiToggleProc
+            running: false
+            command: ["${getExe pkgs.bash}", "-c", "nmcli radio wifi " + (root.wifiEnabled ? "off" : "on")]
+            onRunningChanged: if (!running) {
+                wifiStatusProc.running = true
+                if (root.wifiEnabled) {
+                    wifiScanProc.running = true
+                }
+            }
+        }
+
+        Process {
+            id: wifiConnectProc
+            running: false
+            command: ["${getExe pkgs.bash}", "-c", ""]
+            onRunningChanged: if (!running) {
+                root.wifiConnecting = false
+                wifiStatusProc.running = true
+            }
+        }
+
+        Process {
+            id: wifiDisconnectProc
+            running: false
+            command: ["${getExe pkgs.bash}", "-c", "nmcli dev disconnect iface wlan0"]
+            onRunningChanged: if (!running) {
+                wifiStatusProc.running = true
+            }
+        }
+
+        function scanWifi() {
+            wifiRescanProc.running = true
+        }
+
+        function toggleWifi() {
+            root.wifiEnabled = !root.wifiEnabled
+            wifiToggleProc.running = true
+        }
+
+        function connectWifi(ssid, password) {
+            root.wifiConnecting = true
+            root.wifiPasswordPageVisible = false
+            if (password) {
+                wifiConnectProc.command = ["${getExe pkgs.bash}", "-c", "nmcli dev wifi connect '" + ssid + "' password '" + password + "'"]
+            } else {
+                wifiConnectProc.command = ["${getExe pkgs.bash}", "-c", "nmcli dev wifi connect '" + ssid + "'"]
+            }
+            wifiConnectProc.running = true
+        }
+
+        function disconnectWifi() {
+            wifiDisconnectProc.running = true
+        }
+
+        function getWifiIcon(signal) {
+            if (signal >= 75) return "󰤨"
+            if (signal >= 50) return "󰤥"
+            if (signal >= 25) return "󰤢"
+            return "󰤟"
+        }
+
+        Timer {
+            interval: 30000
+            running: true
+            repeat: true
+            triggeredOnStart: true
+            onTriggered: {
+                wifiStatusProc.running = true
+                if (root.wifiEnabled) {
+                    scanWifi()
+                }
+            }
         }
 
         function setVolume(newVal) {
@@ -550,6 +722,293 @@ if isNiri then
             }
         }
 
+        // Wifi Network Card Component
+        component WifiNetworkCard: Rectangle {
+            id: wifiCard
+
+            property string ssid: ""
+            property int signal: 0
+            property bool secure: false
+            property bool active: false
+            property bool connecting: false
+            property bool saved: false
+            property var controlTheme: null
+
+            height: 50
+            radius: 8
+            color: controlTheme?.bg || "#2E3440"
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 10
+                spacing: 10
+
+                Text {
+                    text: root.getWifiIcon(wifiCard.signal)
+                    font.family: wifiCard.controlTheme?.fontFamily || "monospace"
+                    font.pixelSize: 18
+                    color: wifiCard.active ? (wifiCard.controlTheme?.green || "#A3BE8C") : (wifiCard.controlTheme?.fgMuted || "#434C5E")
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 2
+
+                    Text {
+                        text: wifiCard.ssid
+                        font.family: wifiCard.controlTheme?.fontFamily || "monospace"
+                        font.pixelSize: 12
+                        font.bold: wifiCard.active
+                        color: wifiCard.controlTheme?.fg || "#D8DEE9"
+                        elide: Text.ElideRight
+                        Layout.fillWidth: true
+                    }
+
+                    Text {
+                        text: {
+                            if (wifiCard.connecting) return "Connecting..."
+                            if (wifiCard.active) return "Connected"
+                            if (wifiCard.saved) return "Saved"
+                            if (wifiCard.secure) return "Secured"
+                            return "Open"
+                        }
+                        font.family: wifiCard.controlTheme?.fontFamily || "monospace"
+                        font.pixelSize: 10
+                        color: wifiCard.active ? (wifiCard.controlTheme?.green || "#A3BE8C") : (wifiCard.controlTheme?.fgMuted || "#434C5E")
+                    }
+                }
+
+                Text {
+                    text: wifiCard.signal + "%"
+                    font.family: wifiCard.controlTheme?.fontFamily || "monospace"
+                    font.pixelSize: 10
+                    color: wifiCard.controlTheme?.fgMuted || "#434C5E"
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    if (wifiCard.active) {
+                        root.disconnectWifi()
+                    } else if (wifiCard.saved) {
+                        root.connectWifi(wifiCard.ssid, "")
+                    } else if (wifiCard.secure) {
+                        root.pendingWifiSsid = wifiCard.ssid
+                        root.wifiPasswordPageVisible = true
+                    } else {
+                        root.connectWifi(wifiCard.ssid, "")
+                    }
+                }
+            }
+        }
+
+        // Wifi Empty State Component
+        component WifiEmptyState: Rectangle {
+            property var controlTheme: null
+
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+
+            ColumnLayout {
+                anchors.centerIn: parent
+                spacing: 12
+
+                Rectangle {
+                    width: 64
+                    height: 64
+                    radius: 32
+                    color: controlTheme?.bg || "#2E3440"
+                    Layout.alignment: Qt.AlignHCenter
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: root.wifiScanning ? "󰤩" : (root.wifiEnabled ? "󰤫" : "󰤮")
+                        font.family: controlTheme?.fontFamily || "monospace"
+                        font.pixelSize: 28
+                        color: controlTheme?.fgMuted || "#434C5E"
+                        opacity: 0.5
+                    }
+                }
+
+                Text {
+                    text: {
+                        if (!root.wifiEnabled) return "Wi-Fi Off"
+                        if (root.wifiScanning) return "Scanning..."
+                        return "No networks found"
+                    }
+                    font.family: controlTheme?.fontFamily || "monospace"
+                    font.pixelSize: 12
+                    color: controlTheme?.fgMuted || "#434C5E"
+                    opacity: 0.7
+                    Layout.alignment: Qt.AlignHCenter
+                }
+
+                Text {
+                    text: {
+                        if (!root.wifiEnabled) return "Turn on to see networks"
+                        if (root.wifiScanning) return "Looking for networks"
+                        return "Try scanning again"
+                    }
+                    font.family: controlTheme?.fontFamily || "monospace"
+                    font.pixelSize: 10
+                    color: controlTheme?.fgMuted || "#434C5E"
+                    opacity: 0.5
+                    Layout.alignment: Qt.AlignHCenter
+                }
+            }
+        }
+
+        // Wifi Password Page Component
+        component WifiPasswordPage: Rectangle {
+            id: passPage
+
+            property string targetSsid: ""
+            property var controlTheme: null
+
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            color: controlTheme?.bgAlt || "#3B4252"
+
+            ColumnLayout {
+                anchors.centerIn: parent
+                width: parent.width * 0.85
+                spacing: 20
+
+                Text {
+                    text: "󰤁"
+                    font.family: controlTheme?.fontFamily || "monospace"
+                    font.pixelSize: 48
+                    color: controlTheme?.blue || "#81A1C1"
+                    Layout.alignment: Qt.AlignHCenter
+                }
+
+                ColumnLayout {
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 5
+
+                    Text {
+                        text: "Password Required"
+                        color: controlTheme?.fgMuted || "#434C5E"
+                        font.pixelSize: 12
+                        font.bold: true
+                        Layout.alignment: Qt.AlignHCenter
+                    }
+
+                    Text {
+                        text: passPage.targetSsid
+                        color: controlTheme?.fg || "#D8DEE9"
+                        font.bold: true
+                        font.pixelSize: 14
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.maximumWidth: parent.width
+                        elide: Text.ElideRight
+                    }
+                }
+
+                Rectangle {
+                    id: passInput
+                    Layout.fillWidth: true
+                    height: 45
+                    radius: 8
+                    color: controlTheme?.bg || "#2E3440"
+
+                    TextInput {
+                        id: passTextInput
+                        anchors.fill: parent
+                        verticalAlignment: TextInput.AlignVCenter
+                        leftPadding: 15
+                        rightPadding: 40
+                        echoMode: showPassToggle.checked ? TextInput.Normal : TextInput.Password
+                        color: controlTheme?.fg || "#D8DEE9"
+                        font.family: controlTheme?.fontFamily || "monospace"
+                        font.pixelSize: 12
+
+                        Text {
+                            anchors.right: parent.right
+                            anchors.rightMargin: 10
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: showPassToggle.checked ? "󰤁" : "󰤂"
+                            font.family: controlTheme?.fontFamily || "monospace"
+                            font.pixelSize: 16
+                            color: controlTheme?.fgMuted || "#434C5E"
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: showPassToggle.checked = !showPassToggle.checked
+                            }
+                        }
+                    }
+
+                    Item {
+                        id: showPassToggle
+                        property bool checked: false
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.topMargin: 10
+                    spacing: 15
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 40
+                        radius: 8
+                        color: controlTheme?.bg || "#2E3440"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Cancel"
+                            font.family: controlTheme?.fontFamily || "monospace"
+                            font.pixelSize: 12
+                            color: controlTheme?.fg || "#D8DEE9"
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                passTextInput.text = ""
+                                showPassToggle.checked = false
+                                root.wifiPasswordPageVisible = false
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 40
+                        radius: 8
+                        color: controlTheme?.blue || "#81A1C1"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Connect"
+                            font.family: controlTheme?.fontFamily || "monospace"
+                            font.pixelSize: 12
+                            font.bold: true
+                            color: controlTheme?.bg || "#2E3440"
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (passTextInput.text.length > 0) {
+                                    root.connectWifi(passPage.targetSsid, passTextInput.text)
+                                    passTextInput.text = ""
+                                    showPassToggle.checked = false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // Process to get current brightness
         Process {
             id: brightnessGetProc
@@ -623,7 +1082,11 @@ if isNiri then
                 focus: true
                 Keys.onPressed: event => {
                     if (event.key === Qt.Key_Escape) {
-                        if (root.bluetoothPageVisible) {
+                        if (root.wifiPasswordPageVisible) {
+                            root.wifiPasswordPageVisible = false
+                        } else if (root.wifiPageVisible) {
+                            root.wifiPageVisible = false
+                        } else if (root.bluetoothPageVisible) {
                             root.bluetoothPageVisible = false
                         } else {
                             root.shown = false
@@ -646,12 +1109,12 @@ if isNiri then
                     anchors.margins: 14
                     spacing: 12
 
-                    // Fixed Header - shows Control Center or Bluetooth
+                    // Fixed Header - shows Control Center, Bluetooth, or WiFi
                     RowLayout {
                         Layout.fillWidth: true
 
                         Text {
-                            text: root.bluetoothPageVisible ? "Bluetooth" : "Control Center"
+                            text: root.wifiPasswordPageVisible ? "Password" : (root.wifiPageVisible ? "Wi-Fi" : (root.bluetoothPageVisible ? "Bluetooth" : "Control Center"))
                             color: root.theme?.darkBlue || "#5E81AC"
                             font.pixelSize: 16
                             font.bold: true
@@ -662,14 +1125,14 @@ if isNiri then
 
                         // Show Power toggle when Bluetooth page is visible
                         Text {
-                            visible: root.bluetoothPageVisible
+                            visible: root.bluetoothPageVisible && !root.wifiPageVisible && !root.wifiPasswordPageVisible
                             text: "Power"
                             color: root.theme?.fgMuted || "#434C5E"
                             font.pixelSize: 10
                         }
 
                         Rectangle {
-                            visible: root.bluetoothPageVisible
+                            visible: root.bluetoothPageVisible && !root.wifiPageVisible && !root.wifiPasswordPageVisible
                             width: 44
                             height: 24
                             radius: 12
@@ -695,6 +1158,53 @@ if isNiri then
                             }
                         }
 
+                        // Show WiFi toggle when WiFi page is visible
+                        Text {
+                            visible: root.wifiPageVisible && !root.wifiPasswordPageVisible
+                            text: "Wi-Fi"
+                            color: root.theme?.fgMuted || "#434C5E"
+                            font.pixelSize: 10
+                        }
+
+                        Rectangle {
+                            visible: root.wifiPageVisible && !root.wifiPasswordPageVisible
+                            width: 44
+                            height: 24
+                            radius: 12
+                            color: root.wifiEnabled ? (root.theme?.green || "#A3BE8C") : (root.theme?.fgMuted || "#434C5E")
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    root.toggleWifi()
+                                }
+                            }
+
+                            Rectangle {
+                                x: root.wifiEnabled ? 22 : 2
+                                y: 2
+                                width: 20
+                                height: 20
+                                radius: 10
+                                color: "#FFFFFF"
+                            }
+                        }
+
+                        // Scan button for WiFi page
+                        Text {
+                            visible: root.wifiPageVisible && !root.wifiPasswordPageVisible
+                            text: "Scan"
+                            color: root.theme?.fgMuted || "#434C5E"
+                            font.pixelSize: 10
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.scanWifi()
+                            }
+                        }
+
                         Text {
                             text: "X"
                             color: closeMa.containsMouse ? root.theme?.darkBlue : root.theme?.fg
@@ -705,7 +1215,11 @@ if isNiri then
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 onClicked: {
-                                    if (root.bluetoothPageVisible) {
+                                    if (root.wifiPasswordPageVisible) {
+                                        root.wifiPasswordPageVisible = false
+                                    } else if (root.wifiPageVisible) {
+                                        root.wifiPageVisible = false
+                                    } else if (root.bluetoothPageVisible) {
                                         root.bluetoothPageVisible = false
                                     } else {
                                         root.shown = false
@@ -813,9 +1327,50 @@ if isNiri then
                         }
                     }
 
-                    // Regular content (hidden when Bluetooth page is visible)
+                    // Show WiFi page as full content when visible
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: 520
+                        radius: 8
+                        color: root.theme?.bgAlt || "#3B4252"
+                        visible: root.wifiPageVisible
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 12
+                            spacing: 8
+
+                            ListView {
+                                id: wifiListView
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                clip: true
+                                spacing: 5
+
+                                model: root.wifiNetworks
+
+                                delegate: WifiNetworkCard {
+                                    width: ListView.view.width
+                                    ssid: modelData.ssid || ""
+                                    signal: modelData.signal || 0
+                                    secure: modelData.secure || false
+                                    active: modelData.active || false
+                                    saved: modelData.saved || false
+                                    connecting: root.wifiConnecting && root.pendingWifiSsid === modelData.ssid
+                                    controlTheme: root.theme
+                                }
+                            }
+
+                            WifiEmptyState {
+                                visible: !root.wifiEnabled || (root.wifiNetworks.length === 0 && !root.wifiScanning)
+                                controlTheme: root.theme
+                            }
+                        }
+                    }
+
+                    // Regular content (hidden when Bluetooth or WiFi page is visible)
                     ColumnLayout {
-                        visible: !root.bluetoothPageVisible
+                        visible: !root.bluetoothPageVisible && !root.wifiPageVisible && !root.wifiPasswordPageVisible
                         spacing: 12
 
                     GridLayout {
@@ -828,8 +1383,11 @@ if isNiri then
                             icon: "󰤨"
                             iconOff: "󰤭"
                             label: "WiFi"
-                            isOn: true
+                            isOn: root.wifiEnabled
                             controlTheme: root.theme
+                            onClick: () => {
+                                root.wifiPageVisible = !root.wifiPageVisible
+                            }
                         }
 
                         QuickToggle {
@@ -1049,6 +1607,26 @@ if isNiri then
                         controlTheme: root.theme
                     }
                     }
+                }
+            }
+
+            // WiFi password overlay - appears on top of any page
+            Rectangle {
+                visible: root.wifiPasswordPageVisible
+                anchors.fill: parent
+                color: Qt.rgba(0, 0, 0, 0.5)
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: root.wifiPasswordPageVisible = false
+                }
+
+                WifiPasswordPage {
+                    anchors.centerIn: parent
+                    width: parent.width * 0.85
+                    height: 250
+                    targetSsid: root.pendingWifiSsid
+                    controlTheme: root.theme
                 }
             }
         }
