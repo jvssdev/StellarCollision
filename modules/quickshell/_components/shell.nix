@@ -281,6 +281,12 @@ in
                     } else if (line.startsWith("SIG:")) {
                         let sig = parseInt(line.substring(4))
                         if (!isNaN(sig)) network.strength = sig
+                        if (network.type === "wifi" && network.connected) {
+                            if (network.strength < 25) network.icon = "󰤟"
+                            else if (network.strength < 50) network.icon = "󰤢"
+                            else if (network.strength < 75) network.icon = "󰤥"
+                            else network.icon = "󰤨"
+                        }
                     } else if (line.includes("|")) {
                         let parts = line.split("|")
                         let wifiEnabled = parts[0] === "1"
