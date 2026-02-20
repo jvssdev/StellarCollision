@@ -60,7 +60,6 @@ in
       ControlCenter {
           id: controlCenter
           theme: theme
-          volumeObj: volume
           batteryObj: battery
       }
 

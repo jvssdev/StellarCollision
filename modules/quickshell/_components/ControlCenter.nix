@@ -6,7 +6,7 @@
   ...
 }:
 let
-  inherit (lib) getExe;
+  inherit (lib) getExe getExe';
 in
 if isNiri then
   ''
@@ -18,15 +18,45 @@ if isNiri then
     import Quickshell.Io
     import Quickshell.Bluetooth
     import Quickshell.Services.Mpris
+    import Quickshell.Services.Pipewire
 
     Scope {
         id: root
         property bool shown: false
         property var theme: null
-        property var volumeObj: null
         property var batteryObj: null
         property int brightnessLevel: 50
         property bool bluetoothPageVisible: false
+
+        // Pipewire audio
+        property var audioSink: Pipewire.defaultAudioSink
+        property bool audioReady: audioSink !== null && audioSink.audio !== null && (audioSink.bound || false)
+        property var audioObj: audioReady ? audioSink.audio : null
+        property int volumeLevel: (audioObj !== null) ? Math.round((audioObj.volume || 0.5) * 100) : 50
+        property bool isMuted: (audioObj !== null) ? (audioObj.muted || false) : false
+
+        // Keep audio sink alive
+        PwObjectTracker {
+            objects: [audioSink]
+        }
+
+        function setVolume(newVal) {
+            if (audioReady && audioObj) {
+                audioObj.muted = false
+                audioObj.volume = newVal / 100
+            } else {
+                volumeSetProc.command = ["${getExe' pkgs.wireplumber "wpctl"}", "set-volume", "@DEFAULT_AUDIO_SINK@", (newVal / 100).toString()]
+                volumeSetProc.running = true
+            }
+        }
+
+        function toggleMute() {
+            if (audioReady && audioObj) {
+                audioObj.muted = !audioObj.muted
+            } else {
+                volumeMuteProc.running = true
+            }
+        }
 
         function toggle() {
             shown = !shown
@@ -555,6 +585,17 @@ if isNiri then
             onTriggered: brightnessGetProc.running = true
         }
 
+        // Fallback volume control using wpctl
+        Process {
+            id: volumeSetProc
+            running: false
+        }
+
+        Process {
+            id: volumeMuteProc
+            command: ["${getExe' pkgs.wireplumber "wpctl"}", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"]
+        }
+
         PanelWindow {
             id: ccWindow
             visible: root.shown
@@ -972,12 +1013,15 @@ if isNiri then
 
                     SliderCard {
                         Layout.fillWidth: true
-                        icon: root.volumeObj?.muted ? "󰖁" : "󰕾"
+                        icon: root.isMuted ? "󰖁" : "󰕾"
                         label: "Volume"
-                        value: root.volumeObj?.level || 50
+                        value: root.volumeLevel
                         accentColor: root.theme?.blue || "#81A1C1"
-                        isMuted: root.volumeObj?.muted || false
+                        isMuted: root.isMuted
                         controlTheme: root.theme
+                        valueChangedHandler: (newVal) => {
+                            root.setVolume(newVal)
+                        }
                     }
 
                     SliderCard {
