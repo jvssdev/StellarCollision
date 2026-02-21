@@ -32,8 +32,11 @@ if isNiri then
         property bool wifiPageVisible: false
 
         onBluetoothPageVisibleChanged: {
-            if (bluetoothPageVisible && !BluetoothService.enabled) {
-                BluetoothService.setBluetoothEnabled(true);
+            if (bluetoothPageVisible) {
+                if (!BluetoothService.enabled) {
+                    BluetoothService.setBluetoothEnabled(true);
+                }
+                BluetoothService.setScanActive(true);
             }
         }
         property bool wifiEnabled: false
@@ -1195,6 +1198,25 @@ if isNiri then
                                     radius: 8
                                     color: modelData.connected ? Qt.rgba(0.4, 0.8, 0.4, 0.15) : root.theme?.bg || "#2E3440"
 
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            if (modelData.connected) {
+                                                BluetoothService.disconnectDevice(modelData);
+                                            } else {
+                                                if (modelData.paired || modelData.trusted) {
+                                                    BluetoothService.connectDevice(modelData);
+                                                } else {
+                                                    BluetoothService.pairDevice(modelData);
+                                                }
+                                            }
+                                        }
+                                        onPressAndHold: {
+                                            BluetoothService.forgetDevice(modelData);
+                                        }
+                                    }
+
                                     RowLayout {
                                         anchors.fill: parent
                                         anchors.margins: 12
@@ -1221,33 +1243,11 @@ if isNiri then
 
                                         Item { Layout.fillWidth: true }
 
-                                        MouseArea {
-                                            width: 40
-                                            height: 40
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: {
-                                                if (modelData.connected) {
-                                                    BluetoothService.disconnectDevice(modelData);
-                                                } else {
-                                                    if (modelData.paired || modelData.trusted) {
-                                                        BluetoothService.connectDevice(modelData);
-                                                    } else {
-                                                        BluetoothService.pairDevice(modelData);
-                                                    }
-                                                }
-                                            }
-                                            Text {
-                                                anchors.centerIn: parent
-                                                text: modelData.connected ? "󰅙" : "󰂯"
-                                                color: modelData.connected ? root.theme?.red : root.theme?.blue
-                                                font.pixelSize: 18
-                                            }
+                                        Text {
+                                            text: modelData.connected ? "󰅙" : "󰂯"
+                                            color: modelData.connected ? root.theme?.red : root.theme?.blue
+                                            font.pixelSize: 18
                                         }
-                                    }
-
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        onPressAndHold: BluetoothService.forgetDevice(modelData)
                                     }
                                 }
                             }
