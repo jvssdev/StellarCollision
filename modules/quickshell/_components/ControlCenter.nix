@@ -36,40 +36,26 @@ if isNiri then
         property bool wifiConnecting: false
         property string pendingWifiSsid: ""
         property bool wifiPasswordPageVisible: false
+        property bool airplaneMode: false
 
         onShownChanged: {
-            if (shown && networkObj) {
+            if (shown && networkObj && !root.airplaneMode) {
                 root.wifiEnabled = networkObj.type === "wifi"
                 root.currentWifiSsid = networkObj.ssid || ""
             }
         }
 
         onWifiPageVisibleChanged: {
-            if (wifiPageVisible) {
-                if (networkObj) {
-                    root.wifiEnabled = networkObj.type === "wifi"
-                }
+            if (wifiPageVisible && networkObj && !root.airplaneMode) {
+                root.wifiEnabled = networkObj.type === "wifi"
                 wifiListProc.running = true
             }
         }
 
         onNetworkObjChanged: {
-            if (networkObj) {
+            if (networkObj && !root.airplaneMode) {
                 root.wifiEnabled = networkObj.type === "wifi"
                 root.currentWifiSsid = networkObj.ssid || ""
-            }
-        }
-
-        Timer {
-            interval: 1000
-            running: true
-            repeat: true
-            triggeredOnStart: true
-            onTriggered: {
-                if (networkObj) {
-                    root.wifiEnabled = networkObj.type === "wifi"
-                    root.currentWifiSsid = networkObj.ssid || ""
-                }
             }
         }
 
@@ -198,10 +184,24 @@ if isNiri then
         }
 
         function toggleWifi() {
+            if (root.airplaneMode) return
             var newState = !root.wifiEnabled
             root.wifiEnabled = newState
-            wifiToggleProc.command = ["${getExe pkgs.bash}", "-c", "busctl set-property org.freedesktop.NetworkManager /org/freedesktop/NetworkManager org.freedesktop.NetworkManager.Wireless Enabled b " + (newState ? "true" : "false")]
+            wifiToggleProc.command = ["${getExe pkgs.bash}", "-c", "nmcli radio wifi " + (newState ? "on" : "off")]
             wifiToggleProc.running = true
+        }
+
+        function toggleAirplaneMode() {
+            root.airplaneMode = !root.airplaneMode
+            if (root.airplaneMode) {
+                root.wifiEnabled = false
+                wifiToggleProc.command = ["${getExe pkgs.bash}", "-c", "nmcli radio wifi off"]
+                wifiToggleProc.running = true
+            } else {
+                root.wifiEnabled = false
+                wifiToggleProc.command = ["${getExe pkgs.bash}", "-c", "nmcli radio wifi on"]
+                wifiToggleProc.running = true
+            }
         }
 
         function connectWifi(ssid, password) {
@@ -1439,6 +1439,7 @@ if isNiri then
                             isOn: root.wifiEnabled
                             controlTheme: root.theme
                             onClick: () => {
+                                if (root.airplaneMode) return
                                 root.wifiPageVisible = !root.wifiPageVisible
                             }
                         }
@@ -1477,9 +1478,10 @@ if isNiri then
                             icon: "󰀝"
                             iconOff: "󰀞"
                             label: "Airplane"
-                            isOn: false
+                            isOn: root.airplaneMode
                             accentColor: root.theme?.magenta || "#B48EAD"
                             controlTheme: root.theme
+                            onClick: () => root.toggleAirplaneMode()
                         }
 
                         QuickToggle {
