@@ -30,6 +30,12 @@ if isNiri then
         property int brightnessLevel: 50
         property bool bluetoothPageVisible: false
         property bool wifiPageVisible: false
+
+        onBluetoothPageVisibleChanged: {
+            if (bluetoothPageVisible && !BluetoothService.enabled) {
+                BluetoothService.setBluetoothEnabled(true);
+            }
+        }
         property bool wifiEnabled: false
         property bool wifiScanning: false
         property var wifiNetworks: []
@@ -1167,11 +1173,11 @@ if isNiri then
                                 }
                                 Text {
                                     text: "Scan"
-                                    color: BluetoothService.scanningActive ? root.theme?.yellow : root.theme?.fgMuted
+                                    color: BluetoothService.discovering ? root.theme?.yellow : root.theme?.fgMuted
                                     MouseArea {
                                         anchors.fill: parent
                                         cursorShape: Qt.PointingHandCursor
-                                        onClicked: BluetoothService.setScanActive(!BluetoothService.scanningActive)
+                                        onClicked: BluetoothService.setScanActive(!BluetoothService.discovering)
                                     }
                                 }
                             }
@@ -1247,8 +1253,8 @@ if isNiri then
                             }
 
                             Text {
-                                visible: BluetoothService.enabled && (!BluetoothService.devices || BluetoothService.devices.length === 0)
-                                text: BluetoothService.scanningActive ? "Searching for devices..." : "No devices found"
+                                visible: BluetoothService.enabled && BluetoothService.available
+                                text: BluetoothService.discovering ? "Searching for devices..." : "No devices found"
                                 color: root.theme?.fgMuted
                                 Layout.alignment: Qt.AlignHCenter
                             }

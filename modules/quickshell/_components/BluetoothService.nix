@@ -15,120 +15,188 @@ in
 
     readonly property BluetoothAdapter adapter: Bluetooth.defaultAdapter
 
-    property bool ctlAvailable: false
-    readonly property bool bluetoothAvailable: !!adapter || root.ctlAvailable
-    readonly property bool enabled: adapter ? adapter.enabled : root.ctlPowered
-    property bool ctlPowered: false
-    property bool ctlDiscovering: false
-    property bool ctlDiscoverable: false
+    readonly property bool available: adapter !== null
+    readonly property bool enabled: (adapter && adapter.enabled) ?? false
+    readonly property bool discovering: (adapter && adapter.discovering) ?? false
 
-    readonly property bool scanningActive: adapter ? (adapter.discovering || root.ctlDiscovering) : root.ctlDiscovering
-    readonly property bool discoverable: adapter ? adapter.discoverable : root.ctlDiscoverable
-
-    property var discoveredDevices: []
+    property var _devicesList: []
 
     readonly property var devices: {
-      if (adapter && adapter.devices && adapter.devices.count > 0) {
-        var result = [];
-        for (var i = 0; i < adapter.devices.count; i++) {
-          result.push(adapter.devices.get(i));
-        }
-        return result;
+      if (!adapter || !adapter.devices) {
+        return root._devicesList;
       }
-      return root.discoveredDevices;
+      try {
+        var result = [];
+        var count = adapter.devices.count || 0;
+        for (var i = 0; i < count; i++) {
+          var dev = adapter.devices.get(i);
+          if (dev) result.push(dev);
+        }
+        return result.length > 0 ? result : root._devicesList;
+      } catch (e) {
+        return root._devicesList;
+      }
     }
 
-    readonly property var connectedDevices: {
+    property bool _wasEnabled: false
+
+    Component.onCompleted: {
+      _wasEnabled = root.enabled;
+    }
+
+    onEnabledChanged: {
+      if (root.enabled && !_wasEnabled) {
+        root.setScanActive(true);
+      }
+      _wasEnabled = root.enabled;
+    }
+
+    readonly property var pairedDevices: {
       if (!adapter || !adapter.devices) {
         return [];
       }
       var result = [];
       for (var i = 0; i < adapter.devices.count; i++) {
         var dev = adapter.devices.get(i);
-        if (dev && dev.connected) {
+        if (dev && (dev.paired || dev.trusted)) {
           result.push(dev);
         }
       }
       return result;
     }
 
-    Timer {
-      id: initDelayTimer
-      interval: 3000
-      running: true
-      repeat: false
-      onTriggered: pollCtlState()
+    function sortDevices(devices) {
+      return devices.sort((a, b) => {
+        const aName = a.name || a.deviceName || "";
+        const bName = b.name || b.deviceName || "";
+        const aAddr = a.address || "";
+        const bAddr = b.address || "";
+
+        const aHasRealName = aName.indexOf(" ") !== -1 && aName.length > 3;
+        const bHasRealName = bName.indexOf(" ") !== -1 && bName.length > 3;
+
+        if (aHasRealName && !bHasRealName) return -1;
+        if (!aHasRealName && bHasRealName) return 1;
+
+        if (aHasRealName && bHasRealName) {
+          return aName.localeCompare(bName);
+        }
+
+        return aAddr.localeCompare(bAddr);
+      });
     }
 
-    Timer {
-      id: pollTimer
-      interval: 5000
-      repeat: true
-      running: true
-      onTriggered: pollCtlState()
-    }
+    function getDeviceIcon(device) {
+      if (!device) return "bluetooth";
+      const name = (device.name || device.deviceName || "").toLowerCase();
+      const icon = (device.icon || "").toLowerCase();
 
-    Component.onCompleted: {
-      pollCtlState();
-    }
-
-    function pollCtlState() {
-      if (!adapter && !ctlAvailable) {
-        ctlShowProcess.running = true;
-        return;
+      if (icon.indexOf("headset") !== -1 || name.indexOf("headset") !== -1 ||
+          icon.indexOf("airpod") !== -1 || name.indexOf("airpod") !== -1 ||
+          icon.indexOf("headphone") !== -1 || name.indexOf("headphone") !== -1) {
+        return "headset";
       }
-      ctlShowProcess.running = true;
+
+      if (icon.indexOf("mouse") !== -1 || name.indexOf("mouse") !== -1) {
+        return "mouse";
+      }
+
+      if (icon.indexOf("keyboard") !== -1 || name.indexOf("keyboard") !== -1) {
+        return "keyboard";
+      }
+
+      if (icon.indexOf("phone") !== -1 || name.indexOf("iphone") !== -1 ||
+          icon.indexOf("android") !== -1 || name.indexOf("samsung") !== -1) {
+        return "phone";
+      }
+
+      if (icon.indexOf("watch") !== -1 || name.indexOf("watch") !== -1) {
+        return "watch";
+      }
+
+      if (icon.indexOf("speaker") !== -1 || name.indexOf("speaker") !== -1) {
+        return "speaker";
+      }
+
+      if (icon.indexOf("display") !== -1 || icon.indexOf("tv") !== -1 || name.indexOf("tv") !== -1) {
+        return "tv";
+      }
+
+      return "bluetooth";
     }
 
-    Process {
-      id: ctlShowProcess
-      command: ["bluetoothctl", "show"]
-      running: false
-      stdout: StdioCollector {
-        id: ctlStdout
-      }
-      onExited: function() {
+    function canConnect(device) {
+      if (!device) return false;
+      return !device.paired && !device.pairing && !device.blocked;
+    }
+
+    function canDisconnect(device) {
+      if (!device) return false;
+      return device.connected && !device.pairing && !device.blocked;
+    }
+
+    function canPair(device) {
+      if (!device) return false;
+      return !device.connected && !device.paired && !device.trusted && !device.pairing && !device.blocked;
+    }
+
+    function isDeviceBusy(device) {
+      if (!device) return false;
+      return device.pairing || device.state === 2 || device.state === 3;
+    }
+
+    function setBluetoothEnabled(state) {
+      if (!adapter) return;
+      try {
+        adapter.enabled = state;
+      } catch (e) {}
+    }
+
+    function setScanActive(active) {
+      if (!adapter) return;
+      
+      if (active) {
+        if (!adapter.enabled) {
+          try {
+            adapter.enabled = true;
+          } catch (e) {}
+        }
+        scanTimer.start();
+      } else {
         try {
-          var text = ctlStdout.text || "";
-          var lines = text.split('\n');
-          var foundController = false;
-          var powered = false;
-          var discoverable = false;
-          var discovering = false;
-
-          for (var i = 0; i < lines.length; i++) {
-            var line = lines[i].trim();
-            if (line.indexOf("Controller") === 0) {
-              foundController = true;
-            }
-            var mp = line.match(/\bPowered:\s*(yes|no)\b/i);
-            if (mp) powered = (mp[1].toLowerCase() === "yes");
-            var md = line.match(/\bDiscoverable:\s*(yes|no)\b/i);
-            if (md) discoverable = (md[1].toLowerCase() === "yes");
-            var ms = line.match(/\bDiscovering:\s*(yes|no)\b/i);
-            if (ms) discovering = (ms[1].toLowerCase() === "yes");
-          }
-
-          root.ctlAvailable = foundController;
-          root.ctlPowered = powered;
-          root.ctlDiscoverable = discoverable;
-          root.ctlDiscovering = discovering;
+          adapter.discovering = false;
+          adapter.discoverable = false;
         } catch (e) {}
       }
     }
 
-    Process {
-      id: btPowerOnProcess
-      command: ["bluetoothctl", "power", "on"]
+    Timer {
+      id: scanTimer
+      interval: 500
+      repeat: false
+      onTriggered: {
+        if (adapter && adapter.enabled) {
+          try {
+            adapter.discovering = true;
+            adapter.discoverable = true;
+          } catch (e) {}
+        }
+        refreshDevicesTimer.start();
+      }
+    }
+
+    Timer {
+      id: refreshDevicesTimer
+      interval: 2000
+      repeat: true
+      running: root.enabled
+      onTriggered: {
+        refreshDevicesProcess.running = true;
+      }
     }
 
     Process {
-      id: bluetoothctlScanProcess
-      command: ["bluetoothctl", "scan", "on"]
-    }
-
-    Process {
-      id: devicesListProcess
+      id: refreshDevicesProcess
       command: ["bluetoothctl", "devices"]
       running: false
       stdout: StdioCollector {
@@ -150,68 +218,11 @@ in
               }
             }
           }
-          root.discoveredDevices = devicesArray;
+          if (devicesArray.length > 0) {
+            root._devicesList = devicesArray;
+          }
         } catch (e) {}
       }
-    }
-
-    Timer {
-      id: devicesPollTimer
-      interval: 3000
-      repeat: true
-      running: false
-      onTriggered: devicesListProcess.running = true
-    }
-
-    function setScanActive(active) {
-      if (active) {
-        if (adapter) {
-          try {
-            adapter.enabled = true;
-          } catch (e) {}
-        }
-        btPowerOnProcess.running = true;
-        bluetoothctlScanProcess.running = true;
-        devicesListProcess.running = true;
-        devicesPollTimer.running = true;
-      } else {
-        Quickshell.execDetached(["bluetoothctl", "scan", "off"]);
-        devicesPollTimer.running = false;
-      }
-    }
-
-    function setBluetoothEnabled(state) {
-      if (adapter) {
-        try {
-          adapter.enabled = state;
-        } catch (e) {}
-      }
-      Quickshell.execDetached(["bluetoothctl", "power", state ? "on" : "off"]);
-      root.ctlPowered = state;
-    }
-
-    function getDeviceIcon(device) {
-      if (!device) return "󰂯";
-      var n = (device.name || device.alias || "").toLowerCase();
-      if (n.indexOf("bud") !== -1 || n.indexOf("airpod") !== -1 || n.indexOf("head") !== -1) return "󰒘";
-      if (n.indexOf("mouse") !== -1) return "󰍽";
-      if (n.indexOf("keyboard") !== -1) return "󰌌";
-      return "󰂯";
-    }
-
-    function canConnect(device) {
-      if (!device) return false;
-      return !device.connected && (device.paired || device.trusted) && !device.pairing && !device.blocked;
-    }
-
-    function canDisconnect(device) {
-      if (!device) return false;
-      return device.connected && !device.pairing && !device.blocked;
-    }
-
-    function canPair(device) {
-      if (!device) return false;
-      return !device.connected && !device.paired && !device.trusted && !device.pairing && !device.blocked;
     }
 
     function connectDevice(device) {
