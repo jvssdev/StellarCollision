@@ -50,6 +50,7 @@ let
   };
   LockContext = import (componentsDir + "/LockContext.nix") { };
   LockSurface = import (componentsDir + "/LockSurface.nix") { };
+  BluetoothService = import (componentsDir + "/BluetoothService.nix") { inherit lib; };
   Shell = import (componentsDir + "/shell.nix") {
     inherit pkgs lib config;
     quickshellPackage = cfg.package;
@@ -123,6 +124,7 @@ in
       '';
       "quickshell/LockContext.qml".text = LockContext;
       "quickshell/LockSurface.qml".text = LockSurface;
+      "quickshell/BluetoothService.qml".text = BluetoothService;
     };
   };
 }

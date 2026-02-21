@@ -16,9 +16,10 @@ if isNiri then
     import Quickshell
     import Quickshell.Wayland
     import Quickshell.Io
-    import Quickshell.Bluetooth
     import Quickshell.Services.Mpris
     import Quickshell.Services.Pipewire
+
+    import "BluetoothService.qml"
 
     Scope {
         id: root
@@ -67,49 +68,6 @@ if isNiri then
 
         PwObjectTracker {
             objects: [audioSink]
-        }
-
-        QtObject {
-            id: btService
-            property var adapter: Bluetooth.defaultAdapter
-            readonly property bool isPowered: adapter ? adapter.enabled : false
-            readonly property bool isDiscovering: adapter ? adapter.discovering : false
-            readonly property var devicesList: {
-                if (!adapter || !adapter.devices) return [];
-                let list = [];
-                for (let i = 0; i < adapter.devices.count; i++) {
-                    list.push(adapter.devices.get(i));
-                }
-                return list.sort((a, b) => {
-                    if (a.connected !== b.connected) return b.connected - a.connected;
-                    return (a.alias || a.name || "").localeCompare(b.alias || b.name || "");
-                });
-            }
-            function togglePower() { if (adapter) adapter.enabled = !adapter.enabled; }
-            function toggleScan() { 
-                if (!adapter) return;
-                adapter.discoverable = true;
-                adapter.discovering = true;
-            }
-            function toggleConnection(device) {
-                if (!device) return;
-                if (device.connected) {
-                    device.disconnect();
-                } else {
-                    device.trusted = true;
-                    if (!device.paired) device.pair();
-                    else device.connect();
-                }
-            }
-            function forgetDevice(device) { if (device) device.forget(); }
-            function getDeviceIcon(device) {
-                if (!device) return "󰂯";
-                let n = (device.name || device.alias || "").toLowerCase();
-                if (n.includes("bud") || n.includes("airpod") || n.includes("head")) return "";
-                if (n.includes("mouse")) return "󰍽";
-                if (n.includes("keyboard")) return "";
-                return "󰂯";
-            }
         }
 
         Process {
@@ -1087,16 +1045,16 @@ if isNiri then
                             width: 44
                             height: 24
                             radius: 12
-                            color: btService.isPowered ? (root.theme?.green || "#A3BE8C") : (root.theme?.fgMuted || "#434C5E")
+                            color: BluetoothService.enabled ? (root.theme?.green || "#A3BE8C") : (root.theme?.fgMuted || "#434C5E")
 
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: btService.togglePower()
+                                onClicked: BluetoothService.setBluetoothEnabled(!BluetoothService.enabled)
                             }
 
                             Rectangle {
-                                x: btService.isPowered ? 22 : 2
+                                x: BluetoothService.enabled ? 22 : 2
                                 y: 2
                                 width: 20
                                 height: 20
@@ -1199,19 +1157,21 @@ if isNiri then
                                 }
                                 Item { Layout.fillWidth: true }
                                 Text {
-                                    text: btService.isPowered ? "󰂯" : "󰂲"
-                                    color: btService.isPowered ? root.theme?.green : root.theme?.fgMuted
+                                    text: BluetoothService.enabled ? "󰂯" : "󰂲"
+                                    color: BluetoothService.enabled ? root.theme?.green : root.theme?.fgMuted
                                     MouseArea {
                                         anchors.fill: parent
-                                        onClicked: btService.togglePower()
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: BluetoothService.setBluetoothEnabled(!BluetoothService.enabled)
                                     }
                                 }
                                 Text {
                                     text: "Scan"
-                                    color: btService.isDiscovering ? root.theme?.yellow : root.theme?.fgMuted
+                                    color: BluetoothService.scanningActive ? root.theme?.yellow : root.theme?.fgMuted
                                     MouseArea {
                                         anchors.fill: parent
-                                        onClicked: btService.toggleScan()
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: BluetoothService.setScanActive(!BluetoothService.scanningActive)
                                     }
                                 }
                             }
@@ -1221,7 +1181,7 @@ if isNiri then
                                 Layout.fillHeight: true
                                 clip: true
                                 spacing: 6
-                                model: btService.devicesList
+                                model: BluetoothService.devices
 
                                 delegate: Rectangle {
                                     width: ListView.view.width
@@ -1235,7 +1195,7 @@ if isNiri then
                                         spacing: 12
 
                                         Text {
-                                            text: btService.getDeviceIcon(modelData)
+                                            text: BluetoothService.getDeviceIcon(modelData)
                                             font.pixelSize: 20
                                         }
 
@@ -1259,7 +1219,17 @@ if isNiri then
                                             width: 40
                                             height: 40
                                             cursorShape: Qt.PointingHandCursor
-                                            onClicked: btService.toggleConnection(modelData)
+                                            onClicked: {
+                                                if (modelData.connected) {
+                                                    BluetoothService.disconnectDevice(modelData);
+                                                } else {
+                                                    if (modelData.paired || modelData.trusted) {
+                                                        BluetoothService.connectDevice(modelData);
+                                                    } else {
+                                                        BluetoothService.pairDevice(modelData);
+                                                    }
+                                                }
+                                            }
                                             Text {
                                                 anchors.centerIn: parent
                                                 text: modelData.connected ? "󰅙" : "󰂯"
@@ -1271,14 +1241,14 @@ if isNiri then
 
                                     MouseArea {
                                         anchors.fill: parent
-                                        onPressAndHold: btService.forgetDevice(modelData)
+                                        onPressAndHold: BluetoothService.forgetDevice(modelData)
                                     }
                                 }
                             }
 
                             Text {
-                                visible: btService.devicesList.length === 0 && btService.isPowered
-                                text: btService.isDiscovering ? "Searching for devices..." : "No devices found"
+                                visible: BluetoothService.enabled && (!BluetoothService.devices || BluetoothService.devices.length === 0)
+                                text: BluetoothService.scanningActive ? "Searching for devices..." : "No devices found"
                                 color: root.theme?.fgMuted
                                 Layout.alignment: Qt.AlignHCenter
                             }
@@ -1348,7 +1318,7 @@ if isNiri then
                                 icon: "󰂯"
                                 iconOff: "󰂲"
                                 label: "Bluetooth"
-                                isOn: btService.isPowered
+                                isOn: BluetoothService.enabled
                                 controlTheme: root.theme
                                 onClick: () => { root.bluetoothPageVisible = !root.bluetoothPageVisible }
                             }
