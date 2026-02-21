@@ -337,7 +337,6 @@ in
             implicitHeight: 20
             color: "transparent"
             Process { id: pavuProcess; command: ["${getExe pkgs.pavucontrol}"] }
-            Process { id: networkManagerProcess; command: ["${getExe' pkgs.networkmanagerapplet "nm-connection-editor"}"] }
             Rectangle {
                 anchors.fill: parent
                 color: theme.bg
@@ -459,11 +458,6 @@ in
                             bold: true
                         }
                         Layout.rightMargin: theme.spacing / 2
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: networkManagerProcess.running = true
-                        }
                     }
                     Text {
                         text: notificationServer.trackedNotifications.count > 0 ? "󰂛" : "󰂚"

@@ -77,7 +77,6 @@ if isNiri then
                 }
                 if (!running && buffer) {
                     var lines = buffer.trim().split("\n")
-                    console.log("WiFi lines:", lines.length, lines)
                     var uniqueSsids = {}
                     var networks = []
                     for (var i = 0; i < lines.length; i++) {
@@ -106,7 +105,6 @@ if isNiri then
                         if (b.active) return 1
                         return b.signal - a.signal
                     })
-                    console.log("WiFi networks:", networks.length, networks)
                     root.wifiNetworks = networks
                     root.wifiScanning = false
                     buffer = ""
@@ -236,13 +234,10 @@ if isNiri then
 
         // Toggle Night Light
         function toggleNightLight() {
-            console.log("Toggle night light called, current state:", root.nightLightEnabled)
             root.nightLightEnabled = !root.nightLightEnabled
             if (root.nightLightEnabled) {
-                console.log("Starting gammastep at " + root.nightLightTemperature + "K...")
                 nightLightOn.startDetached()
             } else {
-                console.log("Stopping gammastep...")
                 nightLightOff.running = true
             }
         }
@@ -331,7 +326,6 @@ if isNiri then
             command: ["${getExe pkgs.bash}", "-c", "pgrep gammastep > /dev/null && echo 1 || echo 0"]
             stdout: SplitParser {
                 onRead: data => {
-                    console.log("Night light check:", data.trim() === "1" ? "running" : "not found")
                     root.nightLightEnabled = data.trim() === "1"
                 }
             }

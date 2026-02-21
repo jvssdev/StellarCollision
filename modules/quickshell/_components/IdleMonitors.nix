@@ -46,31 +46,22 @@ in
           if (action === "dpms off" && isIdle) dpmsOffProc.running = true;
           if (action === "dpms on" && !isIdle) dpmsOnProc.running = true;
       }
-      Process { 
-          id: dpmsOffProc; 
+      Process {
+          id: dpmsOffProc;
           command: ${
             if useNiriDPMS then
               ''["niri", "msg", "action", "power-off-monitors"]''
             else
               ''["${getExe pkgs.wlopm}", "--off", "*"]''
           }
-          stderr: SplitParser {
-              onRead: data => console.log("[dpms off] stderr:", data)
-          }
-          onRunningChanged: running => {
-              if (!running) console.log("[dpms off] exited with code:", dpmsOffProc.exitCode, "exitStatus:", dpmsOffProc.exitStatus)
-          }
       }
-      Process { 
-          id: dpmsOnProc; 
+      Process {
+          id: dpmsOnProc;
           command: ${
             if useNiriDPMS then
               ''["niri", "msg", "action", "power-on-monitors"]''
             else
               ''["${getExe pkgs.wlopm}", "--on", "*"]''
-          }
-          stderr: SplitParser {
-              onRead: data => console.log("[dpms on] stderr:", data)
           }
       }
       Process { id: lockProc; command: ["${quickshellPackage}/bin/quickshell", "ipc", "call", "lockScreen", "toggle"] }
