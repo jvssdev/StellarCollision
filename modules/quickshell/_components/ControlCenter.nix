@@ -53,6 +53,19 @@ if isNiri then
             }
         }
 
+        Timer {
+            interval: 5000
+            running: true
+            repeat: true
+            triggeredOnStart: true
+            onTriggered: {
+                if (networkObj) {
+                    root.wifiEnabled = networkObj.type === "wifi"
+                    root.currentWifiSsid = networkObj.ssid || ""
+                }
+            }
+        }
+
         // Pipewire audio
         property var audioSink: Pipewire.defaultAudioSink
         property bool audioReady: audioSink !== null && audioSink.audio !== null && (audioSink.bound || false)
