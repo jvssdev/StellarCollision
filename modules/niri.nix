@@ -55,6 +55,7 @@ in
        spawn-sh-at-startup "${getExe pkgs.fcitx5} -d --replace"
        spawn-sh-at-startup "${getExe' pkgs.networkmanagerapplet "nm-applet"} --indicator"
        spawn-sh-at-startup "${getExe' pkgs.blueman "blueman-applet"}"
+       spawn-sh-at-startup "sleep 3 && bluetoothctl --agent=DisplayYesNo"
        spawn-at-startup "${getExe quickshell}"
        spawn-sh-at-startup "${getExe' pkgs.wl-clipboard "wl-paste"} --type text --watch ${getExe pkgs.cliphist} store"
        spawn-sh-at-startup "${getExe' pkgs.wl-clipboard "wl-paste"} --type image --watch ${getExe pkgs.cliphist} store"

@@ -1,5 +1,110 @@
 { pkgs, config, ... }:
 
+let
+  bluetoothAgent = pkgs.writeScriptBin "bluetooth-agent" ''
+    #!${
+      pkgs.python3.withPackages (
+        ps: with ps; [
+          dbus-python
+          pygobject3
+        ]
+      )
+    }/bin/python3
+
+    import dbus
+    import dbus.service
+    import dbus.mainloop.glib
+    from gi.repository import GLib
+    import subprocess
+    import time
+    import os
+
+    BUS_NAME = 'org.bluez'
+    AGENT_INTERFACE = 'org.bluez.Agent1'
+    AGENT_PATH = '/org/bluez/agent'
+    LOCK_FILE = "/tmp/QsAnyModuleIsOpen"
+
+    def close_quick_settings():
+        if os.path.exists(LOCK_FILE):
+            try:
+                subprocess.run(["wtype", "-k", "Escape"], stderr=subprocess.DEVNULL)
+                time.sleep(0.1)
+            except:
+                pass
+
+    class Agent(dbus.service.Object):
+        def __init__(self, bus, path):
+            dbus.service.Object.__init__(self, bus, path)
+
+        @dbus.service.method(AGENT_INTERFACE, in_signature="", out_signature="")
+        def Release(self): pass
+
+        @dbus.service.method(AGENT_INTERFACE, in_signature="os", out_signature="")
+        def AuthorizeService(self, device, uuid): return
+
+        @dbus.service.method(AGENT_INTERFACE, in_signature="o", out_signature="s")
+        def RequestPinCode(self, device):
+            close_quick_settings()
+            try:
+                output = subprocess.check_output([
+                    "zenity", "--entry",
+                    "--title=Bluetooth",
+                    "--text=Digite o PIN do dispositivo:",
+                    "--width=350"
+                ])
+                return output.decode().strip()
+            except:
+                raise Exception("Rejected")
+
+        @dbus.service.method(AGENT_INTERFACE, in_signature="ou", out_signature="")
+        def RequestConfirmation(self, device, passkey):
+            close_quick_settings()
+            try:
+                subprocess.check_call([
+                    "zenity", "--question",
+                    "--title=Bluetooth Pairing",
+                    "--text=Dispositivo quer parear.\nPIN: " + f"{passkey:06d}\nConfirmar?",
+                    "--ok-label=Confirmar",
+                    "--cancel-label=Cancelar",
+                    "--width=350"
+                ])
+            except:
+                raise Exception("Rejected")
+
+        @dbus.service.method(AGENT_INTERFACE, in_signature="o", out_signature="")
+        def RequestAuthorization(self, device):
+            close_quick_settings()
+            try:
+                subprocess.check_call([
+                    "zenity", "--question",
+                    "--title=Bluetooth",
+                    "--text=Autorizar pareamento?",
+                    "--ok-label=Sim",
+                    "--cancel-label=Não",
+                    "--width=300"
+                ])
+            except:
+                raise Exception("Rejected")
+
+        @dbus.service.method(AGENT_INTERFACE, in_signature="", out_signature="")
+        def Cancel(self): pass
+
+    if __name__ == '__main__':
+        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+        bus = dbus.SystemBus()
+        agent = Agent(bus, AGENT_PATH)
+
+        obj = bus.get_object(BUS_NAME, "/org/bluez")
+        manager = dbus.Interface(obj, "org.bluez.AgentManager1")
+        manager.RegisterAgent(AGENT_PATH, "KeyboardDisplay")
+        manager.RequestDefaultAgent(AGENT_PATH)
+
+        print("Bluetooth agent running...")
+        mainloop = GLib.MainLoop()
+        mainloop.run()
+  '';
+in
+
 {
   imports = [ ./hardware-configuration.nix ];
 
@@ -46,7 +151,6 @@
       withGui = true;
       isALaptop = true;
     };
-
   };
 
   powerManagement = {
@@ -77,7 +181,14 @@
     networkmanager.enable = true;
   };
 
-  environment.pathsToLink = [ "/share/icons" ];
+  environment = {
+    pathsToLink = [ "/share/icons" ];
+    systemPackages = with pkgs; [
+      zenity
+      wtype
+      bluetoothAgent
+    ];
+  };
 
   services = {
     dbus = {
@@ -128,7 +239,36 @@
     };
   };
 
-  hardware.bluetooth.enable = true;
+  systemd.user.services.bluetooth-agent = {
+    description = "Bluetooth Pairing Agent for Quickshell";
+    after = [
+      "bluetooth.service"
+      "pipewire.service"
+      "graphical-session-pre.target"
+      "dbus.service"
+    ];
+    wantedBy = [ "graphical-session.target" ];
+    serviceConfig = {
+      Type = "simple";
+      ExecStart = "${bluetoothAgent}/bin/bluetooth-agent";
+      Restart = "always";
+      RestartSec = 3;
+      StandardOutput = "journal+console";
+      StandardError = "journal+console";
+      TimeoutStartSec = 30;
+    };
+  };
+  hardware.bluetooth = {
+    enable = true;
+    settings = {
+      General = {
+        Enable = "Source,Sink,Media,Socket";
+        Experimental = true;
+        PairableTimeout = 0;
+      };
+    };
+  };
+  services.blueman.enable = true;
 
   system.stateVersion = "25.11";
 }

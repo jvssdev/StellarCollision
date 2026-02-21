@@ -59,20 +59,56 @@ if isNiri then
             }
         }
 
-        // Pipewire audio
         property var audioSink: Pipewire.defaultAudioSink
         property bool audioReady: audioSink !== null && audioSink.audio !== null && (audioSink.bound || false)
         property var audioObj: audioReady ? audioSink.audio : null
         property int volumeLevel: (audioObj !== null) ? Math.round((audioObj.volume || 0.5) * 100) : 50
         property bool isMuted: (audioObj !== null) ? (audioObj.muted || false) : false
 
-        // Keep audio sink alive
         PwObjectTracker {
             objects: [audioSink]
         }
 
-    // WiFi processes
-    Process {
+        QtObject {
+            id: btService
+            property var adapter: Bluetooth.defaultAdapter
+            readonly property bool isPowered: adapter ? adapter.enabled : false
+            readonly property bool isDiscovering: adapter ? adapter.discovering : false
+            readonly property var devicesList: {
+                if (!adapter || !adapter.devices) return [];
+                let list = [];
+                for (let i = 0; i < adapter.devices.count; i++) {
+                    list.push(adapter.devices.get(i));
+                }
+                return list.sort((a, b) => {
+                    if (a.connected !== b.connected) return b.connected - a.connected;
+                    return (a.alias || a.name || "").localeCompare(b.alias || b.name || "");
+                });
+            }
+            function togglePower() { if (adapter) adapter.enabled = !adapter.enabled; }
+            function toggleScan() { if (adapter) adapter.discovering = !adapter.discovering; }
+            function toggleConnection(device) {
+                if (!device) return;
+                if (device.connected) {
+                    device.disconnect();
+                } else {
+                    device.trusted = true;
+                    if (!device.paired) device.pair();
+                    else device.connect();
+                }
+            }
+            function forgetDevice(device) { if (device) device.forget(); }
+            function getDeviceIcon(device) {
+                if (!device) return "󰂯";
+                let n = (device.name || device.alias || "").toLowerCase();
+                if (n.includes("bud") || n.includes("airpod") || n.includes("head")) return "";
+                if (n.includes("mouse")) return "󰍽";
+                if (n.includes("keyboard")) return "";
+                return "󰂯";
+            }
+        }
+
+        Process {
             id: wifiListProc
             running: false
             command: ["${getExe pkgs.bash}", "-c", "nmcli -t -f SSID,SIGNAL,SECURITY,ACTIVE dev wifi list 2>/dev/null | head -20"]
@@ -137,7 +173,7 @@ if isNiri then
         Process {
             id: wifiToggleProc
             running: false
-            command: ["${getExe pkgs.bash}", "-c", ""]
+            command: ["${getExe pkgs.bash}", "-c", "true"]
             onRunningChanged: if (!running) {
                 if (root.wifiEnabled) {
                     wifiListProc.running = true
@@ -148,7 +184,7 @@ if isNiri then
         Process {
             id: wifiConnectProc
             running: false
-            command: ["${getExe pkgs.bash}", "-c", ""]
+            command: ["${getExe pkgs.bash}", "-c", "true"]
             onRunningChanged: if (!running) {
                 root.wifiConnecting = false
                 root.wifiPasswordPageVisible = false
@@ -168,7 +204,7 @@ if isNiri then
         Process {
             id: wifiForgetProc
             running: false
-            command: ["${getExe pkgs.bash}", "-c", ""]
+            command: ["${getExe pkgs.bash}", "-c", "true"]
             onRunningChanged: if (!running) {
                 wifiListProc.running = true
             }
@@ -226,7 +262,7 @@ if isNiri then
             return "󰤟"
         }
 
-        function setVolume(newVal: int) {
+        function setVolume(newVal) {
             if (audioReady && audioObj) {
                 audioObj.muted = false
                 audioObj.volume = newVal / 100
@@ -248,26 +284,26 @@ if isNiri then
             shown = !shown
         }
 
-        // Night Light state
         property bool nightLightEnabled: false
         property int nightLightTemperature: 4500
 
-        // Toggle Night Light
+        Process {
+            id: nightLightProc
+            running: false
+            command: ["bash", "-c", "true"]
+        }
+
         function toggleNightLight() {
             root.nightLightEnabled = !root.nightLightEnabled
             if (root.nightLightEnabled) {
-                nightLightOn.startDetached()
+                nightLightProc.command = ["bash", "-c", "pkill gammastep 2>/dev/null; gammastep -P -O " + root.nightLightTemperature + " &"]
+                nightLightProc.startDetached()
             } else {
-                nightLightOff.running = true
+                nightLightProc.command = ["bash", "-c", "pkill gammastep 2>/dev/null; gammastep -x"]
+                nightLightProc.running = true
             }
         }
 
-        // Initial check disabled - only check on toggle
-        Component.onCompleted: {
-            checkNightLightProc.running = true
-        }
-
-        // MPRIS for media control
         property var mprisPlayers: Mpris.players.values
         property var activePlayer: Mpris.players.values.length > 0 ? Mpris.players.values[0] : null
         property bool hasMediaPlayer: activePlayer !== null
@@ -286,7 +322,6 @@ if isNiri then
             return players[0];
         }
 
-        // Update media properties when players change
         Timer {
             interval: 1000
             running: true
@@ -296,50 +331,15 @@ if isNiri then
             }
         }
 
-        // Process to start night light (uses current temperature)
-        Process {
-            id: nightLightOn
-            command: ["${getExe pkgs.bash}", "-c", "pkill gammastep 2>/dev/null; sleep 0.2; ${getExe pkgs.gammastep} -P -O " + root.nightLightTemperature + " &"]
-        }
-
-        // Process to set night light temperature
-        Process {
-            id: nightLightWarm
-            command: ["${getExe pkgs.bash}", "-c", "pkill gammastep 2>/dev/null; sleep 0.2; ${getExe pkgs.gammastep} -P -O 3500 &"]
-        }
-
-        Process {
-            id: nightLightNormal
-            command: ["${getExe pkgs.bash}", "-c", "pkill gammastep 2>/dev/null; sleep 0.2; ${getExe pkgs.gammastep} -P -O 4500 &"]
-        }
-
-        Process {
-            id: nightLightCool
-            command: ["${getExe pkgs.bash}", "-c", "pkill gammastep 2>/dev/null; sleep 0.2; ${getExe pkgs.gammastep} -P -O 5500 &"]
-        }
-
-        // Process to stop night light
-        Process {
-            id: nightLightOff
-            command: ["${getExe pkgs.bash}", "-c", "pkill gammastep 2>/dev/null; sleep 0.2; ${getExe pkgs.gammastep} -x 2>/dev/null"]
-        }
-
-        // Set temperature preset
         function setNightLightTemp(temp) {
             root.nightLightTemperature = temp
+            nightLightProc.command = ["bash", "-c", "pkill gammastep 2>/dev/null; gammastep -P -O " + temp + " &"]
             if (!root.nightLightEnabled) {
                 root.nightLightEnabled = true
             }
-            if (temp === 3500) {
-                nightLightWarm.startDetached()
-            } else if (temp === 4500) {
-                nightLightNormal.startDetached()
-            } else if (temp === 5500) {
-                nightLightCool.startDetached()
-            }
+            nightLightProc.startDetached()
         }
 
-        // Process to check status
         Process {
             id: checkNightLightProc
             running: true
@@ -351,19 +351,8 @@ if isNiri then
             }
         }
 
-        // Timer to check status periodically (disabled for now)
-        Timer {
-            interval: 10000
-            running: false
-            repeat: true
-            triggeredOnStart: false
-            onTriggered: checkNightLightProc.running = true
-        }
-
-        // Quick Toggle Component
         component QuickToggle: Rectangle {
             id: toggle
-
             property string icon: "󰛨"
             property string iconOff: icon
             property string label: "Toggle"
@@ -392,8 +381,6 @@ if isNiri then
                     font.pixelSize: 18
                     color: toggle.isOn ? toggle.accentColor : (toggle.controlTheme?.fgMuted || "#434C5E")
                     Layout.alignment: Qt.AlignHCenter
-
-                    Behavior on color { ColorAnimation { duration: 150 } }
                 }
 
                 Text {
@@ -402,8 +389,6 @@ if isNiri then
                     font.pixelSize: 10
                     color: toggle.isOn ? (toggle.controlTheme?.fg || "#D8DEE9") : (toggle.controlTheme?.fgMuted || "#434C5E")
                     Layout.alignment: Qt.AlignHCenter
-
-                    Behavior on color { ColorAnimation { duration: 150 } }
                 }
             }
 
@@ -411,19 +396,14 @@ if isNiri then
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
-                    if (toggle.onClick) {
-                        toggle.onClick()
-                    } else {
-                        toggle.isOn = !toggle.isOn
-                    }
+                    if (toggle.onClick) toggle.onClick()
+                    else toggle.isOn = !toggle.isOn
                 }
             }
         }
 
-        // Slider Card Component
         component SliderCard: Rectangle {
             id: sliderCard
-
             property string icon: "󰕾"
             property string label: "Slider"
             property int value: 50
@@ -486,9 +466,6 @@ if isNiri then
                             height: parent.height
                             radius: parent.radius
                             color: sliderCard.isMuted ? (sliderCard.controlTheme?.fgMuted || "#434C5E") : sliderCard.accentColor
-
-                            Behavior on width { NumberAnimation { duration: 50 } }
-                            Behavior on color { ColorAnimation { duration: 150 } }
                         }
                     }
 
@@ -499,15 +476,11 @@ if isNiri then
                         height: 14
                         radius: 7
                         color: sliderCard.isMuted ? (sliderCard.controlTheme?.fgMuted || "#434C5E") : sliderCard.accentColor
-
-                        Behavior on x { NumberAnimation { duration: 50 } }
-                        Behavior on color { ColorAnimation { duration: 150 } }
                     }
 
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-
                         onPositionChanged: (mouse) => {
                             if (pressed) {
                                 var newVal = Math.max(0, Math.min(100, (mouse.x / width) * 100))
@@ -515,7 +488,6 @@ if isNiri then
                                 if (sliderCard.valueChangedHandler) sliderCard.valueChangedHandler(newVal)
                             }
                         }
-
                         onClicked: (mouse) => {
                             var newVal = Math.max(0, Math.min(100, (mouse.x / width) * 100))
                             sliderCard.value = Math.round(newVal)
@@ -526,10 +498,8 @@ if isNiri then
             }
         }
 
-        // Media Card Component
         component MediaCard: Rectangle {
             id: mediaCard
-
             property string title: root.mediaTitle
             property string artist: root.mediaArtist
             property string album: root.mediaAlbum
@@ -539,7 +509,6 @@ if isNiri then
             property var controlTheme: null
 
             visible: hasPlayer
-
             height: 90
             radius: 8
             color: controlTheme?.bgAlt || "#3B4252"
@@ -650,11 +619,8 @@ if isNiri then
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
-                                if (mediaCard.isPlaying) {
-                                    root.activePlayer?.pause()
-                                } else {
-                                    root.activePlayer?.play()
-                                }
+                                if (mediaCard.isPlaying) root.activePlayer?.pause()
+                                else root.activePlayer?.play()
                             }
                         }
                     }
@@ -685,57 +651,8 @@ if isNiri then
             }
         }
 
-        // Action Button Component
-        component ActionButton: Rectangle {
-            id: actionBtn
-
-            property string icon: "󰐥"
-            property string label: "Action"
-            property color accentColor: controlTheme?.darkBlue || "#5E81AC"
-            property var controlTheme: null
-
-            signal clicked()
-
-            height: 44
-            radius: 8
-            color: btnMouse.containsMouse ? Qt.rgba(accentColor.r, accentColor.g, accentColor.b, 0.2) : (controlTheme?.bgAlt || "#3B4252")
-            border.width: btnMouse.containsMouse ? 2 : 0
-            border.color: accentColor
-
-            Behavior on color { ColorAnimation { duration: 150 } }
-
-            RowLayout {
-                anchors.centerIn: parent
-                spacing: 8
-
-                Text {
-                    text: actionBtn.icon
-                    font.family: actionBtn.controlTheme?.fontFamily || "monospace"
-                    font.pixelSize: 16
-                    color: actionBtn.accentColor
-                }
-
-                Text {
-                    text: actionBtn.label
-                    font.family: actionBtn.controlTheme?.fontFamily || "monospace"
-                    font.pixelSize: 12
-                    color: actionBtn.controlTheme?.fg || "#D8DEE9"
-                }
-            }
-
-            MouseArea {
-                id: btnMouse
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: actionBtn.clicked()
-            }
-        }
-
-        // Wifi Network Card Component
         component WifiNetworkCard: Rectangle {
             id: wifiCard
-
             property string ssid: ""
             property int signal: 0
             property bool secure: false
@@ -857,7 +774,6 @@ if isNiri then
             }
         }
 
-        // Wifi Empty State Component
         component WifiEmptyState: Rectangle {
             property var controlTheme: null
 
@@ -898,26 +814,11 @@ if isNiri then
                     opacity: 0.7
                     Layout.alignment: Qt.AlignHCenter
                 }
-
-                Text {
-                    text: {
-                        if (!root.wifiEnabled) return "Turn on to see networks"
-                        if (root.wifiScanning) return "Looking for networks"
-                        return "Try scanning again"
-                    }
-                    font.family: controlTheme?.fontFamily || "monospace"
-                    font.pixelSize: 10
-                    color: controlTheme?.fgMuted || "#434C5E"
-                    opacity: 0.5
-                    Layout.alignment: Qt.AlignHCenter
-                }
             }
         }
 
-        // Wifi Password Page Component
         component WifiPasswordPage: Rectangle {
             id: passPage
-
             property string targetSsid: ""
             property var controlTheme: null
 
@@ -961,7 +862,6 @@ if isNiri then
                 }
 
                 Rectangle {
-                    id: passInput
                     Layout.fillWidth: true
                     height: 45
                     radius: 8
@@ -1062,7 +962,6 @@ if isNiri then
             }
         }
 
-        // Process to get current brightness
         Process {
             id: brightnessGetProc
             command: ["${getExe pkgs.brightnessctl}", "-m", "get"]
@@ -1082,13 +981,11 @@ if isNiri then
             }
         }
 
-        // Process to set brightness
         Process {
             id: brightnessSetProc
             command: ["${getExe pkgs.brightnessctl}", "-e4", "-n2", "set", "50%"]
         }
 
-        // Timer to update brightness periodically
         Timer {
             interval: 5000
             running: true
@@ -1097,7 +994,6 @@ if isNiri then
             onTriggered: brightnessGetProc.running = true
         }
 
-        // Fallback volume control using wpctl
         Process {
             id: volumeSetProc
             running: false
@@ -1162,7 +1058,6 @@ if isNiri then
                     anchors.margins: 14
                     spacing: 12
 
-                    // Fixed Header - shows Control Center, Bluetooth, or WiFi
                     RowLayout {
                         Layout.fillWidth: true
 
@@ -1176,7 +1071,6 @@ if isNiri then
 
                         Item { Layout.fillWidth: true }
 
-                        // Show Power toggle when Bluetooth page is visible
                         Text {
                             visible: root.bluetoothPageVisible && !root.wifiPageVisible && !root.wifiPasswordPageVisible
                             text: "Power"
@@ -1189,20 +1083,16 @@ if isNiri then
                             width: 44
                             height: 24
                             radius: 12
-                            color: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? (root.theme?.green || "#A3BE8C") : (root.theme?.fgMuted || "#434C5E")
+                            color: btService.isPowered ? (root.theme?.green || "#A3BE8C") : (root.theme?.fgMuted || "#434C5E")
 
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    if (Bluetooth.defaultAdapter) {
-                                        Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
-                                    }
-                                }
+                                onClicked: btService.togglePower()
                             }
 
                             Rectangle {
-                                x: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? 22 : 2
+                                x: btService.isPowered ? 22 : 2
                                 y: 2
                                 width: 20
                                 height: 20
@@ -1211,7 +1101,6 @@ if isNiri then
                             }
                         }
 
-                        // Show WiFi toggle when WiFi page is visible
                         Text {
                             visible: root.wifiPageVisible && !root.wifiPasswordPageVisible
                             text: "Wi-Fi"
@@ -1229,9 +1118,7 @@ if isNiri then
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    root.toggleWifi()
-                                }
+                                onClicked: root.toggleWifi()
                             }
 
                             Rectangle {
@@ -1244,7 +1131,6 @@ if isNiri then
                             }
                         }
 
-                        // Scan button for WiFi page
                         Text {
                             visible: root.wifiPageVisible && !root.wifiPasswordPageVisible
                             text: "Scan"
@@ -1288,7 +1174,6 @@ if isNiri then
                         color: root.theme?.fgSubtle || "#4C566A"
                     }
 
-                    // Show Bluetooth page as full content when visible
                     Rectangle {
                         Layout.fillWidth: true
                         implicitHeight: 520
@@ -1301,86 +1186,101 @@ if isNiri then
                             anchors.margins: 12
                             spacing: 8
 
+                            RowLayout {
+                                Text {
+                                    text: "Bluetooth"
+                                    color: root.theme?.darkBlue
+                                    font.pixelSize: 16
+                                    font.bold: true
+                                }
+                                Item { Layout.fillWidth: true }
+                                Text {
+                                    text: btService.isPowered ? "󰂯" : "󰂲"
+                                    color: btService.isPowered ? root.theme?.green : root.theme?.fgMuted
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: btService.togglePower()
+                                    }
+                                }
+                                Text {
+                                    text: "Scan"
+                                    color: btService.isDiscovering ? root.theme?.yellow : root.theme?.fgMuted
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: btService.toggleScan()
+                                    }
+                                }
+                            }
+
                             ListView {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
                                 clip: true
-
-                                model: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? Bluetooth.defaultAdapter.devices : []
+                                spacing: 6
+                                model: btService.devicesList
 
                                 delegate: Rectangle {
                                     width: ListView.view.width
-                                    height: 50
+                                    height: 56
                                     radius: 8
-                                    color: root.theme?.bg || "#2E3440"
+                                    color: modelData.connected ? Qt.rgba(0.4, 0.8, 0.4, 0.15) : root.theme?.bg || "#2E3440"
 
                                     RowLayout {
                                         anchors.fill: parent
-                                        anchors.margins: 10
+                                        anchors.margins: 12
+                                        spacing: 12
 
                                         Text {
-                                            text: modelData.icon || "󰂯"
-                                            font.family: root.theme?.fontFamily || "monospace"
-                                            font.pixelSize: 18
-                                            color: modelData.connected ? (root.theme?.blue || "#81A1C1") : (root.theme?.fgMuted || "#434C5E")
+                                            text: btService.getDeviceIcon(modelData)
+                                            font.pixelSize: 20
                                         }
 
                                         ColumnLayout {
-                                            Layout.fillWidth: true
                                             Text {
-                                                text: modelData.name || modelData.address || "Unknown"
-                                                font.family: root.theme?.fontFamily || "monospace"
-                                                font.pixelSize: 12
-                                                color: root.theme?.fg || "#D8DEE9"
-                                                elide: Text.ElideRight
+                                                text: modelData.alias || modelData.name || "Unknown"
+                                                font.pixelSize: 13
+                                                font.bold: modelData.connected
+                                                color: root.theme?.fg
                                             }
                                             Text {
-                                                text: {
-                                                    if (modelData.state === 1) return "Connected"
-                                                    if (modelData.state === 2) return "Connecting..."
-                                                    if (modelData.state === 3) return "Disconnecting..."
-                                                    return modelData.paired ? "Paired" : ""
-                                                }
-                                                font.family: root.theme?.fontFamily || "monospace"
+                                                text: modelData.connected ? "Connected" : (modelData.paired ? "Paired" : "")
                                                 font.pixelSize: 10
-                                                color: root.theme?.fgMuted || "#434C5E"
+                                                color: modelData.connected ? root.theme?.green : root.theme?.fgMuted
                                             }
                                         }
 
-                                        Text {
-                                            text: modelData.connected ? "󰤬" : "󰛲"
-                                            font.family: root.theme?.fontFamily || "monospace"
-                                            font.pixelSize: 16
-                                            color: modelData.connected ? (root.theme?.green || "#A3BE8C") : (root.theme?.fgMuted || "#434C5E")
+                                        Item { Layout.fillWidth: true }
+
+                                        MouseArea {
+                                            width: 40
+                                            height: 40
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: btService.toggleConnection(modelData)
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: modelData.connected ? "󰅙" : "󰂯"
+                                                color: modelData.connected ? root.theme?.red : root.theme?.blue
+                                                font.pixelSize: 18
+                                            }
                                         }
                                     }
 
                                     MouseArea {
                                         anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: {
-                                            if (modelData.connected) {
-                                                modelData.disconnect()
-                                            } else {
-                                                modelData.connect()
-                                            }
-                                        }
+                                        onPressAndHold: btService.forgetDevice(modelData)
                                     }
                                 }
                             }
 
                             Text {
-                                visible: !Bluetooth.defaultAdapter || !Bluetooth.defaultAdapter.enabled
-                                text: !Bluetooth.defaultAdapter ? "No adapter" : "Bluetooth is off"
-                                font.family: root.theme?.fontFamily || "monospace"
-                                font.pixelSize: 12
-                                color: root.theme?.fgMuted || "#434C5E"
+                                visible: btService.devicesList.length === 0 && btService.isPowered
+                                text: btService.isDiscovering ? "Searching for devices..." : "No devices found"
+                                color: root.theme?.fgMuted
                                 Layout.alignment: Qt.AlignHCenter
                             }
                         }
                     }
 
-                    // Show WiFi page as full content when visible
                     Rectangle {
                         Layout.fillWidth: true
                         implicitHeight: 520
@@ -1421,251 +1321,154 @@ if isNiri then
                         }
                     }
 
-                    // Regular content (hidden when Bluetooth or WiFi page is visible)
                     ColumnLayout {
                         visible: !root.bluetoothPageVisible && !root.wifiPageVisible && !root.wifiPasswordPageVisible
                         spacing: 12
 
-                    GridLayout {
-                        Layout.fillWidth: true
-                        columns: 3
-                        rowSpacing: 10
-                        columnSpacing: 10
+                        GridLayout {
+                            Layout.fillWidth: true
+                            columns: 3
+                            rowSpacing: 10
+                            columnSpacing: 10
 
-                        QuickToggle {
-                            icon: "󰤨"
-                            iconOff: "󰤭"
-                            label: "WiFi"
-                            isOn: root.wifiEnabled
-                            controlTheme: root.theme
-                            onClick: () => {
-                                if (root.airplaneMode) return
-                                root.wifiPageVisible = !root.wifiPageVisible
+                            QuickToggle {
+                                icon: "󰤨"
+                                iconOff: "󰤭"
+                                label: "WiFi"
+                                isOn: root.wifiEnabled
+                                controlTheme: root.theme
+                                onClick: () => { root.wifiPageVisible = !root.wifiPageVisible }
+                            }
+
+                            QuickToggle {
+                                icon: "󰂯"
+                                iconOff: "󰂲"
+                                label: "Bluetooth"
+                                isOn: btService.isPowered
+                                controlTheme: root.theme
+                                onClick: () => { root.bluetoothPageVisible = !root.bluetoothPageVisible }
+                            }
+
+                            QuickToggle {
+                                icon: "󰍶"
+                                iconOff: "󰍷"
+                                label: "DND"
+                                isOn: false
+                                accentColor: root.theme?.red || "#BF616A"
+                                controlTheme: root.theme
+                            }
+
+                            QuickToggle {
+                                icon: "󰖨"
+                                iconOff: "󱩌"
+                                label: "Night"
+                                isOn: root.nightLightEnabled
+                                accentColor: root.theme?.yellow || "#EBCB8B"
+                                controlTheme: root.theme
+                                onClick: () => root.toggleNightLight()
+                            }
+
+                            QuickToggle {
+                                icon: "󰀝"
+                                iconOff: "󰀞"
+                                label: "Airplane"
+                                isOn: root.airplaneMode
+                                accentColor: root.theme?.magenta || "#B48EAD"
+                                controlTheme: root.theme
+                                onClick: () => root.toggleAirplaneMode()
+                            }
+
+                            QuickToggle {
+                                icon: "󱐋"
+                                iconOff: "󱐌"
+                                label: "Power"
+                                isOn: false
+                                accentColor: root.theme?.cyan || "#8FBCBB"
+                                controlTheme: root.theme
                             }
                         }
 
-                        QuickToggle {
-                            icon: "󰂯"
-                            iconOff: "󰂲"
-                            label: "Bluetooth"
-                            isOn: Bluetooth.defaultAdapter ? Bluetooth.defaultAdapter.enabled : false
-                            controlTheme: root.theme
-                            onClick: () => {
-                                root.bluetoothPageVisible = !root.bluetoothPageVisible
-                            }
-                        }
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 60
+                            radius: 8
+                            color: root.theme?.bgAlt || "#3B4252"
+                            visible: root.nightLightEnabled
 
-                        QuickToggle {
-                            icon: "󰍶"
-                            iconOff: "󰍷"
-                            label: "DND"
-                            isOn: false
-                            accentColor: root.theme?.red || "#BF616A"
-                            controlTheme: root.theme
-                        }
-
-                        QuickToggle {
-                            icon: "󰖨"
-                            iconOff: "󱩌"
-                            label: "Night"
-                            isOn: root.nightLightEnabled
-                            accentColor: root.theme?.yellow || "#EBCB8B"
-                            controlTheme: root.theme
-                            onClick: () => root.toggleNightLight()
-                        }
-
-                        QuickToggle {
-                            icon: "󰀝"
-                            iconOff: "󰀞"
-                            label: "Airplane"
-                            isOn: root.airplaneMode
-                            accentColor: root.theme?.magenta || "#B48EAD"
-                            controlTheme: root.theme
-                            onClick: () => root.toggleAirplaneMode()
-                        }
-
-                        QuickToggle {
-                            icon: "󱐋"
-                            iconOff: "󱐌"
-                            label: "Power"
-                            isOn: false
-                            accentColor: root.theme?.cyan || "#8FBCBB"
-                            controlTheme: root.theme
-                        }
-                    }
-
-                    // Night Light Temperature Card
-                    Rectangle {
-                        Layout.fillWidth: true
-                        height: 60
-                        radius: 8
-                        color: root.theme?.bgAlt || "#3B4252"
-                        visible: root.nightLightEnabled
-
-                        ColumnLayout {
-                            anchors.fill: parent
-                            anchors.margins: 12
-                            spacing: 8
-
-                            RowLayout {
-                                Text {
-                                    text: "Night Light Temperature"
-                                    font.family: root.theme?.fontFamily || "monospace"
-                                    font.pixelSize: 12
-                                    color: root.theme?.fg || "#D8DEE9"
-                                }
-                                Item { Layout.fillWidth: true }
-                                Text {
-                                    text: root.nightLightTemperature + "K"
-                                    font.family: root.theme?.fontFamily || "monospace"
-                                    font.pixelSize: 12
-                                    font.bold: true
-                                    color: root.theme?.yellow || "#EBCB8B"
-                                }
-                            }
-
-                            RowLayout {
-                                Text {
-                                    text: "2500"
-                                    font.family: root.theme?.fontFamily || "monospace"
-                                    font.pixelSize: 9
-                                    color: root.theme?.fgMuted || "#434C5E"
-                                }
-
-                                Slider {
-                                    id: nightTempSlider
-                                    Layout.fillWidth: true
-                                    from: 2500
-                                    to: 6500
-                                    value: root.nightLightTemperature
-                                    onValueChanged: {
-                                        root.nightLightTemperature = Math.round(value)
-                                        nightLightSetProc.running = false
-                                        nightLightSetProc.command = ["${getExe pkgs.bash}", "-c", "pkill gammastep 2>/dev/null; ${getExe pkgs.gammastep} -P -O " + root.nightLightTemperature + " &"]
-                                        nightLightSetProc.running = true
-                                    }
-                                }
-
-                                Process {
-                                    id: nightLightSetProc
-                                    running: false
-                                }
-
-                                Text {
-                                    text: "6500"
-                                    font.family: root.theme?.fontFamily || "monospace"
-                                    font.pixelSize: 9
-                                    color: root.theme?.fgMuted || "#434C5E"
-                                }
-                            }
-
-                            // Temperature Presets
-                            RowLayout {
-                                Layout.fillWidth: true
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 12
                                 spacing: 8
 
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    height: 28
-                                    radius: 6
-                                    color: root.theme?.bg || "#2E3440"
+                                RowLayout {
                                     Text {
-                                        anchors.centerIn: parent
-                                        text: "Warm"
+                                        text: "Night Light Temperature"
                                         font.family: root.theme?.fontFamily || "monospace"
-                                        font.pixelSize: 10
+                                        font.pixelSize: 12
                                         color: root.theme?.fg || "#D8DEE9"
                                     }
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.setNightLightTemp(3500)
+                                    Item { Layout.fillWidth: true }
+                                    Text {
+                                        text: root.nightLightTemperature + "K"
+                                        font.family: root.theme?.fontFamily || "monospace"
+                                        font.pixelSize: 12
+                                        font.bold: true
+                                        color: root.theme?.yellow || "#EBCB8B"
                                     }
                                 }
 
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    height: 28
-                                    radius: 6
-                                    color: root.theme?.bg || "#2E3440"
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "Normal"
-                                        font.family: root.theme?.fontFamily || "monospace"
-                                        font.pixelSize: 10
-                                        color: root.theme?.fg || "#D8DEE9"
+                                RowLayout {
+                                    Text { text: "2500"; font.pixelSize: 9; color: root.theme?.fgMuted }
+                                    Slider {
+                                        Layout.fillWidth: true
+                                        from: 2500
+                                        to: 6500
+                                        value: root.nightLightTemperature
+                                        onValueChanged: root.setNightLightTemp(Math.round(value))
                                     }
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.setNightLightTemp(4500)
-                                    }
-                                }
-
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    height: 28
-                                    radius: 6
-                                    color: root.theme?.bg || "#2E3440"
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "Cool"
-                                        font.family: root.theme?.fontFamily || "monospace"
-                                        font.pixelSize: 10
-                                        color: root.theme?.fg || "#D8DEE9"
-                                    }
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.setNightLightTemp(5500)
-                                    }
+                                    Text { text: "6500"; font.pixelSize: 9; color: root.theme?.fgMuted }
                                 }
                             }
                         }
-                    }
 
-                    SliderCard {
-                        Layout.fillWidth: true
-                        icon: root.isMuted ? "󰖁" : "󰕾"
-                        label: "Volume"
-                        value: root.volumeLevel
-                        accentColor: root.theme?.blue || "#81A1C1"
-                        isMuted: root.isMuted
-                        controlTheme: root.theme
-                        valueChangedHandler: (newVal) => {
-                            root.setVolume(newVal)
+                        SliderCard {
+                            Layout.fillWidth: true
+                            icon: root.isMuted ? "󰖁" : "󰕾"
+                            label: "Volume"
+                            value: root.volumeLevel
+                            accentColor: root.theme?.blue || "#81A1C1"
+                            isMuted: root.isMuted
+                            controlTheme: root.theme
+                            valueChangedHandler: (newVal) => root.setVolume(newVal)
                         }
-                    }
 
-                    SliderCard {
-                        id: brightnessSlider
-                        Layout.fillWidth: true
-                        icon: "󰃟"
-                        label: "Brightness"
-                        value: root.brightnessLevel
-                        accentColor: root.theme?.yellow || "#EBCB8B"
-                        controlTheme: root.theme
-                        valueChangedHandler: (newVal) => {
-                            brightnessSetProc.command = ["${getExe pkgs.brightnessctl}", "-e4", "-n2", "set", newVal + "%"]
-                            brightnessSetProc.running = true
+                        SliderCard {
+                            Layout.fillWidth: true
+                            icon: "󰃟"
+                            label: "Brightness"
+                            value: root.brightnessLevel
+                            accentColor: root.theme?.yellow || "#EBCB8B"
+                            controlTheme: root.theme
+                            valueChangedHandler: (newVal) => {
+                                brightnessSetProc.command = ["${getExe pkgs.brightnessctl}", "-e4", "-n2", "set", newVal + "%"]
+                                brightnessSetProc.running = true
+                            }
                         }
-                    }
 
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 1
-                        color: root.theme?.fgSubtle || "#4C566A"
-                    }
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 1
+                            color: root.theme?.fgSubtle || "#4C566A"
+                        }
 
-                    MediaCard {
-                        Layout.fillWidth: true
-                        controlTheme: root.theme
-                    }
+                        MediaCard {
+                            Layout.fillWidth: true
+                            controlTheme: root.theme
+                        }
                     }
                 }
             }
 
-            // WiFi password overlay - inside the main content
             Rectangle {
                 id: passwordOverlay
                 z: 100
@@ -1675,17 +1478,7 @@ if isNiri then
 
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: {
-                        if (mouse.target === passwordOverlay) {
-                            root.wifiPasswordPageVisible = false
-                        }
-                    }
-                }
-
-                Timer {
-                    running: root.wifiPasswordPageVisible
-                    interval: 100
-                    onTriggered: passField.forceActiveFocus()
+                    onClicked: root.wifiPasswordPageVisible = false
                 }
 
                 ColumnLayout {

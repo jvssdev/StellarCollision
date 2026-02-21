@@ -89,7 +89,11 @@ in
   };
 
   config = mkIf cfg.enable {
-    hj.packages = [ cfg.package ];
+    hj.packages = [
+      cfg.package
+      pkgs.gammastep
+      pkgs.brightnessctl
+    ];
     environment.sessionVariables = {
       QML_IMPORT_PATH = lib.concatStringsSep ":" [
         "$HOME/.config/quickshell"
