@@ -47,10 +47,7 @@ let
             close_quick_settings()
             try:
                 output = subprocess.check_output([
-                    "zenity", "--entry",
-                    "--title=Bluetooth",
-                    "--text=Digite o PIN do dispositivo:",
-                    "--width=350"
+                    "kdialog", "--title", "Bluetooth", "--inputbox", "Enter the device PIN:"
                 ])
                 return output.decode().strip()
             except:
@@ -61,12 +58,8 @@ let
             close_quick_settings()
             try:
                 subprocess.check_call([
-                    "zenity", "--question",
-                    "--title=Bluetooth Pairing",
-                    "--text=Dispositivo quer parear.\nPIN: " + f"{passkey:06d}\nConfirmar?",
-                    "--ok-label=Confirmar",
-                    "--cancel-label=Cancelar",
-                    "--width=350"
+                    "kdialog", "--title", "Bluetooth Pairing", "--yesno",
+                    "Device wants to pair.\nPIN: " + f"{passkey:06d}\nConfirm?"
                 ])
             except:
                 raise Exception("Rejected")
@@ -76,12 +69,8 @@ let
             close_quick_settings()
             try:
                 subprocess.check_call([
-                    "zenity", "--question",
-                    "--title=Bluetooth",
-                    "--text=Autorizar pareamento?",
-                    "--ok-label=Sim",
-                    "--cancel-label=Não",
-                    "--width=300"
+                    "kdialog", "--title", "Bluetooth", "--yesno",
+                    "Authorize pairing with this device?"
                 ])
             except:
                 raise Exception("Rejected")
@@ -184,7 +173,7 @@ in
   environment = {
     pathsToLink = [ "/share/icons" ];
     systemPackages = with pkgs; [
-      zenity
+      kdePackages.kdialog
       wtype
       bluetoothAgent
     ];
@@ -268,7 +257,7 @@ in
       };
     };
   };
-  services.blueman.enable = true;
+  services.blueman.enable = false;
 
   system.stateVersion = "25.11";
 }

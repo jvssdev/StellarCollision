@@ -86,7 +86,11 @@ if isNiri then
                 });
             }
             function togglePower() { if (adapter) adapter.enabled = !adapter.enabled; }
-            function toggleScan() { if (adapter) adapter.discovering = !adapter.discovering; }
+            function toggleScan() { 
+                if (!adapter) return;
+                adapter.discoverable = true;
+                adapter.discovering = true;
+            }
             function toggleConnection(device) {
                 if (!device) return;
                 if (device.connected) {
