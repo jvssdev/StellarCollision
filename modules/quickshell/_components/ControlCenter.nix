@@ -849,6 +849,7 @@ if isNiri then
 
             Layout.fillWidth: true
             Layout.fillHeight: true
+            color: controlTheme?.bgAlt || "#3B4252"
 
             ColumnLayout {
                 anchors.centerIn: parent
@@ -1209,7 +1210,7 @@ if isNiri then
                             width: 44
                             height: 24
                             radius: 12
-                            color: root.wifiEnabled ? (root.theme?.green || "#A3BE8C") : (root.theme?.fgMuted || "#434C5E")
+                            color: root.wifiEnabled ? (root.theme?.green || "#A3BE8C") : (root.theme?.bg || "#2E3440")
 
                             MouseArea {
                                 anchors.fill: parent
@@ -1225,7 +1226,7 @@ if isNiri then
                                 width: 20
                                 height: 20
                                 radius: 10
-                                color: "#FFFFFF"
+                                color: root.wifiEnabled ? "#FFFFFF" : (root.theme?.fgMuted || "#434C5E")
                             }
                         }
 
@@ -1400,7 +1401,7 @@ if isNiri then
                             }
 
                             WifiEmptyState {
-                                visible: !root.wifiEnabled || (root.wifiNetworks.length === 0 && !root.wifiScanning)
+                                visible: root.wifiPageVisible && (!root.wifiEnabled || root.wifiNetworks.length === 0) && !root.wifiScanning
                                 controlTheme: root.theme
                             }
                         }
