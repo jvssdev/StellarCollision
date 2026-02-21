@@ -37,6 +37,13 @@ if isNiri then
         property string pendingWifiSsid: ""
         property bool wifiPasswordPageVisible: false
 
+        onShownChanged: {
+            if (shown && networkObj) {
+                root.wifiEnabled = networkObj.type === "wifi"
+                root.currentWifiSsid = networkObj.ssid || ""
+            }
+        }
+
         onWifiPageVisibleChanged: {
             if (wifiPageVisible) {
                 if (networkObj) {
@@ -54,7 +61,7 @@ if isNiri then
         }
 
         Timer {
-            interval: 5000
+            interval: 1000
             running: true
             repeat: true
             triggeredOnStart: true
