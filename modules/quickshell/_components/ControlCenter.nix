@@ -1183,6 +1183,18 @@ if isNiri then
                                         onClicked: BluetoothService.setScanActive(!BluetoothService.discovering)
                                     }
                                 }
+                                Text {
+                                    text: "⟳"
+                                    color: root.theme?.fgMuted
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            BluetoothService._refreshCounter = BluetoothService._refreshCounter + 1;
+                                            BluetoothService.refreshDevices();
+                                        }
+                                    }
+                                }
                             }
 
                             ListView {
@@ -1204,12 +1216,10 @@ if isNiri then
                                         onClicked: {
                                             if (modelData.connected) {
                                                 BluetoothService.disconnectDevice(modelData);
+                                            } else if (modelData.paired || modelData.trusted) {
+                                                BluetoothService.connectDevice(modelData);
                                             } else {
-                                                if (modelData.paired || modelData.trusted) {
-                                                    BluetoothService.connectDevice(modelData);
-                                                } else {
-                                                    BluetoothService.pairDevice(modelData);
-                                                }
+                                                BluetoothService.pairDevice(modelData);
                                             }
                                         }
                                         onPressAndHold: {
@@ -1229,13 +1239,13 @@ if isNiri then
 
                                         ColumnLayout {
                                             Text {
-                                                text: modelData.alias || modelData.name || "Unknown"
+                                                text: modelData.deviceName || modelData.alias || modelData.name || "Unknown"
                                                 font.pixelSize: 13
                                                 font.bold: modelData.connected
                                                 color: root.theme?.fg
                                             }
                                             Text {
-                                                text: modelData.connected ? "Connected" : (modelData.paired ? "Paired" : "")
+                                                text: modelData.connected ? "Connected" : (modelData.paired ? "Tap to connect" : "")
                                                 font.pixelSize: 10
                                                 color: modelData.connected ? root.theme?.green : root.theme?.fgMuted
                                             }

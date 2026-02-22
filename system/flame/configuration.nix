@@ -14,28 +14,33 @@ let
     import time
 
     def log(msg):
-        sys.stdout.write(f"[bluetooth-pair] {msg}\n")
+        sys.stdout.write(f"[pair] {msg}\n")
         sys.stdout.flush()
 
-    if len(sys.argv) < 2:
-        log("Usage: bluetooth-pair.py <addr>")
-        sys.exit(1)
+    if len(sys.argv) < 5:
+        log("Usage: bluetooth-pair.py <addr> <pairWaitSeconds> <attempts> <intervalSec>")
+        sys.exit(2)
 
     addr = sys.argv[1]
+    pair_wait_seconds = float(sys.argv[2])
+    if pair_wait_seconds < 30:
+        pair_wait_seconds = 45.0
+    attempts = int(sys.argv[3])
+    interval_sec = float(sys.argv[4])
 
     if not addr or len(addr) < 17:
         log(f"Invalid Bluetooth address: '{addr}'")
-        sys.exit(1)
+        sys.exit(2)
 
     mfd, sfd = pty.openpty()
     subprocess.Popen(['bluetoothctl'], stdin=sfd, stdout=sfd, stderr=sfd, close_fds=True)
     os.close(sfd)
 
     def send_cmd(cmd):
-        log(f"Sending: {cmd}")
+        log(f"Sending cmd: {cmd}")
         os.write(mfd, (cmd + "\n").encode('utf-8'))
 
-    def read_output(timeout=2.0):
+    def read_output(timeout=1.0):
         output = b""
         end_time = time.time() + timeout
         while time.time() < end_time:
@@ -52,189 +57,114 @@ let
                     raise
         return output.decode('utf-8', errors='replace')
 
-    log(f"Starting pairing with {addr}...")
+    log("Initializing bluetoothctl...")
     time.sleep(1)
 
     send_cmd("agent on")
     send_cmd("default-agent")
+    time.sleep(1)
+
+    log(f"Attempting to pair with {addr}...")
+
+    # Disconnect first if connected
+    send_cmd(f"disconnect {addr}")
     time.sleep(0.5)
 
     send_cmd(f"pair {addr}")
 
     start_time = time.time()
-    pair_timeout = 60
+    paired = False
 
-    log("Waiting for pairing...")
-    while time.time() - start_time < pair_timeout:
+    log("Waiting for pairing sequence start...")
+    while time.time() - start_time < pair_wait_seconds:
         out = read_output(timeout=1.0)
         if out:
-            log(f"Output: {out[:200]}...")
+            sys.stdout.write(out)
             
-            if "Pairing successful" in out or "Paired: yes" in out:
-                log("Pairing successful!")
-                send_cmd(f"trust {addr}")
-                time.sleep(0.5)
-                send_cmd(f"connect {addr}")
-                time.sleep(2)
-                send_cmd("quit")
-                sys.exit(0)
-            
-            if "Failed to pair" in out:
-                log("Pairing failed")
-                send_cmd("quit")
-                sys.exit(1)
-            
+            if f"Device {addr} not available" in out:
+                log(f"Device {addr} not discovered yet...")
+                pair_wait_seconds += 30
+
             if "Confirm passkey" in out or "yes/no" in out or "Request confirmation" in out:
-                log("Sending confirmation...")
+                log("Passkey confirmation detected - user already confirmed on phone, confirming here")
                 send_cmd("yes")
-            
-            if "Enter passkey" in out or "Enter PIN" in out:
-                log("PIN required - waiting for user input")
-                print("PIN_REQUIRED")
-                sys.stdout.flush()
+
+            if "Authorize service" in out or "Request authorization" in out:
+                log("Authorization request detected - confirming")
+                send_cmd("yes")
+
+            if "Enter passkey" in out or "Enter PIN code" in out or "Passkey: " in out:
+                log("Device requested PIN/Passkey. Waiting for user input...")
+                log("PIN_REQUIRED")
                 try:
                     user_pin = sys.stdin.readline().strip()
                     if user_pin:
-                        log(f"Received PIN: {user_pin}")
+                        log(f"Received PIN: {user_pin}, relaying to bluetoothctl...")
                         send_cmd(user_pin)
-                except:
+                except Exception as e:
+                    log(f"Error reading stdin: {e}")
                     break
 
-    log("Pairing timed out")
-    send_cmd("quit")
-    sys.exit(1)
-  '';
+            if "Pairing successful" in out or "Paired: yes" in out or "Bonded: yes" in out:
+                paired = True
+                log("Pairing successful detected in stream.")
+                break
 
-  bluetoothAgent = pkgs.writeScriptBin "bluetooth-agent" ''
-    #${
-      pkgs.python3.withPackages (
-        ps: with ps; [
-          dbus-python
-          pygobject3
-        ]
-      )
-    }/bin/python3
-
-    import dbus
-    import dbus.service
-    import dbus.mainloop.glib
-    from gi.repository import GLib
-    import subprocess
-    import time
-    import os
-    import sys
-
-    BUS_NAME = 'org.bluez'
-    AGENT_INTERFACE = 'org.bluez.Agent1'
-    AGENT_PATH = '/org/bluez/agent'
-    LOCK_FILE = "/tmp/QsAnyModuleIsOpen"
-
-    def log(msg):
-        print(f"[bluetooth-agent] {msg}", file=sys.stderr)
-        sys.stderr.flush()
-
-    def close_quick_settings():
-        if os.path.exists(LOCK_FILE):
-            try:
-                subprocess.run(["wtype", "-k", "Escape"], stderr=subprocess.DEVNULL)
-                time.sleep(0.1)
-            except:
-                pass
-
-    class Agent(dbus.service.Object):
-        def __init__(self, bus, path):
-            dbus.service.Object.__init__(self, bus, path)
-
-        @dbus.service.method(AGENT_INTERFACE, in_signature="", out_signature="")
-        def Release(self):
-            log("Agent released")
-            pass
-
-        @dbus.service.method(AGENT_INTERFACE, in_signature="os", out_signature="")
-        def AuthorizeService(self, device, uuid):
-            log(f"AuthorizeService: {device} {uuid}")
-            return
-
-        @dbus.service.method(AGENT_INTERFACE, in_signature="o", out_signature="s")
-        def RequestPinCode(self, device):
-            log(f"RequestPinCode for {device}")
-            close_quick_settings()
-            try:
-                output = subprocess.check_output([
-                    "kdialog", "--title", "Bluetooth", "--inputbox", "Enter the device PIN:"
-                ], timeout=30)
-                pin = output.decode().strip()
-                log(f"Returning PIN: {pin}")
-                return pin
-            except subprocess.TimeoutExpired:
-                log("PIN entry timed out")
-            except Exception as e:
-                log(f"PIN entry error: {e}")
-            raise dbus.exceptions.DBusException("Rejected", name="org.bluez.Error.Rejected")
-
-        @dbus.service.method(AGENT_INTERFACE, in_signature="ou", out_signature="")
-        def RequestConfirmation(self, device, passkey):
-            log(f"RequestConfirmation for {device}: {passkey:06d}")
-            close_quick_settings()
-            try:
-                result = subprocess.check_call([
-                    "kdialog", "--title", "Bluetooth Pairing", "--yesno",
-                    f"Device wants to pair.\nPIN: {passkey:06d}\nConfirm?"
-                ], timeout=30)
-                log(f"Confirmation result: {result}")
-            except subprocess.TimeoutExpired:
-                log("Confirmation timed out")
-            except Exception as e:
-                log(f"Confirmation error: {e}")
-                raise dbus.exceptions.DBusException("Rejected", name="org.bluez.Error.Rejected")
-
-        @dbus.service.method(AGENT_INTERFACE, in_signature="o", out_signature="")
-        def RequestAuthorization(self, device):
-            log(f"RequestAuthorization for {device}")
-            close_quick_settings()
-            try:
-                subprocess.check_call([
-                    "kdialog", "--title", "Bluetooth", "--yesno",
-                    "Authorize pairing with this device?"
-                ], timeout=30)
-            except subprocess.TimeoutExpired:
-                log("Authorization timed out")
-            except Exception as e:
-                log(f"Authorization error: {e}")
-                raise dbus.exceptions.DBusException("Rejected", name="org.bluez.Error.Rejected")
-
-        @dbus.service.method(AGENT_INTERFACE, in_signature="", out_signature="")
-        def Cancel(self):
-            log("Pairing cancelled")
-            pass
-
-    if __name__ == '__main__':
-        log("Starting Bluetooth agent...")
-        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-        bus = dbus.SystemBus()
+            if "Failed to pair" in out:
+                log("Pairing failed explicitly.")
+                break
+            
+            if "Already joined" in out or "Already exists" in out:
+                paired = True
+                log("Device already paired.")
+                break
         
-        try:
-            agent = Agent(bus, AGENT_PATH)
-            log("Agent object created")
-            
-            obj = bus.get_object(BUS_NAME, "/org/bluez")
-            manager = dbus.Interface(obj, "org.bluez.AgentManager1")
-            
-            manager.RegisterAgent(AGENT_PATH, "KeyboardDisplay")
-            log("Agent registered with NoInputNoOutput capability")
-            
-            manager.RequestDefaultAgent(AGENT_PATH)
-            log("Agent set as default")
-            
-        except Exception as e:
-            log(f"Error setting up agent: {e}")
-            import traceback
-            traceback.print_exc()
+        # Also check if the process is still in the pairing state
+        time.sleep(0.5)
 
-        log("Bluetooth agent running...")
-        mainloop = GLib.MainLoop()
-        mainloop.run()
+    if not paired:
+        send_cmd(f"info {addr}")
+        time.sleep(1)
+        out = read_output(timeout=1)
+        if "Paired: yes" in out:
+            paired = True
+
+    if paired:
+        log("Device is paired. Trusting...")
+        send_cmd(f"trust {addr}")
+        time.sleep(1)
+
+        log("Connecting...")
+        connected = False
+        for i in range(attempts):
+            send_cmd(f"connect {addr}")
+            time.sleep(interval_sec)
+
+            send_cmd(f"info {addr}")
+            time.sleep(1)
+            out = read_output(timeout=1)
+            if "Connected: yes" in out:
+                log("Connected successfully, we are done here.")
+                connected = True
+                break
+            else:
+                log(f"Connection attempt {i + 1}/{attempts} failed. Retrying...")
+
+        if connected:
+            send_cmd("quit")
+            sys.exit(0)
+        else:
+            log("Failed to connect after all attempts.")
+            send_cmd("quit")
+            sys.exit(1)
+    else:
+        log("Failed to pair within timeout.")
+        send_cmd("quit")
+        sys.exit(1)
   '';
+
+  # bluetoothAgent disabled - using script only
+  bluetoothAgent = null;
 in
 
 {
@@ -318,7 +248,6 @@ in
     systemPackages = with pkgs; [
       kdePackages.kdialog
       wtype
-      bluetoothAgent
       bluetoothPairScript
     ];
   };
@@ -372,26 +301,26 @@ in
     };
   };
 
-  systemd.user.services.bluetooth-agent = {
-    description = "Bluetooth Pairing Agent for Quickshell";
-    after = [
-      "bluetooth.service"
-      "dbus.service"
-    ];
-    requires = [
-      "bluetooth.service"
-    ];
-    wantedBy = [ "graphical-session.target" ];
-    serviceConfig = {
-      Type = "simple";
-      ExecStart = "${bluetoothAgent}/bin/bluetooth-agent";
-      Restart = "always";
-      RestartSec = 3;
-      StandardOutput = "journal+console";
-      StandardError = "journal+console";
-      TimeoutStartSec = 30;
-    };
-  };
+  # systemd.user.services.bluetooth-agent = {
+  #   description = "Bluetooth Pairing Agent for Quickshell";
+  #   after = [
+  #     "bluetooth.service"
+  #     "dbus.service"
+  #   ];
+  #   requires = [
+  #     "bluetooth.service"
+  #   ];
+  #   wantedBy = [ "graphical-session.target" ];
+  #   serviceConfig = {
+  #     Type = "simple";
+  #     ExecStart = "${bluetoothAgent}/bin/bluetooth-agent";
+  #     Restart = "always";
+  #     RestartSec = 3;
+  #     StandardOutput = "journal+console";
+  #     StandardError = "journal+console";
+  #     TimeoutStartSec = 30;
+  #   };
+  # };
 
   hardware.bluetooth = {
     enable = true;

@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, pkgs, ... }:
 let
   inherit (lib) getExe getExe';
 in
@@ -18,8 +18,6 @@ in
     readonly property bool available: root.adapter !== null
     readonly property bool enabled: root.adapter ? root.adapter.enabled : false
     readonly property bool discovering: root.adapter ? root.adapter.discovering : false
-
-    property bool _scanRequested: false
 
     readonly property var devices: {
       if (!root.adapter || !root.adapter.devices) {
@@ -61,8 +59,6 @@ in
     function setScanActive(active) {
       if (!root.adapter) return;
       
-      root._scanRequested = active;
-      
       if (active) {
         try {
           root.adapter.enabled = true;
@@ -84,7 +80,7 @@ in
       repeat: true
       running: true
       onTriggered: {
-        if (root._scanRequested && root.adapter && root.adapter.enabled && !root.adapter.discovering) {
+        if (root.adapter && root.adapter.enabled && !root.adapter.discovering) {
           scanDelayTimer.start();
         }
       }
@@ -174,16 +170,40 @@ in
       }
     }
 
+    property int pairWaitSeconds: 45
+    property int connectAttempts: 3
+    property int connectRetryIntervalMs: 2000
+
+    Process {
+      id: pairingProcess
+      running: false
+      command: []
+      stdout: SplitParser {
+        onRead: function(data) {
+          console.log("Pair output: " + data);
+        }
+      }
+      onExited: function() {
+        console.log("Pairing process finished");
+      }
+    }
+
     function pairDevice(device) {
       if (!device) return;
       var address = device.address || device.addresses;
       if (!address) {
         address = device.name;
       }
+      console.log("DEBUG: pairDevice called, address=" + address);
       
-      if (address) {
-        Quickshell.execDetached(["/run/current-system/sw/bin/bluetooth-pair", address]);
-      }
+      var pythonPath = "${getExe' pkgs.python3 "python3"}";
+      var scriptPath = "/run/current-system/sw/bin/bluetooth-pair";
+      var logFile = "/tmp/bluetooth-pair-" + address.replace(/:/g, "-") + ".log";
+      
+      var cmd = pythonPath + " " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &";
+      console.log("DEBUG: Running: " + cmd);
+      
+      Quickshell.execDetached(["bash", "-c", cmd]);
     }
   }
 ''
