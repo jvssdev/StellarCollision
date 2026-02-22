@@ -248,6 +248,7 @@ in
     systemPackages = with pkgs; [
       kdePackages.kdialog
       wtype
+      python3
       bluetoothPairScript
     ];
   };

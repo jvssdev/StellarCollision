@@ -1,6 +1,6 @@
 { lib, pkgs, ... }:
 let
-  inherit (lib) getExe getExe';
+  inherit (lib) ;
 in
 ''
   pragma Singleton
@@ -148,10 +148,17 @@ in
     function connectDevice(device) {
       if (!device) return;
       var address = device.address || device.addresses;
-      if (address) {
-        Quickshell.execDetached(["bluetoothctl", "trust", address]);
-        Quickshell.execDetached(["bluetoothctl", "connect", address]);
-      }
+      if (!address) return;
+      
+      console.log("DEBUG: connectDevice, address=" + address);
+      
+      var logFile = "/tmp/bluetooth-pair-" + address.replace(/:/g, "-") + ".log";
+      var scriptPath = "/run/current-system/sw/bin/bluetooth-pair";
+      
+      Quickshell.execDetached(["bash", "-c", 
+        "bluetoothctl remove " + address + " 2>/dev/null; " +
+        "sleep 0.5; " +
+        "python3 " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &"]);
     }
 
     function disconnectDevice(device) {
@@ -196,11 +203,10 @@ in
       }
       console.log("DEBUG: pairDevice called, address=" + address);
       
-      var pythonPath = "${getExe' pkgs.python3 "python3"}";
       var scriptPath = "/run/current-system/sw/bin/bluetooth-pair";
       var logFile = "/tmp/bluetooth-pair-" + address.replace(/:/g, "-") + ".log";
       
-      var cmd = pythonPath + " " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &";
+      var cmd = "python3 " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &";
       console.log("DEBUG: Running: " + cmd);
       
       Quickshell.execDetached(["bash", "-c", cmd]);
