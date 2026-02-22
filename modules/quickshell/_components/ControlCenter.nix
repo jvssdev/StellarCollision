@@ -1216,8 +1216,8 @@ if isNiri then
                                         onClicked: {
                                             if (modelData.connected) {
                                                 BluetoothService.disconnectDevice(modelData);
-                                            } else if (modelData.paired || modelData.trusted) {
-                                                BluetoothService.connectDevice(modelData);
+                                            } else if (BluetoothService.canConnect(modelData)) {
+                                                BluetoothService.connectDeviceWithTrust(modelData);
                                             } else {
                                                 BluetoothService.pairDevice(modelData);
                                             }
@@ -1245,7 +1245,7 @@ if isNiri then
                                                 color: root.theme?.fg
                                             }
                                             Text {
-                                                text: modelData.connected ? "Connected" : (modelData.paired ? "Tap to connect" : "")
+                                                text: modelData.connected ? "Connected" : "Tap to connect"
                                                 font.pixelSize: 10
                                                 color: modelData.connected ? root.theme?.green : root.theme?.fgMuted
                                             }

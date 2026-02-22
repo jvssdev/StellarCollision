@@ -66,10 +66,15 @@ let
 
     log(f"Attempting to pair with {addr}...")
 
-    # Disconnect first if connected
-    send_cmd(f"disconnect {addr}")
+    # First, make sure adapter is powered on and scanning
+    send_cmd("power on")
     time.sleep(0.5)
+    send_cmd("discoverable on")
+    time.sleep(0.5)
+    send_cmd("scan on")
+    time.sleep(2)
 
+    # Just try to pair directly
     send_cmd(f"pair {addr}")
 
     start_time = time.time()
@@ -82,8 +87,8 @@ let
             sys.stdout.write(out)
             
             if f"Device {addr} not available" in out:
-                log(f"Device {addr} not discovered yet...")
-                pair_wait_seconds += 30
+                log(f"Device {addr} not discovered yet, waiting longer...")
+                pair_wait_seconds += 10
 
             if "Confirm passkey" in out or "yes/no" in out or "Request confirmation" in out:
                 log("Passkey confirmation detected - user already confirmed on phone, confirming here")
@@ -109,6 +114,15 @@ let
                 paired = True
                 log("Pairing successful detected in stream.")
                 break
+
+            if "AlreadyExists" in out:
+                log("Device already paired on laptop, removing and re-pairing...")
+                send_cmd(f"remove {addr}")
+                time.sleep(2)
+                send_cmd("scan on")
+                time.sleep(3)
+                send_cmd(f"pair {addr}")
+                continue
 
             if "Failed to pair" in out:
                 log("Pairing failed explicitly.")

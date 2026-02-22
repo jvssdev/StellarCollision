@@ -127,7 +127,7 @@ in
 
     function canConnect(device) {
       if (!device) return false;
-      return !device.paired && !device.pairing && !device.blocked;
+      return !device.connected && (device.paired || device.trusted) && !device.pairing && !device.blocked;
     }
 
     function canDisconnect(device) {
@@ -155,9 +155,8 @@ in
       var logFile = "/tmp/bluetooth-pair-" + address.replace(/:/g, "-") + ".log";
       var scriptPath = "/run/current-system/sw/bin/bluetooth-pair";
       
+      // Run in background to keep device visible in UI
       Quickshell.execDetached(["bash", "-c", 
-        "bluetoothctl remove " + address + " 2>/dev/null; " +
-        "sleep 0.5; " +
         "python3 " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &"]);
     }
 
@@ -169,12 +168,40 @@ in
       }
     }
 
+    function connectDeviceWithTrust(device) {
+      if (!device) return;
+      var address = device.address || device.addresses;
+      if (!address) {
+        address = device.name;
+      }
+      console.log("connectDeviceWithTrust: " + address);
+      
+      var scriptPath = "/run/current-system/sw/bin/bluetooth-pair";
+      var logFile = "/tmp/bluetooth-pair-" + address.replace(/:/g, "-") + ".log";
+      var cmd = "python3 " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &";
+      Quickshell.execDetached(["bash", "-c", cmd]);
+    }
+
     function forgetDevice(device) {
       if (!device) return;
       var address = device.address || device.addresses;
       if (address) {
         Quickshell.execDetached(["bluetoothctl", "remove", address]);
       }
+    }
+
+    function pairDevice(device) {
+      if (!device) return;
+      var address = device.address || device.addresses;
+      if (!address) {
+        address = device.name;
+      }
+      console.log("pairDevice: " + address);
+      
+      var scriptPath = "/run/current-system/sw/bin/bluetooth-pair";
+      var logFile = "/tmp/bluetooth-pair-" + address.replace(/:/g, "-") + ".log";
+      var cmd = "python3 " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &";
+      Quickshell.execDetached(["bash", "-c", cmd]);
     }
 
     property int pairWaitSeconds: 45
@@ -195,21 +222,20 @@ in
       }
     }
 
-    function pairDevice(device) {
-      if (!device) return;
-      var address = device.address || device.addresses;
-      if (!address) {
-        address = device.name;
+    property int _refreshCounter: 0
+
+    function refreshDevices() {
+      root._refreshCounter = root._refreshCounter + 1;
+    }
+
+    Timer {
+      id: autoRefreshTimer
+      interval: 5000
+      running: true
+      repeat: true
+      onTriggered: {
+        root.refreshDevices();
       }
-      console.log("DEBUG: pairDevice called, address=" + address);
-      
-      var scriptPath = "/run/current-system/sw/bin/bluetooth-pair";
-      var logFile = "/tmp/bluetooth-pair-" + address.replace(/:/g, "-") + ".log";
-      
-      var cmd = "python3 " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &";
-      console.log("DEBUG: Running: " + cmd);
-      
-      Quickshell.execDetached(["bash", "-c", cmd]);
     }
   }
 ''
