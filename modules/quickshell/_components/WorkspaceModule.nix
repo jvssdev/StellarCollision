@@ -5,7 +5,7 @@
   ...
 }:
 if isNiri then
-  ''
+  /* qml */ ''
     import QtQuick
     import QtQuick.Layouts
     import Quickshell
@@ -107,7 +107,7 @@ if isNiri then
     }
   ''
 else if isMango then
-  ''
+  /* qml */ ''
     import QtQuick
     import QtQuick.Layouts
     import Quickshell
@@ -217,7 +217,7 @@ else if isMango then
     }
   ''
 else
-  ''
+  /* qml */ ''
     import QtQuick
     import QtQuick.Layouts
     import Quickshell

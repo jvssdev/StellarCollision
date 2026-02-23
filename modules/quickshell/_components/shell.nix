@@ -9,7 +9,7 @@ let
   inherit (lib) getExe getExe';
   c = colors;
 in
-''
+/* qml */ ''
       import QtQuick
       import QtQuick.Layouts
       import QtQuick.Effects

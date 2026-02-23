@@ -1,5 +1,6 @@
-{ ... }:
-''
+_:
+
+/* qml */ ''
   import QtQuick
   import QtQuick.Layouts
   import QtQuick.Controls

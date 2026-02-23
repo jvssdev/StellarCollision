@@ -1,5 +1,5 @@
 { backgroundColor, base07, ... }:
-''
+/* qml */ ''
   import QtQuick
   import QtQuick.Layouts
   import Quickshell

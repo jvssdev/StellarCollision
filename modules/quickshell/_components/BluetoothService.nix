@@ -1,8 +1,6 @@
-{ lib, pkgs, ... }:
-let
-  inherit (lib) ;
-in
-''
+_:
+
+/* qml */ ''
   pragma Singleton
 
   import QtQuick

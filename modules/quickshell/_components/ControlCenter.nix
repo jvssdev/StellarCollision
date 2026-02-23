@@ -9,7 +9,7 @@ let
   inherit (lib) getExe getExe';
 in
 if isNiri then
-  ''
+  /* qml */ ''
     import QtQuick
     import QtQuick.Layouts
     import QtQuick.Controls
@@ -1614,7 +1614,7 @@ if isNiri then
     }
   ''
 else if isMango then
-  ''
+  /* qml */ ''
     import QtQuick
     import Quickshell
     Scope {
@@ -1628,7 +1628,7 @@ else if isMango then
     }
   ''
 else
-  ''
+  /* qml */ ''
     import QtQuick
     import Quickshell
     Scope {

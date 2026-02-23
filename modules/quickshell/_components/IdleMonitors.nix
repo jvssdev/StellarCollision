@@ -9,7 +9,7 @@ let
   inherit (lib) getExe getExe';
   useNiriDPMS = isNiri;
 in
-''
+/* qml */ ''
   import QtQuick
   import Quickshell
   import Quickshell.Wayland

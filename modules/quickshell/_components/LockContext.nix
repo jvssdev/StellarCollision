@@ -1,5 +1,6 @@
-{ ... }:
-''
+_:
+
+/* qml */ ''
   import QtQuick
   import Quickshell
   import Quickshell.Services.Pam

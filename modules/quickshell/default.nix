@@ -13,16 +13,12 @@ let
     mkOption
     mkIf
     types
-    getExe
-    getExe'
     ;
   inherit (builtins) substring;
 
-  # Detect which compositor is enabled
   isNiri = config.cfg.niri.enable or false;
   isMango = config.cfg.mango.enable or false;
 
-  # Import component files
   componentsDir = ./_components;
   NotificationPopups = import (componentsDir + "/NotificationPopups.nix") { inherit pkgs lib; };
   NotificationCenter = import (componentsDir + "/NotificationCenter.nix") { inherit isNiri isMango; };
@@ -38,7 +34,7 @@ let
   PowerButton = import (componentsDir + "/PowerButton.nix") { inherit pkgs lib; };
   PowerMenu = import (componentsDir + "/PowerMenu.nix") {
     backgroundColor = "#80${substring 1 6 c.base00}";
-    base07 = c.base07;
+    inherit (c) base07;
   };
   WorkspaceModule = import (componentsDir + "/WorkspaceModule.nix") {
     inherit isNiri isMango;
@@ -58,7 +54,6 @@ let
     colors = c;
   };
 
-  # Listar todos os wallpapers disponíveis
   wallpapersDir = ../../assets/Wallpapers;
   wallpapersFiles = lib.filterAttrs (
     name: type:

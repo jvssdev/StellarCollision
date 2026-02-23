@@ -7,6 +7,7 @@
       highlight.enable = true;
       grammars = with pkgs.vimPlugins.nvim-treesitter.builtGrammars; [
         typescript
+        qmljs
       ];
     };
     startPlugins = [

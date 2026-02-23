@@ -6,7 +6,7 @@
 let
   wallpapersArray = lib.concatStringsSep ", " (map (w: "\"${w}\"") wallpapersList);
 in
-''
+/* qml */ ''
   import QtQuick
   import QtQuick.Effects
   import Quickshell

@@ -2,7 +2,7 @@
 let
   inherit (lib) getExe;
 in
-''
+/* qml */ ''
   import QtQuick
   import Quickshell.Io
   QtObject {
