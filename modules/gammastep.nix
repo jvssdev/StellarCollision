@@ -59,7 +59,7 @@ in
         pkgs.brightnessctl
       ];
 
-      xdg.config.files."gammastep/config.ini".text = ''
+      xdg.config.files."gammastep/config.ini".text = /* ini */ ''
         [general]
         temp-day=${toString cfg.temperature.day}
         temp-night=${toString cfg.temperature.night}

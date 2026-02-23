@@ -33,24 +33,41 @@ in
       packages = [ cfg.package ];
 
       xdg.config.files = {
-        "opencode/opencode.json".text = ''
+        "opencode/opencode.json".text = /* json */ ''
           {
             "$schema": "https://opencode.ai/config.json",
             "theme": "theme",
+            /*
             "provider": {},
             "model": "anthropic/claude-sonnet-4-5",
-            "small_model": "anthropic/claude-haiku-4-5"
+            "small_model": "anthropic/claude-haiku-4-5",
+            */
+            "autoupdate": false,
+            "permission": {
+              "*": "ask",
+              "codesearch": "allow",
+              "glob": "allow",
+              "grep": "allow",
+              "list": "allow",
+              "lsp": "allow",
+              "read": "allow",
+              "task": "allow",
+              "todoread": "allow",
+              "todowrite": "allow",
+              "webfetch": "allow",
+              "websearch": "allow"
+            }
           }
         '';
 
-        "opencode/AGENTS.md".text = ''
+        "opencode/AGENTS.md".text = /* markdown */ ''
           # Rules
 
           - Do not put comments inside the code.
 
         '';
 
-        "opencode/themes/theme.json".text = ''
+        "opencode/themes/theme.json".text = /* json */ ''
           {
             "$schema": "https://opencode.ai/theme.json",
             "defs": {

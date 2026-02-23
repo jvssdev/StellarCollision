@@ -35,6 +35,12 @@ in
       default = inputs'.niri.packages.niri-unstable;
       description = "The Niri package to install.";
     };
+
+    xwayland-satellite = mkOption {
+      type = lib.types.package;
+      default = inputs'.niri.packages.xwayland-satellite-unstable;
+      description = "The xwayland-satellite package to install.";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -46,6 +52,7 @@ in
     hj.packages = [
       clipboard.fuzzel-clipboard
       clipboard.fuzzel-clipboard-clear
+      cfg.xwayland-satellite
     ];
 
     hj.xdg.config.files."niri/config.kdl".text = ''
@@ -165,7 +172,7 @@ in
        }
 
        xwayland-satellite {
-         path "${getExe pkgs.xwayland-satellite}"
+         path "${getExe cfg.xwayland-satellite}"
        }
 
        window-rule {

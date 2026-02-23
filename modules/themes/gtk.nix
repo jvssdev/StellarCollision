@@ -73,7 +73,7 @@ in
       ];
 
       xdg.config.files = {
-        "gtk-3.0/settings.ini".text = ''
+        "gtk-3.0/settings.ini".text = /* ini */ ''
           [Settings]
           gtk-theme-name=${cfg.theme.name}
           gtk-icon-theme-name=${cfg.iconTheme.name}
@@ -87,7 +87,7 @@ in
           gtk-xft-rgba=rgb
         '';
 
-        "gtk-4.0/settings.ini".text = ''
+        "gtk-4.0/settings.ini".text = /* ini */ ''
           [Settings]
           gtk-theme-name=${cfg.theme.name}
           gtk-icon-theme-name=${cfg.iconTheme.name}

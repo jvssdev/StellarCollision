@@ -119,7 +119,7 @@ in
       };
 
       xdg.config.files = {
-        "atuin/config.toml".text = ''
+        "atuin/config.toml".text = /* toml */ ''
           enter_accept = false
           keymap_mode = "vim-insert"
           [keymap_cursor]
@@ -127,7 +127,7 @@ in
           vim_normal = "steady-block"
         '';
 
-        "starship.toml".text = ''
+        "starship.toml".text = /* toml */ ''
           add_newline = true
           format = """
           [░▒▓](${c.base02})[ ](bg:${c.base02} fg:${c.base06})[](bg:${c.base0D} fg:${c.base02})$nix_shell$directory[](fg:${c.base0D} bg:${c.base02})$git_branch$git_status[](fg:${c.base02} bg:${c.base03})$time[](fg:${c.base03})

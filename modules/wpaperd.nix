@@ -30,7 +30,7 @@ in
     hj = {
       packages = [ cfg.package ];
 
-      xdg.config.files."wpaperd/config.toml".text = ''
+      xdg.config.files."wpaperd/config.toml".text = /* toml */ ''
         [any]
         path = "${wallpapers}"
         duration = "10m"

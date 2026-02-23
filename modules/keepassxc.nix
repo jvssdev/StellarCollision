@@ -27,7 +27,7 @@ in
     hj.packages = [
       cfg.package
     ];
-    hj.xdg.config.files."keepassxc/keepassxc.ini".text = ''
+    hj.xdg.config.files."keepassxc/keepassxc.ini".text = /* ini */ ''
       [General]
       ConfigVersion=2
       UseAtomicSaves=true

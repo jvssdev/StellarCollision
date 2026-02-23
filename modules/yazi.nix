@@ -114,7 +114,7 @@ in
       ];
 
       xdg.config.files = {
-        "yazi/theme.toml".text = ''
+        "yazi/theme.toml".text = /* toml */ ''
           [mgr.size]
           fg = "${c.base03}"
 
@@ -123,7 +123,7 @@ in
           bg = "${c.base03}"
         '';
 
-        "yazi/yazi.toml".text = ''
+        "yazi/yazi.toml".text = /* toml */ ''
           [mgr]
           show_hidden = true
           show_symlink = true
@@ -204,7 +204,7 @@ in
           use = "edit"
         '';
 
-        "yazi/keymap.toml".text = ''
+        "yazi/keymap.toml".text = /* toml */ ''
           [[mgr.prepend_keymap]]
           on = ["g", "s"]
           run = "plugin git"
@@ -220,7 +220,7 @@ in
           desc = "Restore last deleted files/folders"
         '';
 
-        "yazi/init.lua".text = ''
+        "yazi/init.lua".text = /* toml */ ''
           require("full-border"):setup {
             type = ui.Border.ROUNDED,
           }

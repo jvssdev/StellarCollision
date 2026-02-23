@@ -58,12 +58,12 @@ in
 
     function setScanActive(active) {
       if (!root.adapter) return;
-      
+
       if (active) {
         try {
           root.adapter.enabled = true;
         } catch (e) {}
-        
+
         scanDelayTimer.start();
       } else {
         try {
@@ -149,14 +149,14 @@ in
       if (!device) return;
       var address = device.address || device.addresses;
       if (!address) return;
-      
+
       console.log("DEBUG: connectDevice, address=" + address);
-      
+
       var logFile = "/tmp/bluetooth-pair-" + address.replace(/:/g, "-") + ".log";
       var scriptPath = "/run/current-system/sw/bin/bluetooth-pair";
-      
+
       // Run in background to keep device visible in UI
-      Quickshell.execDetached(["bash", "-c", 
+      Quickshell.execDetached(["bash", "-c",
         "python3 " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &"]);
     }
 
@@ -175,7 +175,7 @@ in
         address = device.name;
       }
       console.log("connectDeviceWithTrust: " + address);
-      
+
       var scriptPath = "/run/current-system/sw/bin/bluetooth-pair";
       var logFile = "/tmp/bluetooth-pair-" + address.replace(/:/g, "-") + ".log";
       var cmd = "python3 " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &";
@@ -197,7 +197,7 @@ in
         address = device.name;
       }
       console.log("pairDevice: " + address);
-      
+
       var scriptPath = "/run/current-system/sw/bin/bluetooth-pair";
       var logFile = "/tmp/bluetooth-pair-" + address.replace(/:/g, "-") + ".log";
       var cmd = "python3 " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &";

@@ -27,7 +27,7 @@ in
   };
   config = mkIf cfg.enable {
     hj.packages = [ cfg.package ];
-    hj.xdg.config.files."wezterm/wezterm.lua".text = ''
+    hj.xdg.config.files."wezterm/wezterm.lua".text = /* lua */ ''
       local wezterm = require 'wezterm'
       local config = wezterm.config_builder()
       config.font = wezterm.font '${font}'
