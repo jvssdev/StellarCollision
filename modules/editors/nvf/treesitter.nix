@@ -8,6 +8,7 @@
       grammars = with pkgs.vimPlugins.nvim-treesitter.builtGrammars; [
         typescript
         qmljs
+        kdl
       ];
     };
     startPlugins = [

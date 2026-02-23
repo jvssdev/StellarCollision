@@ -1,9 +1,9 @@
 { pkgs, config, ... }:
 
 let
-  python = pkgs.python3;
+  python = pkgs.python314;
 
-  bluetoothPairScript = pkgs.writeScriptBin "bluetooth-pair" ''
+  bluetoothPairScript = pkgs.writeScriptBin "bluetooth-pair" /* python */ ''
     #!${python}/bin/python3
     import errno
     import os
@@ -66,7 +66,6 @@ let
 
     log(f"Attempting to pair with {addr}...")
 
-    # First, make sure adapter is powered on and scanning
     send_cmd("power on")
     time.sleep(0.5)
     send_cmd("discoverable on")
@@ -74,7 +73,6 @@ let
     send_cmd("scan on")
     time.sleep(2)
 
-    # Just try to pair directly
     send_cmd(f"pair {addr}")
 
     start_time = time.time()
@@ -85,7 +83,7 @@ let
         out = read_output(timeout=1.0)
         if out:
             sys.stdout.write(out)
-            
+
             if f"Device {addr} not available" in out:
                 log(f"Device {addr} not discovered yet, waiting longer...")
                 pair_wait_seconds += 10
@@ -127,13 +125,12 @@ let
             if "Failed to pair" in out:
                 log("Pairing failed explicitly.")
                 break
-            
+
             if "Already joined" in out or "Already exists" in out:
                 paired = True
                 log("Device already paired.")
                 break
-        
-        # Also check if the process is still in the pairing state
+
         time.sleep(0.5)
 
     if not paired:
@@ -176,9 +173,6 @@ let
         send_cmd("quit")
         sys.exit(1)
   '';
-
-  # bluetoothAgent disabled - using script only
-  bluetoothAgent = null;
 in
 
 {
@@ -262,7 +256,7 @@ in
     systemPackages = with pkgs; [
       kdePackages.kdialog
       wtype
-      python3
+      python314
       bluetoothPairScript
     ];
   };

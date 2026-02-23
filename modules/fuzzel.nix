@@ -35,7 +35,7 @@ in
       ];
       xdg.config = {
         files = {
-          "fuzzel/fuzzel.ini".text = ''
+          "fuzzel/fuzzel.ini".text = /* ini */ ''
             [main]
             dpi-aware=no
             font=${name}:size=13

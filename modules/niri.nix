@@ -55,7 +55,7 @@ in
       cfg.xwayland-satellite
     ];
 
-    hj.xdg.config.files."niri/config.kdl".text = ''
+    hj.xdg.config.files."niri/config.kdl".text = /* kdl */ ''
 
        spawn-at-startup "${getExe' pkgs.dbus "dbus-update-activation-environment"}" "--systemd" "WAYLAND_DISPLAY" "XDG_CURRENT_DESKTOP"
 

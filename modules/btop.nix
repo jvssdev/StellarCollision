@@ -68,7 +68,7 @@ in
         theme[upload_end]="${c.base08}"
       '';
 
-      "btop/btop.conf".text = ''
+      "btop/btop.conf".text = /* ini */ ''
         color_theme = "tsuki"
         theme_background = true
         truecolor = true
