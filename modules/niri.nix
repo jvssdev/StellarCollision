@@ -57,7 +57,7 @@ in
 
     hj.xdg.config.files."niri/config.kdl".text = /* kdl */ ''
 
-       spawn-at-startup "${getExe' pkgs.dbus "dbus-update-activation-environment"}" "--systemd" "WAYLAND_DISPLAY" "XDG_CURRENT_DESKTOP"
+       spawn-at-startup "${getExe' pkgs.dbus "dbus-update-activation-environment"}" "--systemd" "WAYLAND_DISPLAY" "XDG_CURRENT_DESKTOP" "QT_QPA_PLATFORMTHEME" "QT_STYLE_OVERRIDE" "QT_QPA_PLATFORM"
 
        spawn-sh-at-startup "${getExe pkgs.fcitx5} -d --replace"
        spawn-sh-at-startup "${getExe' pkgs.networkmanagerapplet "nm-applet"} --indicator"
@@ -140,9 +140,11 @@ in
 
 
        environment {
-           QT_QPA_PLATFORM "wayland;xcb"
-           GDK_BACKEND "wayland,x11,*"
-       }
+          QT_QPA_PLATFORM "wayland;xcb"
+          QT_QPA_PLATFORMTHEME "qt5ct"
+          QT_STYLE_OVERRIDE "kvantum"
+          GDK_BACKEND "wayland,x11,*"
+        }
 
        cursor {
          hide-when-typing

@@ -73,8 +73,9 @@ let
 
     DefaultBrowserSettingEnabled = false;
     RestoreOnStartup = 1; # 5 = Open New Tab Page, 1 = Restore the last session, 4 = Open list of URLs, 6 = 1 + 4
-    DnsOverHttpsMode = "secure";
+    DnsOverHttpsMode = "automatic";
     HttpsOnlyMode = "allowed";
+    MetricsReportingEnabled = false;
     GtkThemeModeEnabled = true;
     DefaultSearchProviderEnabled = true;
     DefaultSearchProviderName = "DuckDuckGo";
