@@ -47,6 +47,7 @@ let
   LockContext = import (componentsDir + "/LockContext.nix") { };
   LockSurface = import (componentsDir + "/LockSurface.nix") { };
   BluetoothService = import (componentsDir + "/BluetoothService.nix") { inherit lib pkgs; };
+  BatteryMonitor = import (componentsDir + "/BatteryMonitor.nix") { inherit pkgs lib; };
   Shell = import (componentsDir + "/shell.nix") {
     inherit pkgs lib config;
     quickshellPackage = cfg.package;
@@ -89,6 +90,7 @@ in
       cfg.package
       pkgs.gammastep
       pkgs.brightnessctl
+      pkgs.libnotify
     ];
     environment.sessionVariables = {
       QML_IMPORT_PATH = lib.concatStringsSep ":" [
@@ -120,6 +122,7 @@ in
       "quickshell/LockContext.qml".text = LockContext;
       "quickshell/LockSurface.qml".text = LockSurface;
       "quickshell/BluetoothService.qml".text = BluetoothService;
+      "quickshell/services/BatteryMonitor.qml".text = BatteryMonitor;
     };
   };
 }

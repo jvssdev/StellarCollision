@@ -19,8 +19,10 @@ in
       import Quickshell.Bluetooth
       import Quickshell.Services.Pam
       import Quickshell.Services.Notifications
+      import Quickshell.Services.UPower
       ShellRoot {
           id: root
+          Component.onCompleted: console.log("Shell loaded")
           IpcHandler {
               target: "powerMenu"
               function toggle(): void {
@@ -130,19 +132,86 @@ in
               property bool muted: false
           }
 
+          property var upowerBattery: null
+          property bool hasUpowerBattery: false
+          property int upowerPercentage: 0
+          property bool upowerCharging: false
+
+          Instantiator {
+              model: UPower.devices
+              delegate: QtObject {
+                  required property var modelData
+                  Component.onCompleted: checkBattery()
+                  function checkBattery() {
+                      console.log("UPower device: isLaptopBattery=" + modelData.isLaptopBattery)
+                      if (modelData && modelData.isLaptopBattery) {
+                          root.upowerBattery = modelData
+                          root.hasUpowerBattery = true
+                          root.updateBatteryFromUpower()
+                      }
+                  }
+              }
+          }
+
+          function updateBatteryFromUpower() {
+              if (!root.upowerBattery) return
+              var percentage = Math.round(root.upowerBattery.percentage * 100)
+              var charging = root.upowerBattery.state === UPowerDeviceState.Charging
+              root.upowerPercentage = percentage
+              root.upowerCharging = charging
+              root.checkBatteryNotifications(percentage, charging)
+          }
+
+          property bool lowBatteryNotified: false
+          property bool fullBatteryNotified: false
+
+          function checkBatteryNotifications(percentage, charging) {
+              if (!root.hasUpowerBattery) return
+              
+              console.log("Battery check: " + percentage + "% charging=" + charging)
+
+              if (percentage <= 60 && !charging && !root.lowBatteryNotified) {
+                  Quickshell.execDetached(["notify-send", "-u", "critical", "-t", "0", "-A", "dismiss=Dismiss", "Low Battery", "Battery is at " + percentage + "%. Please plug in your charger."])
+                  root.lowBatteryNotified = true
+              } else if (percentage > 60 || charging) {
+                  root.lowBatteryNotified = false
+              }
+
+              if (percentage >= 100 && !charging && !root.fullBatteryNotified) {
+                  Quickshell.execDetached(["notify-send", "-u", "normal", "-t", "0", "-A", "dismiss=Dismiss", "Battery Full", "Battery is fully charged."])
+                  root.fullBatteryNotified = true
+              } else if (percentage < 100) {
+                  root.fullBatteryNotified = false
+              }
+          }
+
+          Timer {
+              interval: 10000
+              running: true
+              repeat: true
+              triggeredOnStart: true
+              onTriggered: {
+                  if (root.upowerBattery) {
+                      root.updateBatteryFromUpower()
+                  }
+              }
+          }
+
           QtObject {
               id: battery
-              property int percentage: 0
-              property string icon: "󰂎"
-              property bool charging: false
-              onPercentageChanged: {
-                  if (percentage === 0) icon = "󰁹"
-                  else if (percentage <= 10) icon = "󰂎"
-                  else if (percentage <= 30) icon = "󰁻"
-                  else if (percentage <= 50) icon = "󰁽"
-                  else if (percentage <= 70) icon = "󰁾"
-                  else if (percentage <= 90) icon = "󰂀"
-                  else icon = "󰂂"
+              property int percentage: root.upowerPercentage
+              property string icon: getBatteryIcon()
+              property bool charging: root.upowerCharging
+              property bool hasBattery: root.hasUpowerBattery
+              function getBatteryIcon() {
+                  if (root.upowerCharging) return "󰂄"
+                  const p = root.upowerPercentage
+                  if (p >= 90) return "󰁹"
+                  if (p >= 70) return "󰂀"
+                  if (p >= 50) return "󰁽"
+                  if (p >= 30) return "󰁻"
+                  if (p >= 10) return "󰂎"
+                  return "󰁺"
               }
           }
           QtObject { id: cpu; property int usage: 0 }
@@ -176,34 +245,6 @@ in
               repeat: true
               triggeredOnStart: true
               onTriggered: volumeProc.running = true
-          }
-          Timer {
-              interval: 10000
-              running: true
-              repeat: true
-              triggeredOnStart: true
-              onTriggered: {
-                  batCapacityProc.running = true
-                  batStatusProc.running = true
-              }
-          }
-          Process {
-              id: batCapacityProc
-              command: ["${getExe pkgs.bash}", "-c", "cat /sys/class/power_supply/BAT*/capacity 2>/dev/null || echo 0"]
-              stdout: SplitParser {
-                  onRead: data => {
-                      if (data) battery.percentage = parseInt(data.trim()) || 0
-                  }
-              }
-          }
-          Process {
-              id: batStatusProc
-              command: ["${getExe pkgs.bash}", "-c", "cat /sys/class/power_supply/BAT*/status 2>/dev/null || echo Discharging"]
-              stdout: SplitParser {
-                  onRead: data => {
-                      if (data) battery.charging = data.trim() === "Charging"
-                  }
-              }
           }
           Process {
               id: cpuProc
@@ -503,9 +544,9 @@ in
                           }
                       }
                       Text {
-                          visible: battery.percentage > 0
+                          visible: battery.hasBattery
                           text: battery.icon + " " + battery.percentage + "%" + (battery.charging ? " 󰂄" : "")
-                          color: battery.percentage <= 15 ? theme.red : battery.percentage <= 30 ? theme.yellow : theme.green
+                          color: battery.percentage <= 20 ? theme.red : battery.percentage <= 35 ? theme.yellow : theme.green
                           font {
                               family: theme.fontFamily
                               pixelSize: theme.fontPixelSize

@@ -258,6 +258,7 @@ in
       wtype
       python314
       bluetoothPairScript
+      upower
     ];
   };
 
@@ -265,6 +266,9 @@ in
     dbus = {
       enable = true;
       packages = [ pkgs.dconf ];
+    };
+    upower = {
+      enable = true;
     };
     auto-cpufreq = {
       enable = true;
