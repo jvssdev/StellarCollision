@@ -34,8 +34,15 @@ in
           default_album_art_path: None,
           show_song_table_header: true,
           draw_borders: true,
-          browser_column_widths: [20, 38, 42],
-
+          enable_config_hot_reload: true,
+          on_song_change: None,
+          select_current_song_on_change: false,
+          album_art: (
+              method: Auto,
+              disabled_protocols: ["http://", "https://"],
+              vertical_align: Center,
+              horizontal_align: Center,
+          ),
           background_color: "${c.base00}",
           modal_backdrop: true,
           text_color: "${c.base04}",
@@ -99,6 +106,79 @@ in
               alignment: Right,
             ),
           ],
+
+          keybinds: (
+                  global: {
+                      ":":       CommandMode,
+                      ",":       VolumeDown,
+                      "s":       Stop,
+                      ".":       VolumeUp,
+                      "<Tab>":   NextTab,
+                      "<S-Tab>": PreviousTab,
+                      "L":       NextTab,
+                      "H":       PreviousTab,
+                      "1":       SwitchToTab("Playing"),
+                      "4":       SwitchToTab("Dir"),
+                      "3":       SwitchToTab("Lists"),
+                      "2":       SwitchToTab("Find"),
+                      "q":       Quit,
+                      ">":       NextTrack,
+                      "p":       TogglePause,
+                      "<":       PreviousTrack,
+                      "f":       SeekForward,
+                      "z":       ToggleRepeat,
+                      "x":       ToggleRandom,
+                      "c":       ToggleConsume,
+                      "v":       ToggleSingle,
+                      "b":       SeekBack,
+                      "~":       ShowHelp,
+                      "I":       ShowCurrentSongInfo,
+                      "O":       ShowOutputs,
+                      "P":       ShowDecoders,
+                  },
+                  navigation: {
+                      "k":         Up,
+                      "j":         Down,
+                      "h":         Left,
+                      "l":         Right,
+                      "<Up>":      Up,
+                      "<Down>":    Down,
+                      "<Left>":    Left,
+                      "<Right>":   Right,
+                      "<C-k>":     PaneUp,
+                      "<C-j>":     PaneDown,
+                      "<C-h>":     PaneLeft,
+                      "<C-l>":     PaneRight,
+                      "<C-u>":     UpHalf,
+                      "N":         PreviousResult,
+                      "a":         Add,
+                      "A":         AddAll,
+                      "r":         Rename,
+                      "n":         NextResult,
+                      "g":         Top,
+                      "<Space>":   Select,
+                      "<C-Space>": InvertSelection,
+                      "G":         Bottom,
+                      "<CR>":      Confirm,
+                      "i":         FocusInput,
+                      "J":         MoveDown,
+                      "<C-d>":     DownHalf,
+                      "/":         EnterSearch,
+                      "<C-c>":     Close,
+                      "<Esc>":     Close,
+                      "K":         MoveUp,
+                      "D":         Delete,
+                  },
+                  queue: {
+                      "D":       DeleteAll,
+                      "<CR>":    Play,
+                      "<C-s>":   Save,
+                      "a":       AddToPlaylist,
+                      "d":       Delete,
+                      "i":       ShowInfo,
+                      "C":       JumpToCurrent,
+                  },
+              ),
 
           layout: Split(
             direction: Vertical,
@@ -220,50 +300,10 @@ in
 
           tabs: [
             (
-              name: "Queue",
+              name: "Playing",
               pane: Split(
-                direction: Vertical,
-                panes: [
-                  (
-                    size: "100%",
-                    borders: "NONE",
-                    pane: Split(
-                      borders: "NONE",
-                      direction: Horizontal,
-                      panes: [
-                        (
-                          size: "70%",
-                          borders: "ALL",
-                          pane: Pane(Queue),
-                        ),
-                        (
-                          size: "30%",
-                          borders: "NONE",
-                          pane: Split(
-                            direction: Vertical,
-                            panes: [
-                              (
-                                size: "75%",
-                                borders: "ALL",
-                                pane: Pane(AlbumArt),
-                              ),
-                              (
-                                size: "25%",
-                                borders: "NONE",
-                                pane: Split(
-                                  direction: Vertical,
-                                  panes: [
-                                    (size: "100%", pane: Pane(Lyrics)),
-                                  ]
-                                ),
-                              ),
-                            ]
-                          ),
-                        ),
-                      ]
-                    ),
-                  ),
-                ],
+                  direction: Horizontal,
+                  panes: [(size: "65%", pane: Pane(Queue)), (size: "35%", pane: Pane(AlbumArt))],
               ),
             ),
             (
@@ -278,13 +318,6 @@ in
               pane: Split(
                 direction: Horizontal,
                 panes: [(size: "100%", borders: "ALL", pane: Pane(Artists))],
-              ),
-            ),
-            (
-              name: "Album Artists",
-              pane: Split(
-                direction: Horizontal,
-                panes: [(size: "100%", borders: "ALL", pane: Pane(AlbumArtists))],
               ),
             ),
             (
@@ -306,20 +339,6 @@ in
               pane: Split(
                 direction: Horizontal,
                 panes: [(size: "100%", borders: "ALL", pane: Pane(Search))],
-              ),
-            ),
-            (
-              name: "Browser",
-              pane: Split(
-                direction: Horizontal,
-                panes: [(size: "100%", borders: "ALL", pane: Pane(Browser(root_tag: "Artist")))],
-              ),
-            ),
-            (
-              name: "Lyrics",
-              pane: Split(
-                direction: Horizontal,
-                panes: [(size: "100%", borders: "ALL", pane: Pane(Lyrics))],
               ),
             ),
           ],

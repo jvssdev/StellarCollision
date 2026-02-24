@@ -78,6 +78,12 @@ in
         bind_to_address "127.0.0.1"
         port            "6600"
       '';
+
+      "mpDris2/mpDris2.conf".text = ''
+        [Bling]
+        notify = False
+        mmkeys = True
+      '';
     };
 
     systemd.user.services = {
