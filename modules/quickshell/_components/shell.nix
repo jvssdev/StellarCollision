@@ -22,7 +22,6 @@ in
       import Quickshell.Services.UPower
       ShellRoot {
           id: root
-          Component.onCompleted: console.log("Shell loaded")
           IpcHandler {
               target: "powerMenu"
               function toggle(): void {
@@ -143,7 +142,6 @@ in
                   required property var modelData
                   Component.onCompleted: checkBattery()
                   function checkBattery() {
-                      console.log("UPower device: isLaptopBattery=" + modelData.isLaptopBattery)
                       if (modelData && modelData.isLaptopBattery) {
                           root.upowerBattery = modelData
                           root.hasUpowerBattery = true
@@ -167,18 +165,16 @@ in
 
           function checkBatteryNotifications(percentage, charging) {
               if (!root.hasUpowerBattery) return
-              
-              console.log("Battery check: " + percentage + "% charging=" + charging)
 
-              if (percentage <= 60 && !charging && !root.lowBatteryNotified) {
-                  Quickshell.execDetached(["notify-send", "-u", "critical", "-t", "0", "-A", "dismiss=Dismiss", "Low Battery", "Battery is at " + percentage + "%. Please plug in your charger."])
+              if (percentage <= 20 && !charging && !root.lowBatteryNotified) {
+                  Quickshell.execDetached(["notify-send", "-u", "critical", "-p", "-t", "99999999", "Low Battery", "Battery is at " + percentage + "%. Please plug in your charger."])
                   root.lowBatteryNotified = true
-              } else if (percentage > 60 || charging) {
+              } else if (percentage > 20 || charging) {
                   root.lowBatteryNotified = false
               }
 
               if (percentage >= 100 && !charging && !root.fullBatteryNotified) {
-                  Quickshell.execDetached(["notify-send", "-u", "normal", "-t", "0", "-A", "dismiss=Dismiss", "Battery Full", "Battery is fully charged."])
+                  Quickshell.execDetached(["notify-send", "-p", "-t", "99999999", "Battery Full", "Battery is fully charged."])
                   root.fullBatteryNotified = true
               } else if (percentage < 100) {
                   root.fullBatteryNotified = false
