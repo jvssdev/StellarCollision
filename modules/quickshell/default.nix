@@ -46,7 +46,7 @@ let
   };
   LockContext = import (componentsDir + "/LockContext.nix") { };
   LockSurface = import (componentsDir + "/LockSurface.nix") { };
-  BluetoothService = import (componentsDir + "/BluetoothService.nix") { inherit lib pkgs; };
+  BluetoothService = import (componentsDir + "/BluetoothService.nix") { };
   BatteryMonitor = import (componentsDir + "/BatteryMonitor.nix") { inherit pkgs lib; };
   Shell = import (componentsDir + "/shell.nix") {
     inherit pkgs lib config;

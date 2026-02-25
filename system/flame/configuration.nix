@@ -7,7 +7,6 @@
 
 let
   inherit (lib) getExe getExe';
-  bluetooth-scripts = pkgs.callPackage ./scripts { };
   bluetooth-agent = pkgs.callPackage ./bluetooth-agent { };
 in
 
@@ -92,10 +91,9 @@ in
     systemPackages = with pkgs; [
       kdePackages.kdialog
       wtype
-      bluetooth-scripts.bluetooth-pair
-      bluetooth-agent
+      bluetooth-agent.bluetooth-agent
+      bluetooth-agent.bluetooth-pair
       upower
-      python3
     ];
   };
 
@@ -155,7 +153,7 @@ in
     wantedBy = [ "graphical-session.target" ];
     serviceConfig = {
       Type = "simple";
-      ExecStart = "${lib.getExe bluetooth-agent}";
+      ExecStart = "${lib.getExe bluetooth-agent.bluetooth-agent} --agent";
       Restart = "always";
       RestartSec = "3";
     };

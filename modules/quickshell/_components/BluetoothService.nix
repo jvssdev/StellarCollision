@@ -1,8 +1,4 @@
-{
-  pkgs,
-  lib,
-  ...
-}:
+_:
 
 /* qml */ ''
   pragma Singleton
@@ -11,8 +7,6 @@
   import Quickshell
   import Quickshell.Bluetooth
   import Quickshell.Io
-
-  readonly property string pythonPath: "${pkgs.python3}/bin/python3"
 
   Singleton {
     id: root
@@ -151,61 +145,50 @@
 
     function connectDevice(device) {
       if (!device) return;
-      var address = device.address || device.addresses;
-      if (!address) return;
+      console.log("DEBUG: connectDevice, device=" + (device.name || device.address));
 
-      console.log("DEBUG: connectDevice, address=" + address);
-
-      var logFile = "/tmp/bluetooth-pair-" + address.replace(/:/g, "-") + ".log";
-      var scriptPath = "/run/current-system/sw/bin/bluetooth-pair";
-
-      // Run in background to keep device visible in UI
-      Quickshell.execDetached(["bash", "-c",
-        root.pythonPath + " " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &"]);
+      try {
+        device.connect();
+      } catch (e) {
+        console.log("connectDevice error: " + e);
+      }
     }
 
     function disconnectDevice(device) {
       if (!device) return;
-      var address = device.address || device.addresses;
-      if (address) {
-        Quickshell.execDetached(["bluetoothctl", "disconnect", address]);
-      }
+      try {
+        device.disconnect();
+      } catch (e) {}
     }
 
     function connectDeviceWithTrust(device) {
       if (!device) return;
-      var address = device.address || device.addresses;
-      if (!address) {
-        address = device.name;
-      }
-      console.log("connectDeviceWithTrust: " + address);
+      console.log("connectDeviceWithTrust: " + (device.name || device.address));
 
-      var scriptPath = "/run/current-system/sw/bin/bluetooth-pair";
-      var logFile = "/tmp/bluetooth-pair-" + address.replace(/:/g, "-") + ".log";
-      var cmd = root.pythonPath + " " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &";
-      Quickshell.execDetached(["bash", "-c", cmd]);
+      try {
+        device.trusted = true;
+        device.connect();
+      } catch (e) {
+        console.log("connectDeviceWithTrust error: " + e);
+      }
     }
 
     function forgetDevice(device) {
       if (!device) return;
-      var address = device.address || device.addresses;
-      if (address) {
-        Quickshell.execDetached(["bluetoothctl", "remove", address]);
-      }
+      try {
+        device.forget();
+      } catch (e) {}
     }
 
     function pairDevice(device) {
       if (!device) return;
-      var address = device.address || device.addresses;
-      if (!address) {
-        address = device.name;
-      }
-      console.log("pairDevice: " + address);
+      console.log("pairDevice: " + (device.name || device.address));
 
-      var scriptPath = "/run/current-system/sw/bin/bluetooth-pair";
-      var logFile = "/tmp/bluetooth-pair-" + address.replace(/:/g, "-") + ".log";
-      var cmd = root.pythonPath + " " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &";
-      Quickshell.execDetached(["bash", "-c", cmd]);
+      try {
+        device.pair();
+      } catch (e) {
+        console.log("pairDevice error: " + e);
+      }
     }
 
     property int pairWaitSeconds: 45
