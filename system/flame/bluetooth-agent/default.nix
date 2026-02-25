@@ -9,8 +9,15 @@ let
   };
 in
 rec {
-  bluetooth-agent = common;
+  bluetooth-agent = common.overrideAttrs (oldAttrs: {
+    meta = oldAttrs.meta or { } // {
+      mainProgram = "bluetooth-agent";
+    };
+  });
   bluetooth-pair = common.overrideAttrs (oldAttrs: {
+    meta = oldAttrs.meta or { } // {
+      mainProgram = "bluetooth-pair";
+    };
     postInstall = ''
       ln -s $out/bin/bluetooth-agent $out/bin/bluetooth-pair
     '';
