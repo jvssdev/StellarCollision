@@ -19,7 +19,8 @@ in
       import Quickshell.Bluetooth
       import Quickshell.Services.Pam
       import Quickshell.Services.Notifications
-      import Quickshell.Services.UPower
+      import "BatteryMonitor.qml"
+
       ShellRoot {
           id: root
           IpcHandler {
@@ -131,84 +132,12 @@ in
               property bool muted: false
           }
 
-          property var upowerBattery: null
-          property bool hasUpowerBattery: false
-          property int upowerPercentage: 0
-          property bool upowerCharging: false
-
-          Instantiator {
-              model: UPower.devices
-              delegate: QtObject {
-                  required property var modelData
-                  Component.onCompleted: checkBattery()
-                  function checkBattery() {
-                      if (modelData && modelData.isLaptopBattery) {
-                          root.upowerBattery = modelData
-                          root.hasUpowerBattery = true
-                          root.updateBatteryFromUpower()
-                      }
-                  }
-              }
-          }
-
-          function updateBatteryFromUpower() {
-              if (!root.upowerBattery) return
-              var percentage = Math.round(root.upowerBattery.percentage * 100)
-              var charging = root.upowerBattery.state === UPowerDeviceState.Charging
-              root.upowerPercentage = percentage
-              root.upowerCharging = charging
-              root.checkBatteryNotifications(percentage, charging)
-          }
-
-          property bool lowBatteryNotified: false
-          property bool fullBatteryNotified: false
-
-          function checkBatteryNotifications(percentage, charging) {
-              if (!root.hasUpowerBattery) return
-
-              if (percentage <= 20 && !charging && !root.lowBatteryNotified) {
-                  Quickshell.execDetached(["notify-send", "-u", "critical", "-p", "-t", "99999999", "Low Battery", "Battery is at " + percentage + "%. Please plug in your charger."])
-                  root.lowBatteryNotified = true
-              } else if (percentage > 20 || charging) {
-                  root.lowBatteryNotified = false
-              }
-
-              if (percentage >= 100 && !charging && !root.fullBatteryNotified) {
-                  Quickshell.execDetached(["notify-send", "-p", "-t", "99999999", "Battery Full", "Battery is fully charged."])
-                  root.fullBatteryNotified = true
-              } else if (percentage < 100) {
-                  root.fullBatteryNotified = false
-              }
-          }
-
-          Timer {
-              interval: 10000
-              running: true
-              repeat: true
-              triggeredOnStart: true
-              onTriggered: {
-                  if (root.upowerBattery) {
-                      root.updateBatteryFromUpower()
-                  }
-              }
-          }
-
           QtObject {
               id: battery
-              property int percentage: root.upowerPercentage
-              property string icon: getBatteryIcon()
-              property bool charging: root.upowerCharging
-              property bool hasBattery: root.hasUpowerBattery
-              function getBatteryIcon() {
-                  if (root.upowerCharging) return "󰂄"
-                  const p = root.upowerPercentage
-                  if (p >= 90) return "󰁹"
-                  if (p >= 70) return "󰂀"
-                  if (p >= 50) return "󰁽"
-                  if (p >= 30) return "󰁻"
-                  if (p >= 10) return "󰂎"
-                  return "󰁺"
-              }
+              property int percentage: BatteryMonitor.percentage
+              property string icon: BatteryMonitor.getBatteryIcon()
+              property bool charging: BatteryMonitor.isCharging
+              property bool hasBattery: BatteryMonitor.hasBattery
           }
           QtObject { id: cpu; property int usage: 0 }
           QtObject { id: mem; property int percent: 0 }

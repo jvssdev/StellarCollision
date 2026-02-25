@@ -1,8 +1,4 @@
-{
-  pkgs,
-  lib,
-  ...
-}:
+_:
 
 /* qml */ ''
   pragma Singleton
@@ -14,7 +10,7 @@
   import Quickshell.Io
 
   Singleton {
-    id: root
+    id: batteryMonitor
 
     property var mainBattery: null
 
@@ -26,8 +22,7 @@
     property bool fullBatteryNotified: false
 
     Component.onCompleted: {
-        console.log("BatteryMonitor loaded, hasBattery=" + root.hasBattery + " percentage=" + root.percentage)
-        Qt.callLater(root.checkBatteryLevel)
+        Qt.callLater(batteryMonitor.checkBatteryLevel)
     }
 
     Instantiator {
@@ -36,18 +31,16 @@
         required property var modelData
         Component.onCompleted: checkDevice()
         function checkDevice() {
-          console.log("UPower device found: isLaptopBattery=" + modelData.isLaptopBattery)
           if (modelData && modelData.isLaptopBattery) {
-            root.mainBattery = modelData
-            console.log("Battery set, percentage=" + root.percentage)
+            batteryMonitor.mainBattery = modelData
           }
         }
       }
     }
 
     function getBatteryIcon() {
-      if (root.isCharging) return "󰂄"
-      const p = root.percentage
+      if (batteryMonitor.isCharging) return "󰂄"
+      const p = batteryMonitor.percentage
       if (p >= 90) return "󰁹"
       if (p >= 60) return "󰂀"
       if (p >= 40) return "󰁾"
@@ -61,34 +54,31 @@
       repeat: true
       triggeredOnStart: true
       onTriggered: {
-        console.log("BatteryMonitor timer triggered, hasBattery=" + root.hasBattery + " percentage=" + root.percentage)
-        if (root.hasBattery) {
-          root.checkBatteryLevel();
+        if (batteryMonitor.hasBattery) {
+          batteryMonitor.checkBatteryLevel();
         }
       }
     }
 
     function checkBatteryLevel() {
-      if (!root.mainBattery) return;
-      
-      const percentage = root.percentage;
-      const charging = root.isCharging;
+      if (!batteryMonitor.mainBattery) return;
 
-      console.log("Battery check: " + percentage + "% charging=" + charging);
+      const percentage = batteryMonitor.percentage;
+      const charging = batteryMonitor.isCharging;
 
-      if (percentage <= 60 && !charging && !root.lowBatteryNotified) {
-        root.sendLowBatteryNotification(percentage);
-        root.lowBatteryNotified = true;
-      } else if (percentage > 60 || charging) {
-        root.lowBatteryNotified = false;
+      if (percentage <= 20 && !charging && !batteryMonitor.lowBatteryNotified) {
+        batteryMonitor.sendLowBatteryNotification(percentage);
+        batteryMonitor.lowBatteryNotified = true;
+      } else if (percentage > 20 || charging) {
+        batteryMonitor.lowBatteryNotified = false;
       }
 
-      if (percentage >= 100 && !charging && !root.fullBatteryNotified) {
-        root.sendFullBatteryNotification();
-        root.fullBatteryNotified = true;
-      } else if (percentage < 100) {
-        root.fullBatteryNotified = false;
-      }
+      // if (percentage >= 100 && !charging && !batteryMonitor.fullBatteryNotified) {
+      //   batteryMonitor.sendFullBatteryNotification();
+      //   batteryMonitor.fullBatteryNotified = true;
+      // } else if (percentage < 100) {
+      //   batteryMonitor.fullBatteryNotified = false;
+      // }
     }
 
     function sendLowBatteryNotification(percentage) {

@@ -104,6 +104,7 @@ in
     };
     hj.xdg.config.files = {
       "quickshell/icons".source = ../../assets/icons;
+      "quickshell/BatteryMonitor.qml".text = BatteryMonitor;
       "quickshell/NotificationPopups.qml".text = NotificationPopups;
       "quickshell/NotificationCenter.qml".text = NotificationCenter;
       "quickshell/ControlCenter.qml".text = ControlCenter;
@@ -122,7 +123,6 @@ in
       "quickshell/LockContext.qml".text = LockContext;
       "quickshell/LockSurface.qml".text = LockSurface;
       "quickshell/BluetoothService.qml".text = BluetoothService;
-      "quickshell/services/BatteryMonitor.qml".text = BatteryMonitor;
     };
   };
 }
