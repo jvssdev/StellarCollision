@@ -1,4 +1,8 @@
-_:
+{
+  pkgs,
+  lib,
+  ...
+}:
 
 /* qml */ ''
   pragma Singleton
@@ -7,6 +11,8 @@ _:
   import Quickshell
   import Quickshell.Bluetooth
   import Quickshell.Io
+
+  readonly property string pythonPath: "${pkgs.python3}/bin/python3"
 
   Singleton {
     id: root
@@ -155,7 +161,7 @@ _:
 
       // Run in background to keep device visible in UI
       Quickshell.execDetached(["bash", "-c",
-        "python3 " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &"]);
+        root.pythonPath + " " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &"]);
     }
 
     function disconnectDevice(device) {
@@ -176,7 +182,7 @@ _:
 
       var scriptPath = "/run/current-system/sw/bin/bluetooth-pair";
       var logFile = "/tmp/bluetooth-pair-" + address.replace(/:/g, "-") + ".log";
-      var cmd = "python3 " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &";
+      var cmd = root.pythonPath + " " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &";
       Quickshell.execDetached(["bash", "-c", cmd]);
     }
 
@@ -198,7 +204,7 @@ _:
 
       var scriptPath = "/run/current-system/sw/bin/bluetooth-pair";
       var logFile = "/tmp/bluetooth-pair-" + address.replace(/:/g, "-") + ".log";
-      var cmd = "python3 " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &";
+      var cmd = root.pythonPath + " " + scriptPath + " " + address + " 45 3 2 > " + logFile + " 2>&1 &";
       Quickshell.execDetached(["bash", "-c", cmd]);
     }
 
