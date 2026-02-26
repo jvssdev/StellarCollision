@@ -38,11 +38,11 @@ let
           "urlhaus-1"
           "plowe-0"
 
-          "https://raw.githubusercontent.com/DandelionSprout/adfilt/refs/heads/master/ClearURLs%20for%20uBo/clear_urls_uboified.txt"
-          "https://raw.githubusercontent.com/yokoffing/filterlists/refs/heads/main/privacy_essentials.txt"
-          "https://raw.githubusercontent.com/DandelionSprout/adfilt/refs/heads/master/LegitimateURLShortener.txt"
-          "https://raw.githubusercontent.com/yokoffing/filterlists/refs/heads/main/annoyance_list.txt"
-          "https://raw.githubusercontent.com/DandelionSprout/adfilt/refs/heads/master/BrowseWebsitesWithoutLoggingIn.txt"
+          "https://raw.githubusercontent.com/DandelionSprout/adfilt/refs/heads/master/ClearURLs%20for%20uBo/clear_urls_uboified.txt "
+          "https://raw.githubusercontent.com/yokoffing/filterlists/refs/heads/main/privacy_essentials.txt "
+          "https://raw.githubusercontent.com/DandelionSprout/adfilt/refs/heads/master/LegitimateURLShortener.txt "
+          "https://raw.githubusercontent.com/yokoffing/filterlists/refs/heads/main/annoyance_list.txt "
+          "https://raw.githubusercontent.com/DandelionSprout/adfilt/refs/heads/master/BrowseWebsitesWithoutLoggingIn.txt "
         ];
 
         warnings = builtins.filter (
@@ -63,28 +63,43 @@ let
 
   policy = {
     ExtensionInstallForcelist = mapAttrsToList (
-      _: ext: "${ext.id};https://services.helium.imput.net/ext"
+      _: ext: "${ext.id};https://services.helium.imput.net/ext "
     ) extensions;
     ExtensionInstallAllowlist = mapAttrsToList (_: ext: ext.id) extensions;
-    ExtensionInstallSources = singleton "https://services.helium.imput.net/*";
+    ExtensionInstallSources = singleton "https://services.helium.imput.net/ *";
 
     "3rdparty".extensions.${extensions.ublock-origin.id}.toOverwrite.filterLists =
       extensions.ublock-origin.filters.wanted;
 
     DefaultBrowserSettingEnabled = false;
-    RestoreOnStartup = 1; # 5 = Open New Tab Page, 1 = Restore the last session, 4 = Open list of URLs, 6 = 1 + 4
+    RestoreOnStartup = 1;
     DnsOverHttpsMode = "automatic";
     HttpsOnlyMode = "allowed";
     MetricsReportingEnabled = false;
-    GtkThemeModeEnabled = true;
     DefaultSearchProviderEnabled = true;
     DefaultSearchProviderName = "DuckDuckGo";
-    DefaultSearchProviderSearchURL = "https://duckduckgo.com/?q={searchTerms}";
-    DefaultSearchProviderSuggestURL = "https://duckduckgo.com/ac/?q={searchTerms}";
+    DefaultSearchProviderSearchURL = "https://duckduckgo.com/?q= {searchTerms}";
+    DefaultSearchProviderSuggestURL = "https://duckduckgo.com/ac/?q= {searchTerms}";
     SearchSuggestEnabled = true;
   };
 
   helium-unwrapped = inputs.helium-browser.packages.${pkgs.stdenv.hostPlatform.system}.helium;
+
+  heliumPrefsScript = pkgs.writeShellScript "helium-set-prefs" ''
+    PREFS_DIR="$HOME/.config/net.imput.helium/Default"
+    PREFS_FILE="$PREFS_DIR/Preferences"
+    mkdir -p "$PREFS_DIR"
+    if [ ! -f "$PREFS_FILE" ] || ! ${pkgs.jq}/bin/jq empty "$PREFS_FILE" 2>/dev/null; then
+      echo '{}' > "$PREFS_FILE"
+    fi
+    ${pkgs.jq}/bin/jq '.browser.custom_chrome_frame = false' "$PREFS_FILE" > "$PREFS_FILE.tmp" \
+      && mv "$PREFS_FILE.tmp" "$PREFS_FILE"
+  '';
+
+  helium-launcher = pkgs.writeShellScriptBin "helium" ''
+    ${heliumPrefsScript}
+    exec ${helium-unwrapped}/bin/helium "$@"
+  '';
 in
 {
   options.cfg.helium = {
@@ -102,7 +117,10 @@ in
 
   config = lib.mkIf cfg.enable {
     hj = {
-      packages = [ cfg.package ];
+      packages = [
+        helium-launcher
+        pkgs.jq
+      ];
     };
 
     environment.etc."chromium/policies/managed/policies.json".text = lib.generators.toJSON { } policy;
