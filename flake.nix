@@ -47,11 +47,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    qtengine = {
-      url = "github:kossLAN/qtengine";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     ublock = {
       url = "github:gorhill/ublock";
       flake = false;
