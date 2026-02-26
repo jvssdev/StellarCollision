@@ -73,18 +73,6 @@ _:
     }
 
     Timer {
-      id: stateCheckTimer
-      interval: 500
-      repeat: true
-      running: true
-      onTriggered: {
-        if (root.adapter && root.adapter.enabled && !root.adapter.discovering) {
-          scanDelayTimer.start();
-        }
-      }
-    }
-
-    Timer {
       id: scanDelayTimer
       interval: 1000
       repeat: false

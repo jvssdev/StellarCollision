@@ -470,7 +470,7 @@ in
                       }
                       Text {
                           visible: battery.hasBattery
-                          text: battery.icon + " " + battery.percentage + "%" + (battery.charging ? " 󰂄" : "")
+                          text: battery.icon + " " + battery.percentage + "%"
                           color: battery.percentage <= 20 ? theme.red : battery.percentage <= 35 ? theme.yellow : theme.green
                           font {
                               family: theme.fontFamily

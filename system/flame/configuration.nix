@@ -6,7 +6,6 @@
 }:
 
 let
-  inherit (lib) getExe getExe';
   bluetooth-agent = pkgs.callPackage ./bluetooth-agent { };
 in
 
@@ -166,6 +165,10 @@ in
         Enable = "Source,Sink,Media,Socket";
         Experimental = true;
         PairableTimeout = 0;
+        AutoEnable = false;
+      };
+      Policy = {
+        AutoEnable = false;
       };
     };
   };

@@ -33,9 +33,6 @@ if isNiri then
 
         onBluetoothPageVisibleChanged: {
             if (bluetoothPageVisible) {
-                if (!BluetoothService.enabled) {
-                    BluetoothService.setBluetoothEnabled(true);
-                }
                 BluetoothService.setScanActive(true);
             }
         }
