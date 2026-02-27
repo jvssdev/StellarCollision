@@ -23,8 +23,8 @@ if isNiri then
             screen: Quickshell.screens[0]
             color: "transparent"
 
-            implicitWidth: 400
-            implicitHeight: Math.min(600, Quickshell.screens[0]?.height * 0.8 || 600)
+            implicitWidth: 380
+            implicitHeight: 600
 
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
@@ -36,8 +36,8 @@ if isNiri then
             }
 
             margins {
-                top: 40
-                right: 20
+                top: 22
+                right: 5
             }
 
             contentItem {
@@ -59,12 +59,15 @@ if isNiri then
 
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 14
+                    anchors.topMargin: 10
+                    anchors.bottomMargin: 18
+                    anchors.leftMargin: 18
+                    anchors.rightMargin: 18
                     spacing: 10
 
                     RowLayout {
                         Layout.fillWidth: true
-
+                        spacing: 30
                         Text {
                             text: "Notifications"
                             color: root.theme?.darkBlue || "#5E81AC"
@@ -78,7 +81,7 @@ if isNiri then
                         Text {
                             text: "Clear"
                             color: clearMa.containsMouse ? root.theme?.red : root.theme?.fgMuted
-                            font.pixelSize: 11
+                            font.pixelSize: 14
 
                             MouseArea {
                                 id: clearMa
@@ -95,9 +98,9 @@ if isNiri then
                         }
 
                         Text {
-                            text: "X"
+                            text: "x"
                             color: closeMa.containsMouse ? root.theme?.darkBlue : root.theme?.fg
-                            font.pixelSize: 14
+                            font.pixelSize: 20
 
                             MouseArea {
                                 id: closeMa
@@ -127,20 +130,20 @@ if isNiri then
                             required property int index
 
                             width: notificationList.width
-                            height: 70
+                            height: 90
                             color: index % 2 === 0 ? (root.theme?.bgAlt || "#3B4252") : (root.theme?.bg || "#2E3440")
-                            radius: 8
+                            radius: 12
                             visible: modelData !== null
 
                             Row {
                                 anchors.fill: parent
-                                anchors.margins: 10
+                                anchors.margins: 26
                                 spacing: 10
 
                                 Text {
                                     text: modelData && modelData.appName ? modelData.appName[0].toUpperCase() : "N"
                                     color: root.theme?.darkBlue || "#5E81AC"
-                                    font.pixelSize: 16
+                                    font.pixelSize: 19
                                     font.bold: true
                                     width: 30
                                 }
@@ -152,7 +155,7 @@ if isNiri then
                                     Text {
                                         text: modelData ? modelData.summary : ""
                                         color: root.theme?.fg || "#D8DEE9"
-                                        font.pixelSize: 13
+                                        font.pixelSize: 15
                                         font.bold: true
                                         elide: Text.ElideRight
                                     }
@@ -160,7 +163,7 @@ if isNiri then
                                     Text {
                                         text: modelData ? modelData.body : ""
                                         color: root.theme?.fgMuted || "#434C5E"
-                                        font.pixelSize: 11
+                                        font.pixelSize: 13
                                         elide: Text.ElideRight
                                         maximumLineCount: 2
                                     }
@@ -169,7 +172,7 @@ if isNiri then
                                 Text {
                                     text: "x"
                                     color: dismissMa.containsMouse ? root.theme?.red : root.theme?.fgMuted
-                                    font.pixelSize: 12
+                                    font.pixelSize: 16
 
                                     MouseArea {
                                         id: dismissMa

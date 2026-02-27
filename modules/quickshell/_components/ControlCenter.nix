@@ -991,8 +991,8 @@ if isNiri then
             }
 
             margins {
-                top: 40
-                right: 20
+                top: 22
+                right: 5
             }
 
             contentItem {
@@ -1023,7 +1023,10 @@ if isNiri then
                 ColumnLayout {
                     id: contentColumn
                     anchors.fill: parent
-                    anchors.margins: 14
+                    anchors.topMargin: 10
+                    anchors.bottomMargin: 18
+                    anchors.leftMargin: 18
+                    anchors.rightMargin: 18
                     spacing: 12
 
                     RowLayout {
@@ -1113,9 +1116,9 @@ if isNiri then
                         }
 
                         Text {
-                            text: "X"
+                            text: "x"
                             color: closeMa.containsMouse ? root.theme?.darkBlue : root.theme?.fg
-                            font.pixelSize: 14
+                            font.pixelSize: 20
 
                             MouseArea {
                                 id: closeMa
