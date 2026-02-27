@@ -233,7 +233,7 @@ in
 
            Mod+T { spawn "${getExe pkgs.${config.cfg.vars.terminal}}"; }
            Mod+B { spawn "${config.cfg.vars.browser}"; }
-           Mod+A repeat=false { spawn "${getExe pkgs.fuzzel}"; }
+           Mod+A { spawn "quickshell" "ipc" "call" "launcher" "toggle"; }
            Mod+v repeat=false { spawn-sh "${getExe clipboard.fuzzel-clipboard}"; }
            Mod+Shift+v repeat=false { spawn-sh "${getExe clipboard.fuzzel-clipboard-clear}"; }
            Mod+O { toggle-overview; }

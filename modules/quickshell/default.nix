@@ -70,6 +70,12 @@ let
   OverviewWallpaper = import (componentsDir + "/OverviewWallpaper.nix") {
     inherit pkgs lib wallpapersList;
   };
+
+  Launcher = import (componentsDir + "/Launcher.nix") {
+    inherit pkgs lib;
+    fontFamily = config.cfg.fonts.monospace.name;
+    colors = c;
+  };
 in
 {
   options.cfg.quickshell = {
@@ -91,6 +97,8 @@ in
       pkgs.gammastep
       pkgs.brightnessctl
       pkgs.libnotify
+      pkgs.cliphist
+      pkgs.wl-clipboard
     ];
     environment.sessionVariables = {
       QML_IMPORT_PATH = lib.concatStringsSep ":" [
@@ -120,9 +128,10 @@ in
       "quickshell/pam/password.conf".text = ''
         auth required pam_unix.so
       '';
-      "quickshell/LockContext.qml".text = LockContext;
       "quickshell/LockSurface.qml".text = LockSurface;
+      "quickshell/LockContext.qml".text = LockContext;
       "quickshell/BluetoothService.qml".text = BluetoothService;
+      "quickshell/Launcher.qml".text = Launcher;
     };
   };
 }

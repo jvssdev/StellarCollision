@@ -20,6 +20,8 @@ in
       import Quickshell.Services.Pam
       import Quickshell.Services.Notifications
       import "BatteryMonitor.qml"
+      import "LockContext.qml"
+      import "LockSurface.qml"
 
       ShellRoot {
           id: root
@@ -77,6 +79,14 @@ in
               target: "controlCenter"
               function toggle(): void {
                   controlCenter.toggle()
+              }
+          }
+          IpcHandler {
+              target: "launcher"
+              function toggle(): void {
+                  if (launcherLoader.item) {
+                      launcherLoader.item.toggle()
+                  }
               }
           }
 
@@ -533,6 +543,11 @@ in
           Loader {
               id: overviewWallpaperLoader
               source: "OverviewWallpaper.qml"
+          }
+
+          Loader {
+              id: launcherLoader
+              source: "Launcher.qml"
           }
       }
 ''

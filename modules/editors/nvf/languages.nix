@@ -4,6 +4,7 @@
     enableExtraDiagnostics = true;
     enableFormat = true;
     go.enable = true;
+    qml.enable = true;
     bash = {
       enable = true;
     };
