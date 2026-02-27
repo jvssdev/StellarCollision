@@ -548,6 +548,7 @@ in
           Loader {
               id: launcherLoader
               source: "Launcher.qml"
+              property var theme: theme
           }
       }
 ''
