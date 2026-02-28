@@ -1,7 +1,4 @@
 {
-  pkgs,
-  lib,
-  fontFamily,
   colors,
   ...
 }:
@@ -45,7 +42,7 @@ in
 
           function loadApps() {
               if (appsLoaded) return;
-              
+
               var allApps = DesktopEntries.applications.values;
               if (allApps && allApps.length > 0) {
                   appsLoaded = true;
@@ -77,12 +74,12 @@ in
 
           function doSearch() {
               selectedIndex = 0;
-              
+
               if (!DesktopEntries || !DesktopEntries.applications) {
                   results = [];
                   return;
               }
-              
+
               var allApps = DesktopEntries.applications.values;
               if (!allApps || allApps.length === 0) {
                   results = [];
@@ -123,7 +120,7 @@ in
               anchors.centerIn: parent
               width: 500
               height: 420
-              color: theme?.bgAlt || "${c.base01}"
+              color: theme?.bg || "${c.base00}"
               radius: 12
               border.color: theme?.fgSubtle || "${c.base03}"
               border.width: 2
