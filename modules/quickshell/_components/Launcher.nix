@@ -88,10 +88,12 @@ in
                           if (tabIndex === -1) continue;
                           var id = line.substring(0, tabIndex);
                           var content = line.substring(tabIndex + 1);
+                          var isImage = content.indexOf("[[") === 0 && content.indexOf("binary data") > 0;
                           items.push({
                               id: id,
                               text: content,
-                              line: line
+                              line: line,
+                              isImage: isImage
                           });
                       }
                       launcherWindow.clipboardEntries = items;
@@ -103,8 +105,6 @@ in
           Process {
               id: clipboardSelectProc
               running: false
-              stdinEnabled: true
-              command: ["sh", "-c", "cat | cliphist decode | wl-copy"]
               onExited: function(code) {
                   if (code === 0) {
                       launcherWindow.visible = false;
@@ -115,8 +115,6 @@ in
           Process {
               id: clipboardDeleteProc
               running: false
-              stdinEnabled: true
-              command: ["sh", "-c", "cat | cliphist delete"]
               onExited: function(code) {
                   if (code === 0) {
                       clipboardListProc.running = true;
@@ -139,13 +137,14 @@ in
           function shellEscape(str) {
               var result = "";
               for (var i = 0; i < str.length; i++) {
-                  var ch = str.charAt(i);
-                  if (ch === "'") {
-                      result = result + "'";
+                  var ch = str.charCodeAt(i);
+                  if (ch === 39) {
+                      result = result + String.fromCharCode(39) + String.fromCharCode(92) + String.fromCharCode(39) + String.fromCharCode(39);
+                  } else {
+                      result = result + str.charAt(i);
                   }
-                  result = result + ch;
               }
-              return result;
+              return String.fromCharCode(39) + result + String.fromCharCode(39);
           }
 
           function launch(app) {
@@ -159,7 +158,7 @@ in
               if (results && results.length > 0 && selectedIndex >= 0 && selectedIndex < results.length) {
                   var item = results[selectedIndex];
                   if (item.type === "clipboard") {
-                      clipboardSelectProc.stdin = item.line + "\n";
+                      clipboardSelectProc.command = ["sh", "-c", "echo " + shellEscape(item.line) + " | cliphist decode | wl-copy"];
                       clipboardSelectProc.running = true;
                   } else if (item.type === "app") {
                       launch(item.app);
@@ -170,7 +169,7 @@ in
           function deleteClipboardItem(index) {
               if (index >= 0 && index < clipboardFiltered.length) {
                   var entry = clipboardFiltered[index];
-                  clipboardDeleteProc.stdin = entry.line + "\n";
+                  clipboardDeleteProc.command = ["sh", "-c", "echo " + shellEscape(entry.line) + " | cliphist delete"];
                   clipboardDeleteProc.running = true;
               }
           }
@@ -205,12 +204,17 @@ in
               }
 
               var matches = clipboardFiltered.map(function(entry) {
+                  var displayName = entry.isImage ? "[Image] " + entry.text : entry.text;
+                  if (displayName.length > 60) {
+                      displayName = displayName.substring(0, 57) + "...";
+                  }
                   return {
-                      name: entry.text.length > 60 ? entry.text.substring(0, 57) + "..." : entry.text,
-                      description: "Clipboard",
+                      name: displayName,
+                      description: entry.isImage ? "Image" : "Text",
                       type: "clipboard",
                       id: entry.id,
-                      line: entry.line
+                      line: entry.line,
+                      isImage: entry.isImage
                   };
               });
 
@@ -240,7 +244,7 @@ in
                   results = [];
                   return;
               }
-              
+
               var allApps = DesktopEntries.applications.values;
               if (!allApps || allApps.length === 0) {
                   results = [];
@@ -421,12 +425,14 @@ in
 
                               Text {
                                   text: {
-                                      if (modelData.type === "clipboard") return "󱉥";
+                                      if (modelData.type === "clipboard") {
+                                          return modelData.isImage ? "󰋩" : "󱉥";
+                                      }
                                       return "";
                                   }
                                   font.family: theme?.fontFamily || "monospace"
                                   font.pixelSize: 16
-                                  color: theme?.yellow || "${c.base0A}"
+                                  color: modelData.isImage ? (theme?.magenta || "${c.base0F}") : (theme?.yellow || "${c.base0A}")
                                   visible: modelData.type === "clipboard"
                               }
 
