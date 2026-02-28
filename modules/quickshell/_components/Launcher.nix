@@ -13,8 +13,6 @@ in
   import Quickshell.Wayland
 
   Scope {
-      property var theme: null
-
       function toggle() {
           launcherWindow.isClipboardMode = false;
           if (!launcherWindow.appsLoaded) {
@@ -275,47 +273,47 @@ in
               loadAppsTimer.start();
           }
 
-          Rectangle {
-              anchors.centerIn: parent
-              width: 500
-              height: 420
-              color: theme?.bg || "${c.base00}"
-              radius: 12
-              border.color: theme?.fgSubtle || "${c.base03}"
-              border.width: 2
-              clip: true
+           Rectangle {
+               anchors.centerIn: parent
+               width: 500
+               height: 420
+               color: theme.bg
+               radius: 12
+               border.color: theme.fgSubtle
+               border.width: 2
+               clip: true
 
-              Column {
-                  anchors.fill: parent
-                  anchors.margins: 12
+               Column {
+                   anchors.fill: parent
+                   anchors.margins: 12
 
-                  Rectangle {
-                      height: 44
-                      width: parent.width
-                      radius: 8
-                      color: theme?.bg || "${c.base00}"
+                   Rectangle {
+                       height: 44
+                       width: parent.width
+                       radius: 8
+                       color: theme.bg
 
-                      RowLayout {
-                          anchors.fill: parent
-                          anchors.leftMargin: 12
-                          anchors.rightMargin: 12
-                          spacing: 10
+                       RowLayout {
+                           anchors.fill: parent
+                           anchors.leftMargin: 12
+                           anchors.rightMargin: 12
+                           spacing: 10
 
-                          Text {
-                              text: launcherWindow.isClipboardMode ? "󱉥" : "󰍉"
-                              font.family: theme?.fontFamily || "monospace"
-                              font.pixelSize: 16
-                              color: launcherWindow.isClipboardMode ? (theme?.yellow || "${c.base0A}") : (theme?.fgMuted || "${c.base04}")
-                          }
+                           Text {
+                               text: launcherWindow.isClipboardMode ? "󱉥" : "󰍉"
+                               font.family: theme.fontFamily
+                               font.pixelSize: 16
+                               color: launcherWindow.isClipboardMode ? theme.yellow : theme.fgMuted
+                           }
 
-                          TextInput {
-                              id: searchInput
-                              Layout.fillWidth: true
-                              font.family: theme?.fontFamily || "monospace"
-                              font.pixelSize: 14
-                              color: theme?.fg || "${c.base05}"
-                              verticalAlignment: TextInput.AlignVCenter
-                              onTextChanged: launcherWindow.query = text
+                           TextInput {
+                               id: searchInput
+                               Layout.fillWidth: true
+                               font.family: theme.fontFamily
+                               font.pixelSize: 14
+                               color: theme.fg
+                               verticalAlignment: TextInput.AlignVCenter
+                               onTextChanged: launcherWindow.query = text
                               onAccepted: function() {
                                   if (launcherWindow.selectedIndex >= 0 && launcherWindow.results.length > 0) {
                                       var item = launcherWindow.results[launcherWindow.selectedIndex];
@@ -362,81 +360,81 @@ in
                       }
                   }
 
-                  Rectangle {
-                      height: 1
-                      width: parent.width
-                      color: theme?.fgSubtle || "${c.base03}"
-                  }
+                   Rectangle {
+                       height: 1
+                       width: parent.width
+                       color: theme.fgSubtle
+                   }
 
-                  ListView {
-                      id: appListView
-                      width: parent.width
-                      height: parent.height - 58
-                      model: launcherWindow.results
-                      currentIndex: launcherWindow.selectedIndex
-                      highlightMoveDuration: 0
-                      clip: true
+                   ListView {
+                       id: appListView
+                       width: parent.width
+                       height: parent.height - 58
+                       model: launcherWindow.results
+                       currentIndex: launcherWindow.selectedIndex
+                       highlightMoveDuration: 0
+                       clip: true
 
-                      delegate: Rectangle {
-                          width: ListView.view.width
-                          height: 44
-                          radius: 8
-                          color: index === launcherWindow.selectedIndex ? Qt.rgba(theme?.darkBlue?.r || 0.37, theme?.darkBlue?.g || 0.51, theme?.darkBlue?.b || 0.71, 0.2) : "transparent"
+                       delegate: Rectangle {
+                           width: ListView.view.width
+                           height: 44
+                           radius: 8
+                           color: index === launcherWindow.selectedIndex ? Qt.rgba(theme.darkBlue.r, theme.darkBlue.g, theme.darkBlue.b, 0.2) : "transparent"
 
-                          RowLayout {
-                              anchors.fill: parent
-                              anchors.leftMargin: 10
-                              anchors.rightMargin: 10
-                              spacing: 12
+                           RowLayout {
+                               anchors.fill: parent
+                               anchors.leftMargin: 10
+                               anchors.rightMargin: 10
+                               spacing: 12
 
-                              Image {
-                                  width: 24
-                                  height: 24
-                                  visible: modelData.type === "app"
-                                  source: {
-                                      if (modelData.type === "app") return modelData.icon ? "image://icon/" + modelData.icon : "";
-                                      return "";
-                                  }
-                                  sourceSize: Qt.size(24, 24)
-                              }
+                               Image {
+                                   width: 24
+                                   height: 24
+                                   visible: modelData.type === "app"
+                                   source: {
+                                       if (modelData.type === "app") return modelData.icon ? "image://icon/" + modelData.icon : "";
+                                       return "";
+                                   }
+                                   sourceSize: Qt.size(24, 24)
+                               }
 
-                              Text {
-                                  text: {
-                                      if (modelData.type === "clipboard") {
-                                          return modelData.isImage ? "󰋩" : "󱉥";
-                                      }
-                                      return "";
-                                  }
-                                  font.family: theme?.fontFamily || "monospace"
-                                  font.pixelSize: 16
-                                  color: modelData.isImage ? (theme?.magenta || "${c.base0F}") : (theme?.yellow || "${c.base0A}")
-                                  visible: modelData.type === "clipboard"
-                              }
+                               Text {
+                                   text: {
+                                       if (modelData.type === "clipboard") {
+                                           return modelData.isImage ? "󰋩" : "󱉥";
+                                       }
+                                       return "";
+                                   }
+                                   font.family: theme.fontFamily
+                                   font.pixelSize: 16
+                                   color: modelData.isImage ? theme.magenta : theme.yellow
+                                   visible: modelData.type === "clipboard"
+                               }
 
-                              Text {
-                                  Layout.fillWidth: true
-                                  text: modelData.name || ""
-                                  font.family: theme?.fontFamily || "monospace"
-                                  font.pixelSize: 13
-                                  color: theme?.fg || "${c.base05}"
-                                  elide: Text.ElideRight
-                              }
+                               Text {
+                                   Layout.fillWidth: true
+                                   text: modelData.name || ""
+                                   font.family: theme.fontFamily
+                                   font.pixelSize: 13
+                                   color: theme.fg
+                                   elide: Text.ElideRight
+                               }
 
-                              Text {
-                                  Layout.preferredWidth: 60
-                                  horizontalAlignment: Text.AlignRight
-                                  text: {
-                                      if (modelData.isAction) return "Clear";
-                                      if (modelData.isLoading || modelData.isEmpty) return "";
-                                      if (modelData.type === "clipboard") return "Paste";
-                                      return "Enter";
-                                  }
-                                  font.family: theme?.fontFamily || "monospace"
-                                  font.pixelSize: 10
-                                  color: theme?.fgMuted || "${c.base04}"
-                                  visible: index === launcherWindow.selectedIndex && !modelData.isLoading && !modelData.isEmpty
-                              }
-                          }
+                               Text {
+                                   Layout.preferredWidth: 60
+                                   horizontalAlignment: Text.AlignRight
+                                   text: {
+                                       if (modelData.isAction) return "Clear";
+                                       if (modelData.isLoading || modelData.isEmpty) return "";
+                                       if (modelData.type === "clipboard") return "Paste";
+                                       return "Enter";
+                                   }
+                                   font.family: theme.fontFamily
+                                   font.pixelSize: 10
+                                   color: theme.fgMuted
+                                   visible: index === launcherWindow.selectedIndex && !modelData.isLoading && !modelData.isEmpty
+                               }
+                           }
 
                           MouseArea {
                               anchors.fill: parent

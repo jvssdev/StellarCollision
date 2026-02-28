@@ -325,14 +325,14 @@ if isNiri then
             property string iconOff: icon
             property string label: "Toggle"
             property bool isOn: false
-            property color accentColor: controlTheme?.green || "#A3BE8C"
+            property color accentColor: controlTheme.green
             property var controlTheme: null
             property var onClick: null
 
             Layout.fillWidth: true
             height: 60
             radius: 8
-            color: isOn ? Qt.rgba(accentColor.r, accentColor.g, accentColor.b, 0.2) : (controlTheme?.bgAlt || "#3B4252")
+            color: isOn ? Qt.rgba(accentColor.r, accentColor.g, accentColor.b, 0.2) : (controlTheme.bgAlt)
             border.width: isOn ? 2 : 0
             border.color: accentColor
 
@@ -345,17 +345,17 @@ if isNiri then
 
                 Text {
                     text: toggle.isOn ? toggle.icon : toggle.iconOff
-                    font.family: toggle.controlTheme?.fontFamily || "monospace"
+                    font.family: toggle.controlTheme.fontFamily
                     font.pixelSize: 18
-                    color: toggle.isOn ? toggle.accentColor : (toggle.controlTheme?.fgMuted || "#434C5E")
+                    color: toggle.isOn ? toggle.accentColor : (toggle.controlTheme.fgMuted)
                     Layout.alignment: Qt.AlignHCenter
                 }
 
                 Text {
                     text: toggle.label
-                    font.family: toggle.controlTheme?.fontFamily || "monospace"
+                    font.family: toggle.controlTheme.fontFamily
                     font.pixelSize: 10
-                    color: toggle.isOn ? (toggle.controlTheme?.fg || "#D8DEE9") : (toggle.controlTheme?.fgMuted || "#434C5E")
+                    color: toggle.isOn ? (toggle.controlTheme.fg) : (toggle.controlTheme.fgMuted)
                     Layout.alignment: Qt.AlignHCenter
                 }
             }
@@ -375,14 +375,14 @@ if isNiri then
             property string icon: "󰕾"
             property string label: "Slider"
             property int value: 50
-            property color accentColor: controlTheme?.blue || "#81A1C1"
+            property color accentColor: controlTheme.blue
             property bool isMuted: false
             property var controlTheme: null
             property var valueChangedHandler: null
 
             height: 70
             radius: 8
-            color: controlTheme?.bgAlt || "#3B4252"
+            color: controlTheme.bgAlt
 
             ColumnLayout {
                 anchors.fill: parent
@@ -395,26 +395,26 @@ if isNiri then
 
                     Text {
                         text: sliderCard.icon
-                        font.family: sliderCard.controlTheme?.fontFamily || "monospace"
+                        font.family: sliderCard.controlTheme.fontFamily
                         font.pixelSize: 16
-                        color: sliderCard.isMuted ? (sliderCard.controlTheme?.fgMuted || "#434C5E") : sliderCard.accentColor
+                        color: sliderCard.isMuted ? (sliderCard.controlTheme.fgMuted) : sliderCard.accentColor
                     }
 
                     Text {
                         text: sliderCard.label
-                        font.family: sliderCard.controlTheme?.fontFamily || "monospace"
+                        font.family: sliderCard.controlTheme.fontFamily
                         font.pixelSize: 12
-                        color: sliderCard.controlTheme?.fg || "#D8DEE9"
+                        color: sliderCard.controlTheme.fg
                     }
 
                     Item { Layout.fillWidth: true }
 
                     Text {
                         text: sliderCard.value + "%"
-                        font.family: sliderCard.controlTheme?.fontFamily || "monospace"
+                        font.family: sliderCard.controlTheme.fontFamily
                         font.pixelSize: 12
                         font.bold: true
-                        color: sliderCard.controlTheme?.fgMuted || "#434C5E"
+                        color: sliderCard.controlTheme.fgMuted
                     }
                 }
 
@@ -427,13 +427,13 @@ if isNiri then
                         width: parent.width
                         height: 6
                         radius: 3
-                        color: controlTheme?.bg || "#2E3440"
+                        color: controlTheme.bg
 
                         Rectangle {
                             width: (sliderCard.value / 100) * parent.width
                             height: parent.height
                             radius: parent.radius
-                            color: sliderCard.isMuted ? (sliderCard.controlTheme?.fgMuted || "#434C5E") : sliderCard.accentColor
+                            color: sliderCard.isMuted ? (sliderCard.controlTheme.fgMuted) : sliderCard.accentColor
                         }
                     }
 
@@ -443,7 +443,7 @@ if isNiri then
                         width: 14
                         height: 14
                         radius: 7
-                        color: sliderCard.isMuted ? (sliderCard.controlTheme?.fgMuted || "#434C5E") : sliderCard.accentColor
+                        color: sliderCard.isMuted ? (sliderCard.controlTheme.fgMuted) : sliderCard.accentColor
                     }
 
                     MouseArea {
@@ -479,7 +479,7 @@ if isNiri then
             visible: hasPlayer
             height: 90
             radius: 8
-            color: controlTheme?.bgAlt || "#3B4252"
+            color: controlTheme.bgAlt
 
             RowLayout {
                 anchors.fill: parent
@@ -490,7 +490,7 @@ if isNiri then
                     width: 56
                     height: 56
                     radius: 6
-                    color: controlTheme?.bg || "#2E3440"
+                    color: controlTheme.bg
 
                     Image {
                         anchors.fill: parent
@@ -502,9 +502,9 @@ if isNiri then
                     Text {
                         anchors.centerIn: parent
                         text: "󰝚"
-                        font.family: mediaCard.controlTheme?.fontFamily || "monospace"
+                        font.family: mediaCard.controlTheme.fontFamily
                         font.pixelSize: 24
-                        color: mediaCard.controlTheme?.fgMuted || "#434C5E"
+                        color: mediaCard.controlTheme.fgMuted
                         visible: mediaCard.artUrl === ""
                     }
                 }
@@ -515,28 +515,28 @@ if isNiri then
 
                     Text {
                         text: mediaCard.title
-                        font.family: mediaCard.controlTheme?.fontFamily || "monospace"
+                        font.family: mediaCard.controlTheme.fontFamily
                         font.pixelSize: 12
                         font.bold: true
-                        color: mediaCard.controlTheme?.fg || "#D8DEE9"
+                        color: mediaCard.controlTheme.fg
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
 
                     Text {
                         text: mediaCard.artist || "Unknown artist"
-                        font.family: mediaCard.controlTheme?.fontFamily || "monospace"
+                        font.family: mediaCard.controlTheme.fontFamily
                         font.pixelSize: 10
-                        color: mediaCard.controlTheme?.fgMuted || "#434C5E"
+                        color: mediaCard.controlTheme.fgMuted
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
 
                     Text {
                         text: mediaCard.album || ""
-                        font.family: mediaCard.controlTheme?.fontFamily || "monospace"
+                        font.family: mediaCard.controlTheme.fontFamily
                         font.pixelSize: 9
-                        color: mediaCard.controlTheme?.fgMuted || "#434C5E"
+                        color: mediaCard.controlTheme.fgMuted
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                         visible: mediaCard.album !== ""
@@ -550,14 +550,14 @@ if isNiri then
                         width: 32
                         height: 32
                         radius: 16
-                        color: prevMouse.containsMouse ? (mediaCard.controlTheme?.bg || "#2E3440") : "transparent"
+                        color: prevMouse.containsMouse ? (mediaCard.controlTheme.bg) : "transparent"
 
                         Text {
                             anchors.centerIn: parent
                             text: "󰒮"
-                            font.family: mediaCard.controlTheme?.fontFamily || "monospace"
+                            font.family: mediaCard.controlTheme.fontFamily
                             font.pixelSize: 14
-                            color: mediaCard.controlTheme?.fg || "#D8DEE9"
+                            color: mediaCard.controlTheme.fg
                         }
 
                         MouseArea {
@@ -573,14 +573,14 @@ if isNiri then
                         width: 36
                         height: 36
                         radius: 18
-                        color: mediaCard.controlTheme?.darkBlue || "#5E81AC"
+                        color: mediaCard.controlTheme.darkBlue
 
                         Text {
                             anchors.centerIn: parent
                             text: mediaCard.isPlaying ? "󰏤" : "󰐊"
-                            font.family: mediaCard.controlTheme?.fontFamily || "monospace"
+                            font.family: mediaCard.controlTheme.fontFamily
                             font.pixelSize: 16
-                            color: mediaCard.controlTheme?.bg || "#2E3440"
+                            color: mediaCard.controlTheme.bg
                         }
 
                         MouseArea {
@@ -597,14 +597,14 @@ if isNiri then
                         width: 32
                         height: 32
                         radius: 16
-                        color: nextMouse.containsMouse ? (mediaCard.controlTheme?.bg || "#2E3440") : "transparent"
+                        color: nextMouse.containsMouse ? (mediaCard.controlTheme.bg) : "transparent"
 
                         Text {
                             anchors.centerIn: parent
                             text: "󰒭"
-                            font.family: mediaCard.controlTheme?.fontFamily || "monospace"
+                            font.family: mediaCard.controlTheme.fontFamily
                             font.pixelSize: 14
-                            color: mediaCard.controlTheme?.fg || "#D8DEE9"
+                            color: mediaCard.controlTheme.fg
                         }
 
                         MouseArea {
@@ -631,7 +631,7 @@ if isNiri then
 
             height: 50
             radius: 8
-            color: controlTheme?.bg || "#2E3440"
+            color: controlTheme.bg
 
             RowLayout {
                 anchors.fill: parent
@@ -640,9 +640,9 @@ if isNiri then
 
                 Text {
                     text: root.getWifiIcon(wifiCard.signal)
-                    font.family: wifiCard.controlTheme?.fontFamily || "monospace"
+                    font.family: wifiCard.controlTheme.fontFamily
                     font.pixelSize: 18
-                    color: wifiCard.active ? (wifiCard.controlTheme?.green || "#A3BE8C") : (wifiCard.controlTheme?.fgMuted || "#434C5E")
+                    color: wifiCard.active ? (wifiCard.controlTheme.green) : (wifiCard.controlTheme.fgMuted)
                 }
 
                 ColumnLayout {
@@ -651,10 +651,10 @@ if isNiri then
 
                     Text {
                         text: wifiCard.ssid
-                        font.family: wifiCard.controlTheme?.fontFamily || "monospace"
+                        font.family: wifiCard.controlTheme.fontFamily
                         font.pixelSize: 12
                         font.bold: wifiCard.active
-                        color: wifiCard.controlTheme?.fg || "#D8DEE9"
+                        color: wifiCard.controlTheme.fg
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
@@ -667,17 +667,17 @@ if isNiri then
                             if (wifiCard.secure) return "Secured"
                             return "Open"
                         }
-                        font.family: wifiCard.controlTheme?.fontFamily || "monospace"
+                        font.family: wifiCard.controlTheme.fontFamily
                         font.pixelSize: 10
-                        color: wifiCard.active ? (wifiCard.controlTheme?.green || "#A3BE8C") : (wifiCard.controlTheme?.fgMuted || "#434C5E")
+                        color: wifiCard.active ? (wifiCard.controlTheme.green) : (wifiCard.controlTheme.fgMuted)
                     }
                 }
 
                 Text {
                     text: wifiCard.signal + "%"
-                    font.family: wifiCard.controlTheme?.fontFamily || "monospace"
+                    font.family: wifiCard.controlTheme.fontFamily
                     font.pixelSize: 10
-                    color: wifiCard.controlTheme?.fgMuted || "#434C5E"
+                    color: wifiCard.controlTheme.fgMuted
                 }
             }
 
@@ -711,21 +711,21 @@ if isNiri then
                 width: 140
                 height: 36
                 radius: 8
-                color: controlTheme?.bg || "#2E3440"
+                color: controlTheme.bg
                 z: 1000
 
                 Rectangle {
                     anchors.fill: parent
                     anchors.margins: 3
                     radius: 6
-                    color: menuMouse.containsMouse ? (controlTheme?.bgAlt || "#3B4252") : "transparent"
+                    color: menuMouse.containsMouse ? (controlTheme.bgAlt) : "transparent"
 
                     Text {
                         anchors.centerIn: parent
                         text: "Forget Network"
-                        font.family: controlTheme?.fontFamily || "monospace"
+                        font.family: controlTheme.fontFamily
                         font.pixelSize: 11
-                        color: controlTheme?.red || "#BF616A"
+                        color: controlTheme.red
                     }
 
                     MouseArea {
@@ -747,7 +747,7 @@ if isNiri then
 
             Layout.fillWidth: true
             Layout.fillHeight: true
-            color: controlTheme?.bgAlt || "#3B4252"
+            color: controlTheme.bgAlt
 
             ColumnLayout {
                 anchors.centerIn: parent
@@ -757,15 +757,15 @@ if isNiri then
                     width: 64
                     height: 64
                     radius: 32
-                    color: controlTheme?.bg || "#2E3440"
+                    color: controlTheme.bg
                     Layout.alignment: Qt.AlignHCenter
 
                     Text {
                         anchors.centerIn: parent
                         text: root.wifiScanning ? "󰤩" : (root.wifiEnabled ? "󰤫" : "󰤮")
-                        font.family: controlTheme?.fontFamily || "monospace"
+                        font.family: controlTheme.fontFamily
                         font.pixelSize: 28
-                        color: controlTheme?.fgMuted || "#434C5E"
+                        color: controlTheme.fgMuted
                         opacity: 0.5
                     }
                 }
@@ -776,9 +776,9 @@ if isNiri then
                         if (root.wifiScanning) return "Scanning..."
                         return "No networks found"
                     }
-                    font.family: controlTheme?.fontFamily || "monospace"
+                    font.family: controlTheme.fontFamily
                     font.pixelSize: 12
-                    color: controlTheme?.fgMuted || "#434C5E"
+                    color: controlTheme.fgMuted
                     opacity: 0.7
                     Layout.alignment: Qt.AlignHCenter
                 }
@@ -790,7 +790,7 @@ if isNiri then
             property string targetSsid: ""
             property var controlTheme: null
 
-            color: controlTheme?.bgAlt || "#3B4252"
+            color: controlTheme.bgAlt
             radius: 12
 
             ColumnLayout {
@@ -800,9 +800,9 @@ if isNiri then
 
                 Text {
                     text: "󰤁"
-                    font.family: controlTheme?.fontFamily || "monospace"
+                    font.family: controlTheme.fontFamily
                     font.pixelSize: 48
-                    color: controlTheme?.blue || "#81A1C1"
+                    color: controlTheme.blue
                     Layout.alignment: Qt.AlignHCenter
                 }
 
@@ -812,7 +812,7 @@ if isNiri then
 
                     Text {
                         text: "Password Required"
-                        color: controlTheme?.fgMuted || "#434C5E"
+                        color: controlTheme.fgMuted
                         font.pixelSize: 12
                         font.bold: true
                         Layout.alignment: Qt.AlignHCenter
@@ -820,7 +820,7 @@ if isNiri then
 
                     Text {
                         text: passPage.targetSsid
-                        color: controlTheme?.fg || "#D8DEE9"
+                        color: controlTheme.fg
                         font.bold: true
                         font.pixelSize: 14
                         Layout.alignment: Qt.AlignHCenter
@@ -833,7 +833,7 @@ if isNiri then
                     Layout.fillWidth: true
                     height: 45
                     radius: 8
-                    color: controlTheme?.bg || "#2E3440"
+                    color: controlTheme.bg
 
                     TextInput {
                         id: passTextInput
@@ -842,8 +842,8 @@ if isNiri then
                         leftPadding: 15
                         rightPadding: 40
                         echoMode: showPassToggle.checked ? TextInput.Normal : TextInput.Password
-                        color: controlTheme?.fg || "#D8DEE9"
-                        font.family: controlTheme?.fontFamily || "monospace"
+                        color: controlTheme.fg
+                        font.family: controlTheme.fontFamily
                         font.pixelSize: 12
 
                         Text {
@@ -851,9 +851,9 @@ if isNiri then
                             anchors.rightMargin: 10
                             anchors.verticalCenter: parent.verticalCenter
                             text: showPassToggle.checked ? "󰤁" : "󰤂"
-                            font.family: controlTheme?.fontFamily || "monospace"
+                            font.family: controlTheme.fontFamily
                             font.pixelSize: 16
-                            color: controlTheme?.fgMuted || "#434C5E"
+                            color: controlTheme.fgMuted
 
                             MouseArea {
                                 anchors.fill: parent
@@ -878,14 +878,14 @@ if isNiri then
                         Layout.fillWidth: true
                         height: 40
                         radius: 8
-                        color: controlTheme?.bg || "#2E3440"
+                        color: controlTheme.bg
 
                         Text {
                             anchors.centerIn: parent
                             text: "Cancel"
-                            font.family: controlTheme?.fontFamily || "monospace"
+                            font.family: controlTheme.fontFamily
                             font.pixelSize: 12
-                            color: controlTheme?.fg || "#D8DEE9"
+                            color: controlTheme.fg
                         }
 
                         MouseArea {
@@ -903,15 +903,15 @@ if isNiri then
                         Layout.fillWidth: true
                         height: 40
                         radius: 8
-                        color: controlTheme?.blue || "#81A1C1"
+                        color: controlTheme.blue
 
                         Text {
                             anchors.centerIn: parent
                             text: "Connect"
-                            font.family: controlTheme?.fontFamily || "monospace"
+                            font.family: controlTheme.fontFamily
                             font.pixelSize: 12
                             font.bold: true
-                            color: controlTheme?.bg || "#2E3440"
+                            color: controlTheme.bg
                         }
 
                         MouseArea {
@@ -1015,8 +1015,8 @@ if isNiri then
 
             Rectangle {
                 anchors.fill: parent
-                color: root.theme?.bg || "#2E3440"
-                border.color: root.theme?.fgSubtle || "#4C566A"
+                color: root.theme.bg
+                border.color: root.theme.fgSubtle
                 border.width: 2
                 radius: 12
 
@@ -1034,10 +1034,10 @@ if isNiri then
 
                         Text {
                             text: root.wifiPasswordPageVisible ? "Password" : (root.wifiPageVisible ? "Wi-Fi" : (root.bluetoothPageVisible ? "Bluetooth" : "Control Center"))
-                            color: root.theme?.darkBlue || "#5E81AC"
+                            color: root.theme.darkBlue
                             font.pixelSize: 16
                             font.bold: true
-                            font.family: root.theme?.fontFamily || "monospace"
+                            font.family: root.theme.fontFamily
                         }
 
                         Item { Layout.fillWidth: true }
@@ -1045,7 +1045,7 @@ if isNiri then
                         Text {
                             visible: root.bluetoothPageVisible && !root.wifiPageVisible && !root.wifiPasswordPageVisible
                             text: "Power"
-                            color: root.theme?.fgMuted || "#434C5E"
+                            color: root.theme.fgMuted
                             font.pixelSize: 10
                         }
 
@@ -1054,7 +1054,7 @@ if isNiri then
                             width: 44
                             height: 24
                             radius: 12
-                            color: BluetoothService.enabled ? (root.theme?.green || "#A3BE8C") : (root.theme?.fgMuted || "#434C5E")
+                            color: BluetoothService.enabled ? (root.theme.green) : (root.theme.fgMuted)
 
                             MouseArea {
                                 anchors.fill: parent
@@ -1075,7 +1075,7 @@ if isNiri then
                         Text {
                             visible: root.wifiPageVisible && !root.wifiPasswordPageVisible
                             text: "Wi-Fi"
-                            color: root.theme?.fgMuted || "#434C5E"
+                            color: root.theme.fgMuted
                             font.pixelSize: 10
                         }
 
@@ -1084,7 +1084,7 @@ if isNiri then
                             width: 44
                             height: 24
                             radius: 12
-                            color: root.wifiEnabled ? (root.theme?.green || "#A3BE8C") : (root.theme?.bg || "#2E3440")
+                            color: root.wifiEnabled ? (root.theme.green) : (root.theme.bg)
 
                             MouseArea {
                                 anchors.fill: parent
@@ -1098,14 +1098,14 @@ if isNiri then
                                 width: 20
                                 height: 20
                                 radius: 10
-                                color: root.wifiEnabled ? "#FFFFFF" : (root.theme?.fgMuted || "#434C5E")
+                                color: root.wifiEnabled ? "#FFFFFF" : (root.theme.fgMuted)
                             }
                         }
 
                         Text {
                             visible: root.wifiPageVisible && !root.wifiPasswordPageVisible
                             text: "Scan"
-                            color: root.theme?.fgMuted || "#434C5E"
+                            color: root.theme.fgMuted
                             font.pixelSize: 10
 
                             MouseArea {
@@ -1117,7 +1117,7 @@ if isNiri then
 
                         Text {
                             text: "x"
-                            color: closeMa.containsMouse ? root.theme?.darkBlue : root.theme?.fg
+                            color: closeMa.containsMouse ? root.theme.darkBlue : root.theme.fg
                             font.pixelSize: 20
 
                             MouseArea {
@@ -1142,14 +1142,14 @@ if isNiri then
                     Rectangle {
                         Layout.fillWidth: true
                         height: 1
-                        color: root.theme?.fgSubtle || "#4C566A"
+                        color: root.theme.fgSubtle
                     }
 
                     Rectangle {
                         Layout.fillWidth: true
                         implicitHeight: 520
                         radius: 8
-                        color: root.theme?.bgAlt || "#3B4252"
+                        color: root.theme.bgAlt
                         visible: root.bluetoothPageVisible
 
                         ColumnLayout {
@@ -1160,14 +1160,14 @@ if isNiri then
                             RowLayout {
                                 Text {
                                     text: "Bluetooth"
-                                    color: root.theme?.darkBlue
+                                    color: root.theme.darkBlue
                                     font.pixelSize: 16
                                     font.bold: true
                                 }
                                 Item { Layout.fillWidth: true }
                                 Text {
                                     text: BluetoothService.enabled ? "󰂯" : "󰂲"
-                                    color: BluetoothService.enabled ? root.theme?.green : root.theme?.fgMuted
+                                    color: BluetoothService.enabled ? root.theme.green : root.theme.fgMuted
                                     MouseArea {
                                         anchors.fill: parent
                                         cursorShape: Qt.PointingHandCursor
@@ -1176,7 +1176,7 @@ if isNiri then
                                 }
                                 Text {
                                     text: "Scan"
-                                    color: BluetoothService.discovering ? root.theme?.yellow : root.theme?.fgMuted
+                                    color: BluetoothService.discovering ? root.theme.yellow : root.theme.fgMuted
                                     MouseArea {
                                         anchors.fill: parent
                                         cursorShape: Qt.PointingHandCursor
@@ -1185,7 +1185,7 @@ if isNiri then
                                 }
                                 Text {
                                     text: "⟳"
-                                    color: root.theme?.fgMuted
+                                    color: root.theme.fgMuted
                                     MouseArea {
                                         anchors.fill: parent
                                         cursorShape: Qt.PointingHandCursor
@@ -1208,7 +1208,7 @@ if isNiri then
                                     width: ListView.view.width
                                     height: 56
                                     radius: 8
-                                    color: modelData.connected ? Qt.rgba(0.4, 0.8, 0.4, 0.15) : root.theme?.bg || "#2E3440"
+                                    color: modelData.connected ? Qt.rgba(0.4, 0.8, 0.4, 0.15) : root.theme.bg
 
                                     MouseArea {
                                         anchors.fill: parent
@@ -1242,12 +1242,12 @@ if isNiri then
                                                 text: modelData.deviceName || modelData.alias || modelData.name || "Unknown"
                                                 font.pixelSize: 13
                                                 font.bold: modelData.connected
-                                                color: root.theme?.fg
+                                                color: root.theme.fg
                                             }
                                             Text {
                                                 text: modelData.connected ? "Connected" : "Tap to connect"
                                                 font.pixelSize: 10
-                                                color: modelData.connected ? root.theme?.green : root.theme?.fgMuted
+                                                color: modelData.connected ? root.theme.green : root.theme.fgMuted
                                             }
                                         }
 
@@ -1255,7 +1255,7 @@ if isNiri then
 
                                         Text {
                                             text: modelData.connected ? "󰅙" : "󰂯"
-                                            color: modelData.connected ? root.theme?.red : root.theme?.blue
+                                            color: modelData.connected ? root.theme.red : root.theme.blue
                                             font.pixelSize: 18
                                         }
                                     }
@@ -1265,7 +1265,7 @@ if isNiri then
                             Text {
                                 visible: BluetoothService.enabled && BluetoothService.available
                                 text: BluetoothService.discovering ? "Searching for devices..." : "No devices found"
-                                color: root.theme?.fgMuted
+                                color: root.theme.fgMuted
                                 Layout.alignment: Qt.AlignHCenter
                             }
                         }
@@ -1275,7 +1275,7 @@ if isNiri then
                         Layout.fillWidth: true
                         implicitHeight: 520
                         radius: 8
-                        color: root.theme?.bgAlt || "#3B4252"
+                        color: root.theme.bgAlt
                         visible: root.wifiPageVisible
 
                         ColumnLayout {
@@ -1344,7 +1344,7 @@ if isNiri then
                                 iconOff: "󰍷"
                                 label: "DND"
                                 isOn: false
-                                accentColor: root.theme?.red || "#BF616A"
+                                accentColor: root.theme.red
                                 controlTheme: root.theme
                             }
 
@@ -1353,7 +1353,7 @@ if isNiri then
                                 iconOff: "󱩌"
                                 label: "Night"
                                 isOn: root.nightLightEnabled
-                                accentColor: root.theme?.yellow || "#EBCB8B"
+                                accentColor: root.theme.yellow
                                 controlTheme: root.theme
                                 onClick: () => root.toggleNightLight()
                             }
@@ -1363,7 +1363,7 @@ if isNiri then
                                 iconOff: "󰀞"
                                 label: "Airplane"
                                 isOn: root.airplaneMode
-                                accentColor: root.theme?.magenta || "#B48EAD"
+                                accentColor: root.theme.magenta
                                 controlTheme: root.theme
                                 onClick: () => root.toggleAirplaneMode()
                             }
@@ -1373,7 +1373,7 @@ if isNiri then
                                 iconOff: "󱐌"
                                 label: "Power"
                                 isOn: false
-                                accentColor: root.theme?.cyan || "#8FBCBB"
+                                accentColor: root.theme.cyan
                                 controlTheme: root.theme
                             }
                         }
@@ -1382,7 +1382,7 @@ if isNiri then
                             Layout.fillWidth: true
                             height: 60
                             radius: 8
-                            color: root.theme?.bgAlt || "#3B4252"
+                            color: root.theme.bgAlt
                             visible: root.nightLightEnabled
 
                             ColumnLayout {
@@ -1393,22 +1393,22 @@ if isNiri then
                                 RowLayout {
                                     Text {
                                         text: "Night Light Temperature"
-                                        font.family: root.theme?.fontFamily || "monospace"
+                                        font.family: root.theme.fontFamily
                                         font.pixelSize: 12
-                                        color: root.theme?.fg || "#D8DEE9"
+                                        color: root.theme.fg
                                     }
                                     Item { Layout.fillWidth: true }
                                     Text {
                                         text: root.nightLightTemperature + "K"
-                                        font.family: root.theme?.fontFamily || "monospace"
+                                        font.family: root.theme.fontFamily
                                         font.pixelSize: 12
                                         font.bold: true
-                                        color: root.theme?.yellow || "#EBCB8B"
+                                        color: root.theme.yellow
                                     }
                                 }
 
                                 RowLayout {
-                                    Text { text: "2500"; font.pixelSize: 9; color: root.theme?.fgMuted }
+                                    Text { text: "2500"; font.pixelSize: 9; color: root.theme.fgMuted }
                                     Slider {
                                         Layout.fillWidth: true
                                         from: 2500
@@ -1416,7 +1416,7 @@ if isNiri then
                                         value: root.nightLightTemperature
                                         onValueChanged: root.setNightLightTemp(Math.round(value))
                                     }
-                                    Text { text: "6500"; font.pixelSize: 9; color: root.theme?.fgMuted }
+                                    Text { text: "6500"; font.pixelSize: 9; color: root.theme.fgMuted }
                                 }
                             }
                         }
@@ -1426,7 +1426,7 @@ if isNiri then
                             icon: root.isMuted ? "󰖁" : "󰕾"
                             label: "Volume"
                             value: root.volumeLevel
-                            accentColor: root.theme?.blue || "#81A1C1"
+                            accentColor: root.theme.blue
                             isMuted: root.isMuted
                             controlTheme: root.theme
                             valueChangedHandler: (newVal) => root.setVolume(newVal)
@@ -1437,7 +1437,7 @@ if isNiri then
                             icon: "󰃟"
                             label: "Brightness"
                             value: root.brightnessLevel
-                            accentColor: root.theme?.yellow || "#EBCB8B"
+                            accentColor: root.theme.yellow
                             controlTheme: root.theme
                             valueChangedHandler: (newVal) => {
                                 brightnessSetProc.command = ["${getExe pkgs.brightnessctl}", "-e4", "-n2", "set", newVal + "%"]
@@ -1448,7 +1448,7 @@ if isNiri then
                         Rectangle {
                             Layout.fillWidth: true
                             Layout.preferredHeight: 1
-                            color: root.theme?.fgSubtle || "#4C566A"
+                            color: root.theme.fgSubtle
                         }
 
                         MediaCard {
@@ -1480,7 +1480,7 @@ if isNiri then
                         Layout.fillWidth: true
                         height: 250
                         radius: 12
-                        color: root.theme?.bgAlt || "#3B4252"
+                        color: root.theme.bgAlt
 
                         ColumnLayout {
                             anchors.fill: parent
@@ -1489,26 +1489,26 @@ if isNiri then
 
                             Text {
                                 text: "󰤁"
-                                font.family: root.theme?.fontFamily || "monospace"
+                                font.family: root.theme.fontFamily
                                 font.pixelSize: 36
-                                color: root.theme?.blue || "#81A1C1"
+                                color: root.theme.blue
                                 Layout.alignment: Qt.AlignHCenter
                             }
 
                             Text {
                                 text: "Password Required"
-                                font.family: root.theme?.fontFamily || "monospace"
+                                font.family: root.theme.fontFamily
                                 font.pixelSize: 12
-                                color: root.theme?.fgMuted || "#434C5E"
+                                color: root.theme.fgMuted
                                 Layout.alignment: Qt.AlignHCenter
                             }
 
                             Text {
                                 text: root.pendingWifiSsid
-                                font.family: root.theme?.fontFamily || "monospace"
+                                font.family: root.theme.fontFamily
                                 font.pixelSize: 14
                                 font.bold: true
-                                color: root.theme?.fg || "#D8DEE9"
+                                color: root.theme.fg
                                 Layout.alignment: Qt.AlignHCenter
                                 elide: Text.ElideRight
                             }
@@ -1517,7 +1517,7 @@ if isNiri then
                                 Layout.fillWidth: true
                                 height: 40
                                 radius: 8
-                                color: root.theme?.bg || "#2E3440"
+                                color: root.theme.bg
 
                                 TextInput {
                                     id: passField
@@ -1526,8 +1526,8 @@ if isNiri then
                                     leftPadding: 15
                                     rightPadding: 40
                                     echoMode: passShow.checked ? TextInput.Normal : TextInput.Password
-                                    color: root.theme?.fg || "#D8DEE9"
-                                    font.family: root.theme?.fontFamily || "monospace"
+                                    color: root.theme.fg
+                                    font.family: root.theme.fontFamily
                                     font.pixelSize: 12
 
                                     Text {
@@ -1535,9 +1535,9 @@ if isNiri then
                                         anchors.rightMargin: 10
                                         anchors.verticalCenter: parent.verticalCenter
                                         text: passShow.checked ? "󰤁" : "󰤂"
-                                        font.family: root.theme?.fontFamily || "monospace"
+                                        font.family: root.theme.fontFamily
                                         font.pixelSize: 14
-                                        color: root.theme?.fgMuted || "#434C5E"
+                                        color: root.theme.fgMuted
 
                                         MouseArea {
                                             anchors.fill: parent
@@ -1561,14 +1561,14 @@ if isNiri then
                                     Layout.fillWidth: true
                                     height: 36
                                     radius: 8
-                                    color: root.theme?.bg || "#2E3440"
+                                    color: root.theme.bg
 
                                     Text {
                                         anchors.centerIn: parent
                                         text: "Cancel"
-                                        font.family: root.theme?.fontFamily || "monospace"
+                                        font.family: root.theme.fontFamily
                                         font.pixelSize: 12
-                                        color: root.theme?.fg || "#D8DEE9"
+                                        color: root.theme.fg
                                     }
 
                                     MouseArea {
@@ -1585,15 +1585,15 @@ if isNiri then
                                     Layout.fillWidth: true
                                     height: 36
                                     radius: 8
-                                    color: root.theme?.blue || "#81A1C1"
+                                    color: root.theme.blue
 
                                     Text {
                                         anchors.centerIn: parent
                                         text: "Connect"
-                                        font.family: root.theme?.fontFamily || "monospace"
+                                        font.family: root.theme.fontFamily
                                         font.pixelSize: 12
                                         font.bold: true
-                                        color: root.theme?.bg || "#2E3440"
+                                        color: root.theme.bg
                                     }
 
                                     MouseArea {

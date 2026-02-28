@@ -52,8 +52,8 @@ if isNiri then
 
             Rectangle {
                 anchors.fill: parent
-                color: root.theme?.bg || "#2E3440"
-                border.color: root.theme?.fgSubtle || "#4C566A"
+                color: root.theme.bg
+                border.color: root.theme.fgSubtle
                 border.width: 2
                 radius: 12
 
@@ -70,17 +70,17 @@ if isNiri then
                         spacing: 30
                         Text {
                             text: "Notifications"
-                            color: root.theme?.darkBlue || "#5E81AC"
+                            color: root.theme.darkBlue
                             font.pixelSize: 16
                             font.bold: true
-                            font.family: root.theme?.fontFamily || "monospace"
+                            font.family: root.theme.fontFamily
                         }
 
                         Item { Layout.fillWidth: true }
 
                         Text {
                             text: "Clear"
-                            color: clearMa.containsMouse ? root.theme?.red : root.theme?.fgMuted
+                            color: clearMa.containsMouse ? root.theme.red : root.theme.fgMuted
                             font.pixelSize: 14
 
                             MouseArea {
@@ -99,7 +99,7 @@ if isNiri then
 
                         Text {
                             text: "x"
-                            color: closeMa.containsMouse ? root.theme?.darkBlue : root.theme?.fg
+                            color: closeMa.containsMouse ? root.theme.darkBlue : root.theme.fg
                             font.pixelSize: 20
 
                             MouseArea {
@@ -114,7 +114,7 @@ if isNiri then
                     Rectangle {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 1
-                        color: root.theme?.fgSubtle || "#4C566A"
+                        color: root.theme.fgSubtle
                     }
 
                     ListView {
@@ -131,7 +131,7 @@ if isNiri then
 
                             width: notificationList.width
                             height: 90
-                            color: index % 2 === 0 ? (root.theme?.bgAlt || "#3B4252") : (root.theme?.bg || "#2E3440")
+                            color: index % 2 === 0 ? (root.theme.bgAlt) : (root.theme.bg)
                             radius: 12
                             visible: modelData !== null
 
@@ -142,7 +142,7 @@ if isNiri then
 
                                 Text {
                                     text: modelData && modelData.appName ? modelData.appName[0].toUpperCase() : "N"
-                                    color: root.theme?.darkBlue || "#5E81AC"
+                                    color: root.theme.darkBlue
                                     font.pixelSize: 19
                                     font.bold: true
                                     width: 30
@@ -154,7 +154,7 @@ if isNiri then
 
                                     Text {
                                         text: modelData ? modelData.summary : ""
-                                        color: root.theme?.fg || "#D8DEE9"
+                                        color: root.theme.fg
                                         font.pixelSize: 15
                                         font.bold: true
                                         elide: Text.ElideRight
@@ -162,7 +162,7 @@ if isNiri then
 
                                     Text {
                                         text: modelData ? modelData.body : ""
-                                        color: root.theme?.fgMuted || "#434C5E"
+                                        color: root.theme.fgMuted
                                         font.pixelSize: 13
                                         elide: Text.ElideRight
                                         maximumLineCount: 2
@@ -171,7 +171,7 @@ if isNiri then
 
                                 Text {
                                     text: "x"
-                                    color: dismissMa.containsMouse ? root.theme?.red : root.theme?.fgMuted
+                                    color: dismissMa.containsMouse ? root.theme.red : root.theme.fgMuted
                                     font.pixelSize: 16
 
                                     MouseArea {
@@ -187,7 +187,7 @@ if isNiri then
                         Text {
                             anchors.centerIn: parent
                             text: "No notifications"
-                            color: root.theme?.fgMuted || "#434C5E"
+                            color: root.theme.fgMuted
                             font.pixelSize: 14
                             visible: notificationList.count === 0
                         }

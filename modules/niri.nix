@@ -238,8 +238,9 @@ in
            Alt+Print { screenshot-window; }
 
            Mod+X { spawn "quickshell" "ipc" "call" "powerMenu" "toggle"; }
-           Mod+N { spawn "quickshell" "ipc" "call" "notificationCenter" "toggle"; }
-           Mod+Q { close-window; }
+            Mod+N { spawn "quickshell" "ipc" "call" "notificationCenter" "toggle"; }
+            Mod+C { spawn "quickshell" "ipc" "call" "controlCenter" "toggle"; }
+            Mod+Q { close-window; }
            Mod+W { toggle-column-tabbed-display ; }
            Mod+Shift+C { quit; }
            Mod+Space { toggle-window-floating; }
@@ -318,9 +319,8 @@ in
            // === Sizing & Layout ===
            Mod+Shift+R { switch-preset-column-width; }
            Mod+Ctrl+R { reset-window-height; }
-           Mod+Ctrl+F { expand-column-to-available-width; }
-           Mod+C { center-column; }
-           Mod+Ctrl+C { center-visible-columns; }
+            Mod+Ctrl+F { expand-column-to-available-width; }
+            Mod+Ctrl+C { center-visible-columns; }
 
            // === Manual Sizing ===
            Mod+Minus { set-column-width "-10%"; }
