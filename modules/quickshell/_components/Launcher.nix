@@ -39,6 +39,20 @@ in
           property int selectedIndex: 0
           property var results: []
           property bool appsLoaded: false
+          property bool isClipboardMode: false
+
+          property var clipboardEntries: []
+          readonly property var clipboardFiltered: {
+              if (query.startsWith(">clip")) {
+                  if (query === ">clip") return clipboardEntries;
+                  var q = query.slice(6).toLowerCase();
+                  if (q === "") return clipboardEntries;
+                  return clipboardEntries.filter(function(entry) {
+                      return entry.text.toLowerCase().indexOf(q) >= 0;
+                  });
+              }
+              return [];
+          }
 
           function loadApps() {
               if (appsLoaded) return;
@@ -59,6 +73,81 @@ in
               onTriggered: launcherWindow.loadApps()
           }
 
+          Process {
+              id: clipboardListProc
+              running: false
+              command: ["cliphist", "list"]
+              stdout: StdioCollector {
+                  onStreamFinished: function() {
+                      var lines = text.trim().split("\n");
+                      var items = [];
+                      for (var i = 0; i < lines.length; i++) {
+                          var line = lines[i];
+                          if (!line) continue;
+                          var tabIndex = line.indexOf("\t");
+                          if (tabIndex === -1) continue;
+                          var id = line.substring(0, tabIndex);
+                          var content = line.substring(tabIndex + 1);
+                          items.push({
+                              id: id,
+                              text: content,
+                              line: line
+                          });
+                      }
+                      launcherWindow.clipboardEntries = items;
+                      launcherWindow.updateClipboardResults();
+                  }
+              }
+          }
+
+          Process {
+              id: clipboardSelectProc
+              running: false
+              stdinEnabled: true
+              command: ["sh", "-c", "cat | cliphist decode | wl-copy"]
+              onExited: function(code) {
+                  if (code === 0) {
+                      launcherWindow.visible = false;
+                  }
+              }
+          }
+
+          Process {
+              id: clipboardDeleteProc
+              running: false
+              stdinEnabled: true
+              command: ["sh", "-c", "cat | cliphist delete"]
+              onExited: function(code) {
+                  if (code === 0) {
+                      clipboardListProc.running = true;
+                  }
+              }
+          }
+
+          Process {
+              id: clipboardClearProc
+              running: false
+              command: ["cliphist", "wipe"]
+              onExited: function(code) {
+                  if (code === 0) {
+                      launcherWindow.clipboardEntries = [];
+                      launcherWindow.updateClipboardResults();
+                  }
+              }
+          }
+
+          function shellEscape(str) {
+              var result = "";
+              for (var i = 0; i < str.length; i++) {
+                  var ch = str.charAt(i);
+                  if (ch === "'") {
+                      result = result + "'";
+                  }
+                  result = result + ch;
+              }
+              return result;
+          }
+
           function launch(app) {
               if (app && app.execute) {
                   app.execute();
@@ -68,18 +157,90 @@ in
 
           function launchSelected() {
               if (results && results.length > 0 && selectedIndex >= 0 && selectedIndex < results.length) {
-                  launch(results[selectedIndex]);
+                  var item = results[selectedIndex];
+                  if (item.type === "clipboard") {
+                      clipboardSelectProc.stdin = item.line + "\n";
+                      clipboardSelectProc.running = true;
+                  } else if (item.type === "app") {
+                      launch(item.app);
+                  }
               }
+          }
+
+          function deleteClipboardItem(index) {
+              if (index >= 0 && index < clipboardFiltered.length) {
+                  var entry = clipboardFiltered[index];
+                  clipboardDeleteProc.stdin = entry.line + "\n";
+                  clipboardDeleteProc.running = true;
+              }
+          }
+
+          function updateClipboardResults() {
+              if (!isClipboardMode) return;
+
+              var cmd = query.slice(5).trim();
+
+              if (cmd === "clear") {
+                  results = [
+                      { name: "Clear clipboard history", description: "Delete all clipboard items", type: "clipboard", id: "__clear__", isAction: true }
+                  ];
+                  return;
+              }
+
+              if (cmd === "delete") {
+                  if (clipboardFiltered.length > 0) {
+                      var entry = clipboardFiltered[selectedIndex];
+                      if (entry) {
+                          deleteClipboardItem(selectedIndex);
+                      }
+                  }
+                  return;
+              }
+
+              if (clipboardEntries.length === 0) {
+                  results = [
+                      { name: "Loading...", description: "Fetching clipboard history", type: "clipboard", id: "", isLoading: true }
+                  ];
+                  return;
+              }
+
+              var matches = clipboardFiltered.map(function(entry) {
+                  return {
+                      name: entry.text.length > 60 ? entry.text.substring(0, 57) + "..." : entry.text,
+                      description: "Clipboard",
+                      type: "clipboard",
+                      id: entry.id,
+                      line: entry.line
+                  };
+              });
+
+              if (matches.length === 0) {
+                  var q = query.slice(6);
+                  results = [
+                      { name: q ? "No matches found" : "Clipboard is empty", description: q ? "No items containing \"" + q + "\"" : "Copy something to see it here", type: "clipboard", id: "", isEmpty: true }
+                  ];
+                  return;
+              }
+
+              results = matches;
           }
 
           function doSearch() {
               selectedIndex = 0;
 
+              if (query.startsWith(">clip")) {
+                  isClipboardMode = true;
+                  updateClipboardResults();
+                  return;
+              }
+
+              isClipboardMode = false;
+
               if (!DesktopEntries || !DesktopEntries.applications) {
                   results = [];
                   return;
               }
-
+              
               var allApps = DesktopEntries.applications.values;
               if (!allApps || allApps.length === 0) {
                   results = [];
@@ -94,7 +255,9 @@ in
               });
 
               if (query === "") {
-                  results = arr.slice(0, 50);
+                  results = arr.slice(0, 50).map(function(app) {
+                      return { type: "app", app: app, name: app.name, icon: app.icon };
+                  });
                   return;
               }
 
@@ -104,13 +267,28 @@ in
                   var app = arr[i];
                   var name = (app.name || "").toLowerCase();
                   if (name.indexOf(q) >= 0) {
-                      matches.push(app);
+                      matches.push({ type: "app", app: app, name: app.name, icon: app.icon });
                   }
               }
               results = matches;
           }
 
-          onQueryChanged: doSearch()
+          onQueryChanged: {
+              if (query.startsWith(">clip")) {
+                  if (!isClipboardMode) {
+                      isClipboardMode = true;
+                      clipboardListProc.running = true;
+                  }
+                  if (clipboardEntries.length > 0) {
+                      updateClipboardResults();
+                  }
+              } else if (isClipboardMode) {
+                  isClipboardMode = false;
+                  doSearch();
+              } else {
+                  doSearch();
+              }
+          }
 
           Component.onCompleted: {
               loadAppsTimer.start();
@@ -143,10 +321,10 @@ in
                           spacing: 10
 
                           Text {
-                              text: "󰍉"
+                              text: launcherWindow.isClipboardMode ? "󱉥" : "󰍉"
                               font.family: theme?.fontFamily || "monospace"
                               font.pixelSize: 16
-                              color: theme?.fgMuted || "${c.base04}"
+                              color: launcherWindow.isClipboardMode ? (theme?.yellow || "${c.base0A}") : (theme?.fgMuted || "${c.base04}")
                           }
 
                           TextInput {
@@ -157,7 +335,16 @@ in
                               color: theme?.fg || "${c.base05}"
                               verticalAlignment: TextInput.AlignVCenter
                               onTextChanged: launcherWindow.query = text
-                              onAccepted: launcherWindow.launchSelected()
+                              onAccepted: function() {
+                                  if (launcherWindow.selectedIndex >= 0 && launcherWindow.results.length > 0) {
+                                      var item = launcherWindow.results[launcherWindow.selectedIndex];
+                                      if (item.id === "__clear__") {
+                                          clipboardClearProc.running = true;
+                                      } else if (!item.isLoading && !item.isEmpty) {
+                                          launcherWindow.launchSelected();
+                                      }
+                                  }
+                              }
                               Keys.onEscapePressed: function(event) {
                                   if (launcherWindow.query === "") {
                                       launcherWindow.visible = false;
@@ -224,8 +411,23 @@ in
                               Image {
                                   width: 24
                                   height: 24
-                                  source: modelData.icon ? "image://icon/" + modelData.icon : ""
+                                  source: {
+                                      if (modelData.type === "clipboard") return "";
+                                      if (modelData.type === "app") return modelData.icon ? "image://icon/" + modelData.icon : "";
+                                      return "";
+                                  }
                                   sourceSize: Qt.size(24, 24)
+                              }
+
+                              Text {
+                                  text: {
+                                      if (modelData.type === "clipboard") return "󱉥";
+                                      return "";
+                                  }
+                                  font.family: theme?.fontFamily || "monospace"
+                                  font.pixelSize: 16
+                                  color: theme?.yellow || "${c.base0A}"
+                                  visible: modelData.type === "clipboard"
                               }
 
                               Text {
@@ -238,11 +440,18 @@ in
                               }
 
                               Text {
-                                  text: "Enter"
+                                  Layout.preferredWidth: 60
+                                  horizontalAlignment: Text.AlignRight
+                                  text: {
+                                      if (modelData.isAction) return "Clear";
+                                      if (modelData.isLoading || modelData.isEmpty) return "";
+                                      if (modelData.type === "clipboard") return "Paste";
+                                      return "Enter";
+                                  }
                                   font.family: theme?.fontFamily || "monospace"
                                   font.pixelSize: 10
                                   color: theme?.fgMuted || "${c.base04}"
-                                  visible: index === launcherWindow.selectedIndex
+                                  visible: index === launcherWindow.selectedIndex && !modelData.isLoading && !modelData.isEmpty
                               }
                           }
 
@@ -251,7 +460,11 @@ in
                               cursorShape: Qt.PointingHandCursor
                               onClicked: function() {
                                   launcherWindow.selectedIndex = index;
-                                  launcherWindow.launchSelected();
+                                  if (modelData.id === "__clear__") {
+                                      clipboardClearProc.running = true;
+                                  } else if (!modelData.isLoading && !modelData.isEmpty) {
+                                      launcherWindow.launchSelected();
+                                  }
                               }
                           }
                       }
@@ -263,7 +476,16 @@ in
               anchors.fill: parent
               focus: true
               Keys.onEscapePressed: launcherWindow.visible = false
-              Keys.onReturnPressed: launcherWindow.launchSelected()
+              Keys.onReturnPressed: function() {
+                  if (launcherWindow.selectedIndex >= 0 && launcherWindow.results.length > 0) {
+                      var item = launcherWindow.results[launcherWindow.selectedIndex];
+                      if (item.id === "__clear__") {
+                          clipboardClearProc.running = true;
+                      } else if (!item.isLoading && !item.isEmpty) {
+                          launcherWindow.launchSelected();
+                      }
+                  }
+              }
               Keys.onUpPressed: function(event) {
                   if (launcherWindow.selectedIndex > 0) launcherWindow.selectedIndex--
                   appListView.currentIndex = launcherWindow.selectedIndex
@@ -300,6 +522,7 @@ in
                   query = "";
                   selectedIndex = 0;
                   appsLoaded = false;
+                  isClipboardMode = false;
                   launcherWindow.loadApps();
                   Qt.callLater(function() { searchInput.forceActiveFocus(); });
               }
