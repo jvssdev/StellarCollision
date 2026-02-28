@@ -1,10 +1,5 @@
-{
-  colors,
-  ...
-}:
-let
-  c = colors;
-in
+_:
+
 /* qml */ ''
   import QtQuick
   import QtQuick.Layouts
