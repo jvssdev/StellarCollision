@@ -17,8 +17,6 @@ let
   cfg = config.cfg.niri;
   c = config.cfg.theme.colors;
 
-  clipboard = pkgs.callPackage ./_fuzzel-clipboard.nix { };
-
   quickshell = inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default;
 in
 {

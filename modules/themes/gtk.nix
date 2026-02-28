@@ -12,6 +12,16 @@ let
     inherit (config.cfg.fonts.monospace) name;
     inherit (config.cfg.fonts) size;
   };
+
+  fairywrenWithFallback = pkgs.fairywren.overrideAttrs (old: {
+    postInstall = (old.postInstall or "") + ''
+      theme_dir="$out/share/icons/FairyWren_Dark"
+      if [ -f "$theme_dir/index.theme" ]; then
+        sed -i '/^Inherits=/d' "$theme_dir/index.theme"
+        sed -i '/^\[Icon Theme\]/a Inherits=Adwaita,hicolor' "$theme_dir/index.theme"
+      fi
+    '';
+  });
 in
 {
   options.cfg.gtk = {
@@ -42,7 +52,7 @@ in
       type = types.attrs;
       default = {
         name = "FairyWren_Dark";
-        package = pkgs.fairywren;
+        package = fairywrenWithFallback;
       };
       description = "Icon theme configuration";
     };
@@ -70,10 +80,11 @@ in
         cfg.theme.package
         cfg.iconTheme.package
         cfg.cursorTheme.package
+        pkgs.adwaita-icon-theme
       ];
 
       xdg.config.files = {
-        "gtk-3.0/settings.ini".text = /* ini */ ''
+        "gtk-3.0/settings.ini".text = ''
           [Settings]
           gtk-theme-name=${cfg.theme.name}
           gtk-icon-theme-name=${cfg.iconTheme.name}
@@ -87,7 +98,7 @@ in
           gtk-xft-rgba=rgb
         '';
 
-        "gtk-4.0/settings.ini".text = /* ini */ ''
+        "gtk-4.0/settings.ini".text = ''
           [Settings]
           gtk-theme-name=${cfg.theme.name}
           gtk-icon-theme-name=${cfg.iconTheme.name}

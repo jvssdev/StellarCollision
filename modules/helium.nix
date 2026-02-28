@@ -85,6 +85,34 @@ let
 
   helium-unwrapped = inputs.helium-browser.packages.${pkgs.stdenv.hostPlatform.system}.helium;
 
+  helium-assets = pkgs.runCommand "helium-assets" { } ''
+    mkdir -p $out/share/applications
+    cat > $out/share/applications/helium.desktop <<EOF
+    [Desktop Entry]
+    Name=Helium
+    Exec=helium %U
+    Terminal=false
+    Type=Application
+    Icon=helium
+    StartupWMClass=Helium
+    Comment=A private, fast, and honest web browser
+    MimeType=text/html;text/xml;application/xhtml+xml;application/xml;x-scheme-handler/http;x-scheme-handler/https;
+    Categories=Network;WebBrowser;
+    EOF
+
+    for size in 16 32 48 64 128 256; do
+      icon=$(find "${helium-unwrapped}" -name "product_logo_''${size}.png" 2>/dev/null | head -1)
+      if [ -z "$icon" ]; then
+        icon=$(find "${helium-unwrapped}" -name "product_logo_48.png" 2>/dev/null | head -1)
+      fi
+      if [ -n "$icon" ]; then
+        dest="$out/share/icons/hicolor/''${size}x''${size}/apps"
+        mkdir -p "$dest"
+        cp "$icon" "$dest/helium.png"
+      fi
+    done
+  '';
+
   heliumPrefsScript = pkgs.writeShellScript "helium-set-prefs" ''
     PREFS_DIR="$HOME/.config/net.imput.helium/Default"
     PREFS_FILE="$PREFS_DIR/Preferences"
@@ -98,7 +126,7 @@ let
 
   helium-launcher = pkgs.writeShellScriptBin "helium" ''
     ${heliumPrefsScript}
-    exec ${helium-unwrapped}/bin/helium "$@"
+    exec ${helium-unwrapped}/bin/helium "$@" 2> >(${pkgs.gnugrep}/bin/grep -v 'Could not load icon' >&2)
   '';
 in
 {
@@ -119,6 +147,7 @@ in
     hj = {
       packages = [
         helium-launcher
+        helium-assets
         pkgs.jq
       ];
     };

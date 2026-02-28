@@ -33,7 +33,7 @@ in
     gtk.enable = true;
     qt.enable = true;
     dunst.enable = false;
-    fuzzel.enable = true;
+    fuzzel.enable = false;
     btop.enable = true;
     zathura.enable = true;
     keepassxc.enable = true;

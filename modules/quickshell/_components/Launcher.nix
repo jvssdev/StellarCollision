@@ -16,20 +16,20 @@ in
       property var theme: null
 
       function toggle() {
-          launcherWindow.visible = !launcherWindow.visible;
-          if (launcherWindow.visible) {
-              launcherWindow.isClipboardMode = false;
+          launcherWindow.isClipboardMode = false;
+          if (!launcherWindow.appsLoaded) {
+              launcherWindow.loadApps();
           }
+          launcherWindow.visible = !launcherWindow.visible;
       }
 
       function openClipboard() {
+          launcherWindow.isClipboardMode = true;
+          launcherWindow.query = "";
+          launcherWindow.selectedIndex = 0;
+          launcherWindow.results = [];
           launcherWindow.visible = true;
-          Qt.callLater(function() {
-              launcherWindow.query = "";
-              launcherWindow.selectedIndex = 0;
-              launcherWindow.isClipboardMode = true;
-              clipboardListProc.running = true;
-          });
+          clipboardListProc.running = true;
       }
 
       function clearClipboard() {
@@ -502,13 +502,19 @@ in
 
           onVisibleChanged: {
               if (visible) {
-                  query = "";
-                  selectedIndex = 0;
-                  if (!isClipboardMode) {
+                  if (isClipboardMode) {
+                      if (clipboardEntries.length === 0) {
+                          clipboardListProc.running = true;
+                      }
+                  } else {
+                      query = "";
+                      selectedIndex = 0;
                       appsLoaded = false;
                       launcherWindow.loadApps();
                   }
                   Qt.callLater(function() { searchInput.forceActiveFocus(); });
+              } else {
+                  isClipboardMode = false;
               }
           }
       }
