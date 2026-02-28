@@ -16,7 +16,24 @@ in
       property var theme: null
 
       function toggle() {
-          launcherWindow.visible = !launcherWindow.visible
+          launcherWindow.visible = !launcherWindow.visible;
+          if (launcherWindow.visible) {
+              launcherWindow.isClipboardMode = false;
+          }
+      }
+
+      function openClipboard() {
+          launcherWindow.visible = true;
+          Qt.callLater(function() {
+              launcherWindow.query = "";
+              launcherWindow.selectedIndex = 0;
+              launcherWindow.isClipboardMode = true;
+              clipboardListProc.running = true;
+          });
+      }
+
+      function clearClipboard() {
+          clipboardClearProc.running = true;
       }
 
       PanelWindow {
@@ -42,17 +59,7 @@ in
           property bool isClipboardMode: false
 
           property var clipboardEntries: []
-          readonly property var clipboardFiltered: {
-              if (query.startsWith(">clip")) {
-                  if (query === ">clip") return clipboardEntries;
-                  var q = query.slice(6).toLowerCase();
-                  if (q === "") return clipboardEntries;
-                  return clipboardEntries.filter(function(entry) {
-                      return entry.text.toLowerCase().indexOf(q) >= 0;
-                  });
-              }
-              return [];
-          }
+          property var clipboardResults: []
 
           function loadApps() {
               if (appsLoaded) return;
@@ -167,8 +174,8 @@ in
           }
 
           function deleteClipboardItem(index) {
-              if (index >= 0 && index < clipboardFiltered.length) {
-                  var entry = clipboardFiltered[index];
+              if (index >= 0 && index < clipboardEntries.length) {
+                  var entry = clipboardEntries[index];
                   clipboardDeleteProc.command = ["sh", "-c", "echo " + shellEscape(entry.line) + " | cliphist delete"];
                   clipboardDeleteProc.running = true;
               }
@@ -177,25 +184,6 @@ in
           function updateClipboardResults() {
               if (!isClipboardMode) return;
 
-              var cmd = query.slice(5).trim();
-
-              if (cmd === "clear") {
-                  results = [
-                      { name: "Clear clipboard history", description: "Delete all clipboard items", type: "clipboard", id: "__clear__", isAction: true }
-                  ];
-                  return;
-              }
-
-              if (cmd === "delete") {
-                  if (clipboardFiltered.length > 0) {
-                      var entry = clipboardFiltered[selectedIndex];
-                      if (entry) {
-                          deleteClipboardItem(selectedIndex);
-                      }
-                  }
-                  return;
-              }
-
               if (clipboardEntries.length === 0) {
                   results = [
                       { name: "Loading...", description: "Fetching clipboard history", type: "clipboard", id: "", isLoading: true }
@@ -203,7 +191,7 @@ in
                   return;
               }
 
-              var matches = clipboardFiltered.map(function(entry) {
+              var matches = clipboardEntries.map(function(entry) {
                   var displayName = entry.isImage ? "[Image] " + entry.text : entry.text;
                   if (displayName.length > 60) {
                       displayName = displayName.substring(0, 57) + "...";
@@ -219,9 +207,8 @@ in
               });
 
               if (matches.length === 0) {
-                  var q = query.slice(6);
                   results = [
-                      { name: q ? "No matches found" : "Clipboard is empty", description: q ? "No items containing \"" + q + "\"" : "Copy something to see it here", type: "clipboard", id: "", isEmpty: true }
+                      { name: "Clipboard is empty", description: "Copy something to see it here", type: "clipboard", id: "", isEmpty: true }
                   ];
                   return;
               }
@@ -232,13 +219,10 @@ in
           function doSearch() {
               selectedIndex = 0;
 
-              if (query.startsWith(">clip")) {
-                  isClipboardMode = true;
+              if (isClipboardMode) {
                   updateClipboardResults();
                   return;
               }
-
-              isClipboardMode = false;
 
               if (!DesktopEntries || !DesktopEntries.applications) {
                   results = [];
@@ -278,17 +262,10 @@ in
           }
 
           onQueryChanged: {
-              if (query.startsWith(">clip")) {
-                  if (!isClipboardMode) {
-                      isClipboardMode = true;
-                      clipboardListProc.running = true;
-                  }
+              if (isClipboardMode) {
                   if (clipboardEntries.length > 0) {
                       updateClipboardResults();
                   }
-              } else if (isClipboardMode) {
-                  isClipboardMode = false;
-                  doSearch();
               } else {
                   doSearch();
               }
@@ -527,9 +504,10 @@ in
               if (visible) {
                   query = "";
                   selectedIndex = 0;
-                  appsLoaded = false;
-                  isClipboardMode = false;
-                  launcherWindow.loadApps();
+                  if (!isClipboardMode) {
+                      appsLoaded = false;
+                      launcherWindow.loadApps();
+                  }
                   Qt.callLater(function() { searchInput.forceActiveFocus(); });
               }
           }

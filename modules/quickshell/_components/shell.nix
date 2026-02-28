@@ -88,6 +88,16 @@ in
                       launcherLoader.item.toggle()
                   }
               }
+              function openClipboard(): void {
+                  if (launcherLoader.item) {
+                      launcherLoader.item.openClipboard()
+                  }
+              }
+              function clearClipboard(): void {
+                  if (launcherLoader.item) {
+                      launcherLoader.item.clearClipboard()
+                  }
+              }
           }
 
           property bool sessionLocked: false

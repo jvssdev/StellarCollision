@@ -50,8 +50,6 @@ in
     };
 
     hj.packages = [
-      clipboard.fuzzel-clipboard
-      clipboard.fuzzel-clipboard-clear
       cfg.xwayland-satellite
     ];
 
@@ -233,9 +231,9 @@ in
 
            Mod+T { spawn "${getExe pkgs.${config.cfg.vars.terminal}}"; }
            Mod+B { spawn "${config.cfg.vars.browser}"; }
-           Mod+A { spawn "quickshell" "ipc" "call" "launcher" "toggle"; }
-           Mod+v repeat=false { spawn-sh "${getExe clipboard.fuzzel-clipboard}"; }
-           Mod+Shift+v repeat=false { spawn-sh "${getExe clipboard.fuzzel-clipboard-clear}"; }
+            Mod+A { spawn "quickshell" "ipc" "call" "launcher" "toggle"; }
+            Mod+v repeat=false { spawn "quickshell" "ipc" "call" "launcher" "openClipboard"; }
+            Mod+Shift+v repeat=false { spawn "quickshell" "ipc" "call" "launcher" "clearClipboard"; }
            Mod+O { toggle-overview; }
            Print { screenshot-screen; }
            Mod+P { screenshot; }
