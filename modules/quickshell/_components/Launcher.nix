@@ -392,8 +392,8 @@ in
                               Image {
                                   width: 24
                                   height: 24
+                                  visible: modelData.type === "app"
                                   source: {
-                                      if (modelData.type === "clipboard") return "";
                                       if (modelData.type === "app") return modelData.icon ? "image://icon/" + modelData.icon : "";
                                       return "";
                                   }
