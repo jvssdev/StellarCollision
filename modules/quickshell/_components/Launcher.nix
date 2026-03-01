@@ -324,6 +324,7 @@ _:
                                       launcherWindow.visible = false;
                                   } else {
                                       launcherWindow.query = "";
+                                      launcherWindow.visible = false;
                                   }
                               }
                               Keys.onTabPressed: function(event) {
@@ -501,6 +502,7 @@ _:
                       }
                   } else {
                       query = "";
+                      searchInput.text = "";
                       selectedIndex = 0;
                       appsLoaded = false;
                       launcherWindow.loadApps();
