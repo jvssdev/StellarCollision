@@ -30,7 +30,6 @@
     pkgs.networkmanagerapplet
     pkgs.anydesk
     pkgs.glib
-    pkgs.p7zip
     pkgs.appimage-run
     pkgs.nh
     pkgs.haruna
@@ -41,6 +40,12 @@
     pkgs.cliphist
     pkgs.wl-clipboard
     pkgs.qbittorrent
+    pkgs.azahar
+    pkgs.melonds
+    pkgs.p7zip
+    pkgs.kdePackages.ark
+    pkgs.tealdeer
+    pkgs.rar
     pkgs.libgcc
     pkgs.libnotify
     pkgs.procps
@@ -61,6 +66,15 @@
     pkgs.xrdb
   ];
 
+  programs = {
+    thunar = {
+      enable = config.cfg.vars.withGui;
+      plugins = [
+        pkgs.thunar-archive-plugin
+        pkgs.thunar-volman
+      ];
+    };
+  };
   security = {
     sudo = {
       enable = true;

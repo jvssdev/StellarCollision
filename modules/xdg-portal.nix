@@ -79,14 +79,14 @@ in
     xdg = {
       portal = {
         enable = true;
-        wlr.enable = true;
+        wlr.enable = config.cfg.mango.enable;
         xdgOpenUsePortal = true;
         extraPortals = [
           pkgs.xdg-desktop-portal-gtk
           pkgs.xdg-desktop-portal-termfilechooser
         ]
-        ++ (optional (config.niri.enable or false) pkgs.xdg-desktop-portal-gnome)
-        ++ (optional (config.mango.enable or false) pkgs.xdg-desktop-portal-wlr);
+        ++ optional config.cfg.niri.enable pkgs.xdg-desktop-portal-gnome
+        ++ optional config.cfg.mango.enable pkgs.xdg-desktop-portal-wlr;
 
         config = {
           common = {

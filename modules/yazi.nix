@@ -83,6 +83,7 @@ let
     chmod
     git
     restore
+    jjui
   ];
 
   allPlugins = nixpkgsPlugins ++ [
@@ -101,7 +102,9 @@ in
 
     package = mkOption {
       type = types.package;
-      default = pkgs.yazi;
+      default = pkgs.yazi.override {
+        _7zz = pkgs._7zz-rar;
+      };
       description = "The Yazi package to install.";
     };
   };
@@ -200,8 +203,10 @@ in
           use = "edit"
 
           [[open.rules]]
-          mime = "*"
-          use = "edit"
+          mime = "application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}"
+          use = ["extract", "reveal"]
+          # mime = "*"
+          # use = "edit"
         '';
 
         "yazi/keymap.toml".text = /* toml */ ''

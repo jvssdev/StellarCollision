@@ -52,6 +52,9 @@ in
         "video/mp4" = "org.kde.haruna.desktop";
         "video/x-matroska" = "org.kde.haruna.desktop";
         "audio/mpeg" = "org.kde.haruna.desktop";
+
+        "application/x-bittorrent" = "org.qbittorrent.qBittorrent.desktop";
+        "x-scheme-handler/magnet" = "org.qbittorrent.qBittorrent.desktop";
       };
     };
   };
