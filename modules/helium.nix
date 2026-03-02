@@ -10,7 +10,7 @@ let
 
   inherit (lib) fix;
   inherit (lib.attrsets) attrNames mapAttrsToList;
-  inherit (lib.lists) elem singleton;
+  inherit (lib.lists) elem;
   inherit (lib.strings) hasInfix;
 
   extensions = {
@@ -62,11 +62,15 @@ let
   };
 
   policy = {
-    ExtensionInstallForcelist = mapAttrsToList (
-      _: ext: "${ext.id};https://services.helium.imput.net/ext "
-    ) extensions;
-    ExtensionInstallAllowlist = mapAttrsToList (_: ext: ext.id) extensions;
-    ExtensionInstallSources = singleton "https://services.helium.imput.net/ *";
+    ExtensionSettings = builtins.listToAttrs (
+      mapAttrsToList (_: ext: {
+        name = ext.id;
+        value = {
+          installation_mode = "normal_installed";
+          update_url = "https://services.helium.imput.net/ext";
+        };
+      }) extensions
+    );
 
     "3rdparty".extensions.${extensions.ublock-origin.id}.toOverwrite.filterLists =
       extensions.ublock-origin.filters.wanted;
