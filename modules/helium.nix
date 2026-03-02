@@ -59,6 +59,10 @@ let
     bettertv = {
       id = "ajopnjidmegmdimjlfnijceegpefgped";
     };
+    bypass-paywalls = {
+      id = "lkbebcjgcmobigpeffafkodonchffocl";
+      update_url = "https://gitflic.ru/project/magnolia1234/bpc_updates/blob/raw?file=updates.xml";
+    };
   };
 
   policy = {
@@ -67,10 +71,17 @@ let
         name = ext.id;
         value = {
           installation_mode = "normal_installed";
-          update_url = "https://services.helium.imput.net/ext";
+          update_url = ext.update_url or "https://services.helium.imput.net/ext";
         };
       }) extensions
     );
+
+    ExtensionInstallAllowlist = mapAttrsToList (_: ext: ext.id) extensions;
+
+    ExtensionInstallSources = [
+      "https://services.helium.imput.net/*"
+      "https://gitflic.ru/*"
+    ];
 
     "3rdparty".extensions.${extensions.ublock-origin.id}.toOverwrite.filterLists =
       extensions.ublock-origin.filters.wanted;
