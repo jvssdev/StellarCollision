@@ -291,7 +291,7 @@ in
           require("yatline-githead"):setup({
             show_branch = true,
             branch_prefix = "",
-            branch_symbol = "",
+            branch_symbol = " ",
             branch_borders = "",
             commit_symbol = " ",
             show_behind_ahead = true,

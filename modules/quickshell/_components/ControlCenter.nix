@@ -1016,7 +1016,7 @@ if isNiri then
             Rectangle {
                 anchors.fill: parent
                 color: root.theme.bg
-                border.color: root.theme.fgSubtle
+                border.color: root.theme.darkBlue
                 border.width: 2
                 radius: 12
 

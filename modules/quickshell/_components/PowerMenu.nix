@@ -80,7 +80,7 @@
                               Layout.preferredHeight: 180
                               color: ma.containsMouse || (index == root.focusedIndex) ? root.buttonHoverColor : root.buttonColor
                               radius: 12
-                              border.color: theme.fgSubtle
+                              border.color: theme.darkBlue
                               border.width: 2
                               MouseArea {
                                   id: ma

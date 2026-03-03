@@ -274,7 +274,7 @@ _:
                height: 420
                color: theme.bg
                radius: 12
-               border.color: theme.fgSubtle
+               border.color: theme.darkBlue
                border.width: 2
                clip: true
 
