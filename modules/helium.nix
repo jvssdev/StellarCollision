@@ -59,6 +59,12 @@ let
     bettertv = {
       id = "ajopnjidmegmdimjlfnijceegpefgped";
     };
+    i-still-dont-care-about-cookies = {
+      id = "edibdbjcniadpccecjdfdjjppcpchdlm";
+    };
+    clearurls = {
+      id = "lckanjgmijmafbedllaakclkaicjfmnk";
+    };
     bypass-paywalls = {
       id = "lkbebcjgcmobigpeffafkodonchffocl";
       update_url = "https://gitflic.ru/project/magnolia1234/bpc_updates/blob/raw?file=updates.xml";

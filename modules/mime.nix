@@ -31,7 +31,7 @@ in
         "application/x-extension-xhtml" = "helium.desktop";
         "application/x-extension-xht" = "helium.desktop";
 
-        "inode/directory" = "yazi-open.desktop";
+        # "inode/directory" = "yazi-open.desktop";
 
         "text/markdown" = "nvim.desktop";
         "text/x-nix" = "nvim.desktop";
