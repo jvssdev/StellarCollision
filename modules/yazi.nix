@@ -142,12 +142,12 @@ in
 
           [[plugin.prepend_fetchers]]
           id = "git"
-          name = "*"
+          url = "*"
           run = "git"
 
           [[plugin.prepend_fetchers]]
           id = "git"
-          name = "*/"
+          url = "*/"
           run = "git"
 
           [[opener.play]]
