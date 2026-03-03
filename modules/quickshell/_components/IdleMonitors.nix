@@ -36,9 +36,6 @@ in
           triggeredOnStart: true
           onTriggered: audioCheckProc.running = true
       }
-      IdleInhibitor {
-          enabled: manualInhibit || audioPlaying.isPlaying
-      }
       function handleIdleAction(action, isIdle) {
           if (!action) return;
           if (action === "lock" && isIdle) lockProc.running = true;
@@ -86,8 +83,7 @@ in
           ]
           IdleMonitor {
               required property var modelData
-              enabled: !manualInhibit
-              respectInhibitors: true
+              enabled: !manualInhibit && !audioPlaying.isPlaying
               timeout: modelData.timeout
               onIsIdleChanged: idleScope.handleIdleAction(isIdle ? modelData.idleAction : modelData.returnAction, isIdle)
           }
