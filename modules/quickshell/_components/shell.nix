@@ -551,6 +551,26 @@ in
           }
 
           Loader {
+              id: wallpaperPickerLoader
+              source: "WallpaperPicker.qml"
+
+              onLoaded: {
+                  if (item) {
+                      item.wallpaperLoader = wallpaperLoader
+                  }
+              }
+          }
+
+          IpcHandler {
+              target: "wallpaperPicker"
+              function toggle(): void {
+                  if (wallpaperPickerLoader.item) {
+                      wallpaperPickerLoader.item.shown = !wallpaperPickerLoader.item.shown
+                  }
+              }
+          }
+
+          Loader {
               id: overviewWallpaperLoader
               source: "OverviewWallpaper.qml"
           }

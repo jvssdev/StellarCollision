@@ -67,6 +67,10 @@ let
     inherit pkgs lib wallpapersList;
   };
 
+  WallpaperPicker = import (componentsDir + "/WallpaperPicker.nix") {
+    inherit pkgs lib wallpapersList;
+  };
+
   OverviewWallpaper = import (componentsDir + "/OverviewWallpaper.nix") {
     inherit pkgs lib wallpapersList;
   };
@@ -122,6 +126,7 @@ in
       "quickshell/IdleMonitors.qml".text = IdleMonitors;
       "quickshell/shell.qml".text = Shell;
       "quickshell/Wallpaper.qml".text = Wallpaper;
+      "quickshell/WallpaperPicker.qml".text = WallpaperPicker;
       "quickshell/OverviewWallpaper.qml".text = OverviewWallpaper;
       "quickshell/wallpaper.png".source =
         ../../assets/Wallpapers/a6116535-4a72-453e-83c9-ea97b8597d8c.png;
