@@ -22,7 +22,6 @@ in
 
       function setWallpaper(path) {
           currentWallpaperPath = path
-          // Chama o setWallpaper do delegate (atualiza índice + imagem)
           for (let i = 0; i < targets.length; i++) {
               let t = targets[i]
               if (t && typeof t.setWallpaper === "function") {
@@ -42,7 +41,6 @@ in
               Component.onCompleted: {
                   wallpaperRoot.registerTarget(root)
 
-                  // Corrigido: não existe wallpaperManager
                   if (wallpaperRoot.currentWallpaperPath !== "") {
                       currentWallpaper.source = wallpaperRoot.currentWallpaperPath
                   } else if (wallpapers.length > 0) {
