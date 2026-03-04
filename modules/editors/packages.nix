@@ -52,6 +52,7 @@ in
       black
       rustfmt
       biome
+      python314
       gcc
       gnumake
       cargo
