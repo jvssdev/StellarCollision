@@ -14,22 +14,16 @@ in
   };
 
   config = mkIf cfg.enable {
-    systemd.user.services.xdg-desktop-portal = {
-      serviceConfig = {
-        Environment = [
-          "NIX_XDG_DESKTOP_PORTAL_DIR=/run/current-system/sw/share/xdg-desktop-portal/portals"
-          "XDG_DATA_DIRS=/run/current-system/sw/share:/etc/profiles/per-user/%u/share"
-        ];
-      };
-    };
+    hj.xdg.config.files."systemd/user/xdg-desktop-portal.service.d/nixos-override.conf".text = ''
+      [Service]
+      Environment=NIX_XDG_DESKTOP_PORTAL_DIR=/run/current-system/sw/share/xdg-desktop-portal/portals
+      Environment=XDG_DATA_DIRS=/run/current-system/sw/share:/etc/profiles/per-user/%u/share
+    '';
 
-    systemd.user.services.xdg-desktop-portal-gnome = {
-      serviceConfig = {
-        Environment = [
-          "XDG_DATA_DIRS=/run/current-system/sw/share:/etc/profiles/per-user/%u/share"
-        ];
-      };
-    };
+    hj.xdg.config.files."systemd/user/xdg-desktop-portal-gnome.service.d/nixos-override.conf".text = ''
+      [Service]
+      Environment=XDG_DATA_DIRS=/run/current-system/sw/share:/etc/profiles/per-user/%u/share
+    '';
 
     xdg.portal = {
       enable = true;
