@@ -184,7 +184,11 @@ _:
                   return;
               }
 
-              var matches = clipboardEntries.map(function(entry) {
+              var q = query.toLowerCase();
+              var matches = clipboardEntries.filter(function(entry) {
+                  if (q === "") return true;
+                  return entry.text.toLowerCase().indexOf(q) >= 0;
+              }).map(function(entry) {
                   var displayName = entry.isImage ? "[Image] " + entry.text : entry.text;
                   if (displayName.length > 60) {
                       displayName = displayName.substring(0, 57) + "...";
@@ -200,6 +204,12 @@ _:
               });
 
               if (matches.length === 0) {
+                  if (q !== "") {
+                      results = [
+                          { name: "No matches", description: "No clipboard entries match your search", type: "clipboard", id: "", isEmpty: true }
+                      ];
+                      return;
+                  }
                   results = [
                       { name: "Clipboard is empty", description: "Copy something to see it here", type: "clipboard", id: "", isEmpty: true }
                   ];
