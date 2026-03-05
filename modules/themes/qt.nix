@@ -172,6 +172,20 @@ in
         config = {
 
           files = {
+            "kdeglobals".text = ''
+              [KDE]
+              ColorScheme=Tsuki
+              contrast=4
+
+              [General]
+              ColorScheme=Tsuki
+              Name=Tsuki
+              XftAntialias=true
+              XftHinting=true
+              XftHintStyle=hintslight
+              XftSubpixel=rgb
+            '';
+
             "Kvantum/kvantum.kvconfig".source = (pkgs.formats.ini { }).generate "kvantum.kvconfig" {
               General.theme = "Base16Kvantum";
             };
