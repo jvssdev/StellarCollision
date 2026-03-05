@@ -31,8 +31,6 @@ in
         "application/x-extension-xhtml" = "helium.desktop";
         "application/x-extension-xht" = "helium.desktop";
 
-        # "inode/directory" = "yazi-open.desktop";
-
         "text/markdown" = "nvim.desktop";
         "text/x-nix" = "nvim.desktop";
         "text/x-log" = "nvim.desktop";
@@ -55,6 +53,9 @@ in
 
         "application/x-bittorrent" = "org.qbittorrent.qBittorrent.desktop";
         "x-scheme-handler/magnet" = "org.qbittorrent.qBittorrent.desktop";
+
+        "x-scheme-handler/terminal" = "org.wezfurlong.wezterm.desktop";
+        "x-terminal-emulator" = "org.wezfurlong.wezterm.desktop";
       };
     };
   };

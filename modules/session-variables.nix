@@ -43,6 +43,8 @@ in
 
       GDK_DPI_SCALE = "1.45";
 
+      TERMINAL = "wezterm";
+
       EDITOR = "nvim";
       VISUAL = "nvim";
       SUDO_EDITOR = "nvim";

@@ -42,6 +42,8 @@ in
         pkgs.zsh-autosuggestions
         pkgs.zsh-completions
         pkgs.zsh-fast-syntax-highlighting
+        pkgs.exo # necessário pro Thunar
+        pkgs.xdg-terminal-exec # bônus
       ];
 
       files = {
@@ -159,6 +161,25 @@ in
           time_format = "%R"
           style = "bg:${c.base03}"
           format = "[[  $time ](fg:${c.base04} bg:${c.base03})]($style)"
+        '';
+
+        "xfce4/helpers.rc".text = ''
+          TerminalEmulator=wezterm
+          TerminalEmulatorDismissed=true
+        '';
+
+        "Thunar/uca.xml".text = ''
+          <?xml version="1.0" encoding="UTF-8"?>
+          <actions>
+            <action>
+              <icon>utilities-terminal</icon>
+              <name>Open terminal here</name>
+              <command>wezterm start --cwd "%f"</command>
+              <description>Opens Wezterm in the current directory</description>
+              <patterns>*</patterns>
+              <directories/>
+            </action>
+          </actions>
         '';
       };
     };

@@ -23,6 +23,7 @@ in
     wezterm.enable = true;
     zsh.enable = true;
     nvf.enable = true;
+    dolphin.enable = true;
     opencode.enable = true;
     zen-browser.enable = true;
     helium.enable = true;

@@ -43,7 +43,6 @@
     pkgs.azahar
     pkgs.melonds
     pkgs.p7zip
-    pkgs.kdePackages.ark
     pkgs.tealdeer
     pkgs.rar
     pkgs.libgcc
@@ -62,19 +61,9 @@
     pkgs.kdePackages.qtbase
     pkgs.kdePackages.qtdeclarative
     pkgs.lxqt.lxqt-policykit
-
     pkgs.xrdb
   ];
 
-  programs = {
-    thunar = {
-      enable = config.cfg.vars.withGui;
-      plugins = [
-        pkgs.thunar-archive-plugin
-        pkgs.thunar-volman
-      ];
-    };
-  };
   security = {
     sudo = {
       enable = true;

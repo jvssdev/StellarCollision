@@ -205,7 +205,7 @@ in
        }
 
        window-rule {
-           match app-id=r#"(?i)(wezterm-yazi-nvim|filechooser|thunar)"#
+           match app-id=r#"(?i)(wezterm-yazi-nvim|filechooser|dolphin)"#
            open-floating true
            default-window-height { proportion 0.8; }
            default-column-width { proportion 0.8; }
