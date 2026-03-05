@@ -8,6 +8,17 @@ let
   inherit (lib) mkOption types mkIf;
   c = config.cfg.theme.colors;
   cfg = config.cfg.qt;
+
+  fairywrenWithFallback = pkgs.fairywren.overrideAttrs (old: {
+    postInstall = (old.postInstall or "") + ''
+      theme_dir="$out/share/icons/FairyWren_Dark"
+      if [ -f "$theme_dir/index.theme" ]; then
+        sed -i '/^Inherits=/d' "$theme_dir/index.theme"
+        sed -i '/^\[Icon Theme\]/a Inherits=Adwaita,hicolor' "$theme_dir/index.theme"
+      fi
+    '';
+  });
+
   hexMap = {
     "0" = 0;
     "1" = 1;
@@ -64,12 +75,14 @@ in
     };
     hj = {
       packages = [
-        pkgs.fairywren
+        fairywrenWithFallback
         pkgs.adwaita-icon-theme
       ];
       xdg = {
-
-        data.files."icons/FairyWren_Dark".source = "${pkgs.fairywren}/share/icons/FairyWren_Dark";
+        data.files = {
+          "icons/FairyWren_Dark".source = "${fairywrenWithFallback}/share/icons/FairyWren_Dark";
+          "icons/Adwaita".source = "${pkgs.adwaita-icon-theme}/share/icons/Adwaita";
+        };
 
         config.files = {
           "qt5ct/qt5ct.conf".text = ''

@@ -394,12 +394,15 @@ _:
                                spacing: 12
 
                                Image {
+                                   id: appIcon
                                    width: 24
                                    height: 24
-                                   visible: modelData.type === "app"
+                                   visible: modelData.type === "app" && status !== Image.Error
+                                   asynchronous: true
                                    source: {
-                                       if (modelData.type === "app") return modelData.icon ? "image://icon/" + modelData.icon : "";
-                                       return "";
+                                       if (modelData.type !== "app" || !modelData.icon) return "";
+                                       if (modelData.icon.startsWith("/")) return "file://" + modelData.icon;
+                                       return "image://icon/" + modelData.icon;
                                    }
                                    sourceSize: Qt.size(24, 24)
                                }
