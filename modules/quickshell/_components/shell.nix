@@ -477,8 +477,14 @@ in
                           Layout.rightMargin: theme.spacing / 2
                       }
                       Text {
-                          text: root.notificationHistory.length > 0 ? "󰂛" : "󰂚"
-                          color: root.notificationHistory.length > 0 ? theme.yellow : theme.fgMuted
+                          text: controlCenter.dndEnabled ? "󰂛" : "󰂚"
+                          color: {
+                              const hasNotifs = root.notificationHistory.length > 0
+                              const dnd = controlCenter.dndEnabled
+                              if (hasNotifs && dnd) return theme.red
+                              if (hasNotifs)        return theme.yellow
+                              return theme.fgMuted
+                          }
                           font {
                               family: theme.fontFamily
                               pixelSize: theme.fontPixelSize
