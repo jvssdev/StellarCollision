@@ -604,6 +604,9 @@ in
           onVisibleChanged: {
               if (visible) {
                   if (isClipboardMode) {
+                      query = "";
+                      searchInput.text = "";
+                      selectedIndex = 0;
                       if (clipboardEntries.length === 0) clipboardListProc.running = true;
                   } else {
                       query = "";
