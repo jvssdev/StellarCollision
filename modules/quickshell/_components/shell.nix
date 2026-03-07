@@ -557,6 +557,7 @@ in
               onLoaded: {
                   if (item) {
                       item.wallpaperLoader = wallpaperLoader
+                      item.overviewWallpaperLoader = overviewWallpaperLoader
                   }
               }
           }

@@ -16,6 +16,7 @@ in
       id: pickerRoot
       property bool shown: false
       property var wallpaperLoader: null
+      property var overviewWallpaperLoader: null
 
       model: Quickshell.screens
 
@@ -129,6 +130,10 @@ in
                                   var wl = pickerRoot.wallpaperLoader
                                   if (wl && wl.item) {
                                       wl.item.setWallpaper(wpItem.modelData)
+                                  }
+                                  var owl = pickerRoot.overviewWallpaperLoader
+                                  if (owl && owl.item) {
+                                      owl.item.setWallpaper(wpItem.modelData)
                                   }
                                   pickerRoot.shown = false
                               }

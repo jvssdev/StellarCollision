@@ -12,6 +12,25 @@ in
   import Quickshell
   import Quickshell.Wayland
 
+  Item {
+    id: overviewWallpaperRoot
+    property string currentWallpaperPath: ""
+    property var targets: []
+
+    function registerTarget(obj) {
+      targets.push(obj)
+    }
+
+    function setWallpaper(path) {
+      currentWallpaperPath = path
+      for (let i = 0; i < targets.length; i++) {
+        let t = targets[i]
+        if (t && typeof t.setWallpaper === "function") {
+          t.setWallpaper(path)
+        }
+      }
+    }
+
   Variants {
     model: Quickshell.screens
 
@@ -38,8 +57,22 @@ in
       property real transitionProgress: 0
 
       Component.onCompleted: {
-        if (wallpapers.length > 0) {
+        overviewWallpaperRoot.registerTarget(root)
+
+        if (overviewWallpaperRoot.currentWallpaperPath !== "") {
+          currentWallpaper.source = overviewWallpaperRoot.currentWallpaperPath
+        } else if (wallpapers.length > 0) {
           currentWallpaper.source = wallpapers[0]
+        }
+      }
+
+      function setWallpaper(path) {
+        let idx = wallpapers.indexOf(path)
+        if (idx >= 0) {
+          currentIndex = idx
+          nextWallpaperImage.source = path
+        } else {
+          nextWallpaperImage.source = path
         }
       }
 
@@ -137,5 +170,6 @@ in
         }
       }
     }
+  }
   }
 ''
