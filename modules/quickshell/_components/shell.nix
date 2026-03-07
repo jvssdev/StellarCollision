@@ -37,6 +37,8 @@ in
                   sessionLocked = true
               }
           }
+          property var notificationHistory: []
+
           NotificationServer {
               id: notificationServer
               actionsSupported: true
@@ -48,6 +50,14 @@ in
 
               onNotification: notification => {
                   notification.tracked = true
+                  var entry = {
+                      id: notification.id,
+                      appName: notification.appName,
+                      summary: notification.summary,
+                      body: notification.body,
+                      urgency: notification.urgency
+                  }
+                  root.notificationHistory = [entry].concat(root.notificationHistory)
               }
           }
 
@@ -59,6 +69,13 @@ in
               id: notificationCenter
               notifServer: notificationServer
               theme: theme
+              history: root.notificationHistory
+              onClearHistory: root.notificationHistory = []
+              onRemoveEntry: index => {
+                  var h = root.notificationHistory.slice()
+                  h.splice(index, 1)
+                  root.notificationHistory = h
+              }
           }
 
           ControlCenter {
@@ -459,12 +476,12 @@ in
                           Layout.rightMargin: theme.spacing / 2
                       }
                       Text {
-                          text: notificationServer.trackedNotifications.count > 0 ? "󰂛" : "󰂚"
-                          color: notificationServer.trackedNotifications.count > 0 ? theme.yellow : theme.fgMuted
+                          text: root.notificationHistory.length > 0 ? "󰂛" : "󰂚"
+                          color: root.notificationHistory.length > 0 ? theme.yellow : theme.fgMuted
                           font {
                               family: theme.fontFamily
                               pixelSize: theme.fontPixelSize
-                              bold: notificationServer.trackedNotifications.count > 0
+                              bold: root.notificationHistory.length > 0
                           }
                           Layout.rightMargin: theme.spacing / 2
                           MouseArea {

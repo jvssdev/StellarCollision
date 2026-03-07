@@ -4,6 +4,7 @@ if isNiri then
     import QtQuick
     import QtQuick.Layouts
     import Quickshell
+    import Quickshell.Io
     import Quickshell.Wayland
     import Quickshell.Services.Notifications
 
@@ -12,9 +13,20 @@ if isNiri then
         property bool shown: false
         property var notifServer: null
         property var theme: null
+        property var history: []
+
+        signal clearHistory()
+        signal removeEntry(int index)
 
         function toggle() {
             shown = !shown
+        }
+
+        property string _clipboardText: ""
+
+        Process {
+            id: copyProc
+            command: ["wl-copy", root._clipboardText]
         }
 
         PanelWindow {
@@ -87,13 +99,7 @@ if isNiri then
                                 id: clearMa
                                 anchors.fill: parent
                                 hoverEnabled: true
-                                onClicked: {
-                                    let count = root.notifServer?.trackedNotifications?.count ?? 0
-                                    for (let i = count - 1; i >= 0; i--) {
-                                        let notif = root.notifServer?.trackedNotifications?.get(i)
-                                        if (notif) notif.dismiss()
-                                    }
-                                }
+                                onClicked: root.clearHistory()
                             }
                         }
 
@@ -123,7 +129,7 @@ if isNiri then
                         Layout.fillHeight: true
                         spacing: 10
                         clip: true
-                        model: root.notifServer?.trackedNotifications
+                        model: root.history
 
                         delegate: Rectangle {
                             required property var modelData
@@ -133,7 +139,6 @@ if isNiri then
                             height: 90
                             color: index % 2 === 0 ? (root.theme.bgAlt) : (root.theme.bg)
                             radius: 12
-                            visible: modelData !== null
 
                             Row {
                                 anchors.fill: parent
@@ -149,7 +154,7 @@ if isNiri then
                                 }
 
                                 Column {
-                                    width: parent.width - 50
+                                    width: parent.width - 80
                                     spacing: 4
 
                                     Text {
@@ -170,6 +175,24 @@ if isNiri then
                                 }
 
                                 Text {
+                                    text: "󱉥"
+                                    color: copyMa.containsMouse ? root.theme.darkBlue : root.theme.fgMuted
+                                    font.pixelSize: 16
+
+                                    MouseArea {
+                                        id: copyMa
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            if (!modelData) return
+                                            root._clipboardText = modelData.summary + (modelData.body ? "\n" + modelData.body : "")
+                                            copyProc.running = true
+                                        }
+                                    }
+                                }
+
+                                Text {
                                     text: "x"
                                     color: dismissMa.containsMouse ? root.theme.red : root.theme.fgMuted
                                     font.pixelSize: 16
@@ -178,7 +201,8 @@ if isNiri then
                                         id: dismissMa
                                         anchors.fill: parent
                                         hoverEnabled: true
-                                        onClicked: if (modelData) modelData.dismiss()
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.removeEntry(index)
                                     }
                                 }
                             }
