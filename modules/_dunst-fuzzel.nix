@@ -10,7 +10,7 @@ pkgs.writeShellScriptBin "dunst-fuzzel" ''
 
     tmpdir=$(mktemp -d)
     history_file="$tmpdir/history.json"
-    
+
     ${getExe' pkgs.dunst "dunstctl"} history > "$history_file"
 
     if [ ! -f "$history_file" ] || [ ! -s "$history_file" ]; then
@@ -59,19 +59,19 @@ pkgs.writeShellScriptBin "dunst-fuzzel" ''
     case "$action" in
         "View notifications")
             selected=$(cat "$display_file" | ${getExe pkgs.fuzzel} --dmenu --prompt="Notifications: " --lines=15 --width=70)
-            
+
             if [ -n "$selected" ];
             then
                 line_number=$(grep -n -F "$selected" "$display_file" | head -1 | cut -d: -f1)
-                
+
                 if [ -n "$line_number" ];
                 then
                     selected_data=$(sed -n "''${line_number}p" "$data_file")
-                    
+
                     IFS='|||' read -r app summary body <<< "$selected_data"
-                    
+
                     notify_action=$(echo -e "Copy\nShow again\nClose" | ${getExe pkgs.fuzzel} --dmenu --prompt="Action: " --width=30)
-                    
+
                     case "$notify_action" in
                         "Copy")
                             if [ -n "$body" ];

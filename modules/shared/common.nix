@@ -17,6 +17,7 @@
     pkgs.git
     pkgs.gh
     pkgs.jq
+    pkgs.tealdeer
     pkgs.neovim-unwrapped
     pkgs.unzip
     pkgs.p7zip
@@ -52,6 +53,7 @@
     pkgs.kdePackages.qtdeclarative
     pkgs.lxqt.lxqt-policykit
 
+    pkgs.networkmanagerapplet
     pkgs.qbittorrent
     pkgs.imv
     pkgs.anydesk
@@ -59,7 +61,6 @@
     pkgs.libreoffice
     pkgs.azahar
     pkgs.melonds
-    pkgs.tealdeer
   ];
 
   security = {

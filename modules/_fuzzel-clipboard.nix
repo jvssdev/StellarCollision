@@ -7,7 +7,6 @@ let
     #!/usr/bin/env bash
     set -euo pipefail
 
-    # Debug: log para arquivo
     exec 2> >(tee -a /tmp/fuzzel-clipboard.log >&2)
     set -x
 
