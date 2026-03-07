@@ -44,6 +44,7 @@ if isNiri then
         property string pendingWifiSsid: ""
         property bool wifiPasswordPageVisible: false
         property bool airplaneMode: false
+        property bool dndEnabled: false
 
         onShownChanged: {
             if (shown && networkObj && !root.airplaneMode) {
@@ -1343,9 +1344,10 @@ if isNiri then
                                 icon: "󰍶"
                                 iconOff: "󰍷"
                                 label: "DND"
-                                isOn: false
+                                isOn: root.dndEnabled
                                 accentColor: root.theme.red
                                 controlTheme: root.theme
+                                onClick: () => { root.dndEnabled = !root.dndEnabled }
                             }
 
                             QuickToggle {

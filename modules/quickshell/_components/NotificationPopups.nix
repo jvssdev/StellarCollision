@@ -10,20 +10,20 @@ _:
   PanelWindow {
       id: popupsWindow
 
+      property bool dndEnabled: false
+
       implicitWidth: 380
       implicitHeight: 800
       screen: Quickshell.screens[0]
       color: "transparent"
 
-      // FIX: Only visible when there are notification children
-      visible: notificationColumn.children.length > 0
+      visible: notificationColumn.children.length > 0 && !dndEnabled
 
       WlrLayershell.layer: WlrLayer.Overlay
       WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
       exclusionMode: ExclusionMode.Ignore
 
-      // FIX: Allow clickthrough when no notifications
-      mask: notificationColumn.children.length > 0 ? popupMask : null
+      mask: notificationColumn.children.length > 0 && !dndEnabled ? popupMask : null
 
       Region {
           id: popupMask

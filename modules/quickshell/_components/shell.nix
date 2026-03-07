@@ -63,6 +63,7 @@ in
 
           NotificationPopups {
               id: notificationPopups
+              dndEnabled: controlCenter.dndEnabled
           }
 
           NotificationCenter {
