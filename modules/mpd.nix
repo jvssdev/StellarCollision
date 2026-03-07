@@ -37,7 +37,7 @@ in
     };
 
     systemd.tmpfiles.rules = [
-      "d ${homeDir}/Media/Music 0755 ${config.cfg.vars.username} users -"
+      "d ${homeDir}/Music 0755 ${config.cfg.vars.username} users -"
       "d ${xdgConfig}/mpd 0755 ${config.cfg.vars.username} users -"
       "d ${xdgConfig}/mpd/playlists 0755 ${config.cfg.vars.username} users -"
       "d ${xdgState}/mpd 0755 ${config.cfg.vars.username} users -"
@@ -45,7 +45,7 @@ in
 
     hj.xdg.config.files = {
       "mpd/mpd.conf".text = ''
-        music_directory      "${homeDir}/Media/Music"
+        music_directory      "${homeDir}/Music"
         playlist_directory   "${xdgConfig}/mpd/playlists"
         state_file           "${xdgState}/mpd/state"
         sticker_file         "${xdgState}/mpd/sticker.sql"
