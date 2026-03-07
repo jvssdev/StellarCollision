@@ -36,8 +36,8 @@ _:
       }
 
       margins {
-          top: 60
-          right: 20
+          top: 22
+          right: 5
       }
 
       Column {

@@ -123,13 +123,30 @@ if isNiri then
                         color: root.theme.fgSubtle
                     }
 
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: notificationList.count === 0
+                        Layout.preferredHeight: notificationList.count === 0 ? -1 : 0
+                        visible: notificationList.count === 0
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰂚"
+                            color: root.theme.fgMuted
+                            font.pixelSize: 48
+                            font.family: root.theme.fontFamily
+                        }
+                    }
+
                     ListView {
                         id: notificationList
                         Layout.fillWidth: true
-                        Layout.fillHeight: true
+                        Layout.fillHeight: notificationList.count > 0
+                        Layout.preferredHeight: notificationList.count > 0 ? -1 : 0
                         spacing: 10
                         clip: true
                         model: root.history
+                        visible: notificationList.count > 0
 
                         delegate: Rectangle {
                             required property var modelData
@@ -143,14 +160,25 @@ if isNiri then
                             Row {
                                 anchors.fill: parent
                                 anchors.margins: 26
-                                spacing: 10
+                                spacing: 16
 
                                 Text {
-                                    text: modelData && modelData.appName ? modelData.appName[0].toUpperCase() : "N"
-                                    color: root.theme.darkBlue
+                                    text: "󱉥"
+                                    color: copyMa.containsMouse ? root.theme.darkBlue : root.theme.fgMuted
                                     font.pixelSize: 19
-                                    font.bold: true
                                     width: 30
+
+                                    MouseArea {
+                                        id: copyMa
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            if (!modelData) return
+                                            root._clipboardText = modelData.summary + (modelData.body ? "\n" + modelData.body : "")
+                                            copyProc.running = true
+                                        }
+                                    }
                                 }
 
                                 Column {
@@ -175,24 +203,6 @@ if isNiri then
                                 }
 
                                 Text {
-                                    text: "󱉥"
-                                    color: copyMa.containsMouse ? root.theme.darkBlue : root.theme.fgMuted
-                                    font.pixelSize: 16
-
-                                    MouseArea {
-                                        id: copyMa
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: {
-                                            if (!modelData) return
-                                            root._clipboardText = modelData.summary + (modelData.body ? "\n" + modelData.body : "")
-                                            copyProc.running = true
-                                        }
-                                    }
-                                }
-
-                                Text {
                                     text: "x"
                                     color: dismissMa.containsMouse ? root.theme.red : root.theme.fgMuted
                                     font.pixelSize: 16
@@ -208,13 +218,6 @@ if isNiri then
                             }
                         }
 
-                        Text {
-                            anchors.centerIn: parent
-                            text: "No notifications"
-                            color: root.theme.fgMuted
-                            font.pixelSize: 14
-                            visible: notificationList.count === 0
-                        }
                     }
                 }
             }
