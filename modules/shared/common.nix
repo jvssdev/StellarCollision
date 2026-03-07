@@ -19,51 +19,47 @@
     pkgs.jq
     pkgs.neovim-unwrapped
     pkgs.unzip
+    pkgs.p7zip
+    pkgs.rar
     pkgs.nix-index
-    pkgs.dnsutils
-    pkgs.nmap
+    pkgs.wf-recorder
     pkgs.mpc
     pkgs.ffmpeg
     pkgs.playerctl
     pkgs.pamixer
     pkgs.pavucontrol
-    pkgs.networkmanagerapplet
-    pkgs.anydesk
-    pkgs.glib
+    pkgs.wireplumber
+
     pkgs.appimage-run
     pkgs.nh
-    pkgs.haruna
-    pkgs.imv
-    pkgs.grim
-    pkgs.slurp
+
     pkgs.wl-clip-persist
     pkgs.cliphist
     pkgs.wl-clipboard
-    pkgs.qbittorrent
-    pkgs.azahar
-    pkgs.melonds
-    pkgs.p7zip
-    pkgs.tealdeer
-    pkgs.rar
+
+    pkgs.glib
     pkgs.libgcc
     pkgs.libnotify
     pkgs.procps
-    pkgs.wireplumber
     pkgs.bluez
-    pkgs.blueman
     pkgs.wlopm
     pkgs.dbus
     pkgs.xdg-utils
-    pkgs.wf-recorder
     pkgs.fcitx5
 
     pkgs.kdePackages.qt5compat
     pkgs.kdePackages.qtbase
     pkgs.kdePackages.qtdeclarative
     pkgs.lxqt.lxqt-policykit
-    pkgs.xrdb
 
+    pkgs.qbittorrent
+    pkgs.imv
+    pkgs.anydesk
+    pkgs.haruna
     pkgs.libreoffice
+    pkgs.azahar
+    pkgs.melonds
+    pkgs.tealdeer
   ];
 
   security = {

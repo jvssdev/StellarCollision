@@ -41,6 +41,9 @@ in
       screenshot
       clipboard.fuzzel-clipboard
       clipboard.fuzzel-clipboard-clear
+      pkgs.xrdb
+      pkgs.grim
+      pkgs.slurp
     ];
 
     hj.xdg.config.files."mango/config.conf".text = ''
@@ -49,8 +52,6 @@ in
       exec-once=systemctl --user start mango-session.target
       exec-once = "${getExe pkgs.xwayland-satellite}"
       exec-once = "sh -c 'sleep 1; echo \"Xft.dpi: 140\" | ${getExe' pkgs.xrdb "xrdb"} -merge'"
-      exec-once = "${getExe' pkgs.networkmanagerapplet "nm-applet"} --indicator"
-      exec-once = "${getExe' pkgs.blueman "blueman-applet"}"
       exec-once = "${getExe quickshell}"
       exec-once = "${getExe pkgs.wpaperd}"
       exec-once = ${getExe' pkgs.wl-clipboard "wl-paste"} --type text --watch ${getExe pkgs.cliphist} store
