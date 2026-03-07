@@ -93,7 +93,7 @@ in
        }
 
        layout {
-           gaps 0
+           gaps 5
 
            center-focused-column "never"
            always-center-single-column
@@ -107,14 +107,14 @@ in
            }
 
            focus-ring {
-               off
+               on
                width 2
                active-color "${c.base0D}"
                inactive-color "${c.base02}"
            }
 
            border {
-               off
+               on
                width 2
                active-color "${c.base0D}"
                inactive-color "${c.base02}"
@@ -173,14 +173,14 @@ in
 
        window-rule {
            match is-floating=false
-           geometry-corner-radius 0
+           geometry-corner-radius 12
            clip-to-geometry true
        }
 
-       window-rule {
-           match is-active=false
-           opacity 0.8
-       }
+       // window-rule {
+       //     match is-active=false
+       //     opacity 0.8
+       // }
 
        window-rule {
            match app-id=r#"(?i)(firefox|zen|zen-browser|zen-beta|chromium|helium)"#

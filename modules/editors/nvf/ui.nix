@@ -116,7 +116,7 @@ in
       set_hl("SpecialKey", { fg = colors.base03 })
       set_hl("TooLong", { fg = colors.base08 })
       set_hl("Underlined", { fg = colors.base08 })
-      set_hl("Visual", { bg = colors.base04 })
+      set_hl("Visual", { bg = colors.base03 })
       set_hl("VisualNOS", { fg = colors.base08 })
       set_hl("WarningMsg", { fg = colors.base08 })
       set_hl("WildMenu", { fg = colors.base08, bg = colors.base06 })
