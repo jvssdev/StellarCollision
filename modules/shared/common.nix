@@ -62,6 +62,8 @@
     pkgs.kdePackages.qtdeclarative
     pkgs.lxqt.lxqt-policykit
     pkgs.xrdb
+
+    pkgs.libreoffice
   ];
 
   security = {

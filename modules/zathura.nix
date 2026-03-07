@@ -61,7 +61,7 @@ in
 
       set recolor-lightcolor       "${c.base00}"
       set recolor-darkcolor        "${c.base05}"
-      set recolor                   true
+      set recolor                   false
     '';
   };
 }
