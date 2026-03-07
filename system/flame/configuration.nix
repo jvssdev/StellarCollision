@@ -7,6 +7,7 @@
 
 let
   bluetooth-agent = pkgs.callPackage ./bluetooth-agent { };
+  qs-backend = pkgs.callPackage ./qs_backend { };
 in
 
 {
@@ -16,7 +17,10 @@ in
     drivers.intel.enable = true;
     mango.enable = false;
     niri.enable = true;
-    quickshell.enable = true;
+    quickshell = {
+      enable = true;
+      iconResolverPath = lib.getExe qs-backend.icon-resolver;
+    };
     sessionVariables.enable = true;
     portals.enable = true;
     ghostty.enable = false;
@@ -93,6 +97,7 @@ in
       wtype
       bluetooth-agent.bluetooth-agent
       bluetooth-agent.bluetooth-pair
+      qs-backend.icon-resolver
       upower
     ];
   };
@@ -124,7 +129,6 @@ in
         Login = {
           HandlePowerKey = "suspend";
           HandlePowerKeyLongPress = "poweroff";
-          HandleLidSwitch = "suspend";
           HandleLidSwitchExternalPower = "suspend";
           HandleLidSwitchDocked = "ignore";
         };

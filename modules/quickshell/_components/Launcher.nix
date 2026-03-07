@@ -1,6 +1,7 @@
 {
   fontFamily,
   colors,
+  iconResolverPath,
   ...
 }:
 let
@@ -53,6 +54,8 @@ in
           property var results: []
           property var appsCache: []
           property bool appsLoaded: false
+          property bool iconsReady: false
+          property var iconPaths: ({})
           property bool isClipboardMode: false
           property var clipboardEntries: []
 
@@ -83,7 +86,41 @@ in
 
               appsCache = filtered;
               appsLoaded = true;
+              resolveIcons();
               doSearch();
+          }
+
+          function resolveIcons() {
+              var iconNames = [];
+              var seen = {};
+              for (var i = 0; i < appsCache.length; i++) {
+                  var ic = String(appsCache[i].icon || "");
+                  if (ic && !seen[ic]) {
+                      seen[ic] = true;
+                      iconNames.push(ic);
+                  }
+              }
+              if (iconNames.length === 0) {
+                  iconsReady = true;
+                  return;
+              }
+              iconResolverProc.command = ["${iconResolverPath}"].concat(iconNames);
+              iconResolverProc.running = true;
+          }
+
+          function iconSource(iconName) {
+              if (!iconName) return "";
+              var ic = String(iconName);
+              if (ic.startsWith("file://")) return ic;
+              if (ic.startsWith("/")) {
+                  if (ic.indexOf("/nix/store/") === 0) {
+                      var base = ic.split("/").pop().replace(/\.[^.]+$/, "");
+                      return iconPaths[base] ? "file://" + iconPaths[base] : "";
+                  }
+                  return "file://" + ic;
+              }
+              var resolved = iconPaths[ic];
+              return resolved ? "file://" + resolved : "";
           }
 
           Timer {
@@ -98,7 +135,23 @@ in
               function onValuesChanged() {
                   launcherWindow.appsLoaded = false;
                   launcherWindow.appsCache = [];
+                  launcherWindow.iconPaths = ({});
+                  launcherWindow.iconsReady = false;
                   launcherWindow.loadApps();
+              }
+          }
+
+          Process {
+              id: iconResolverProc
+              running: false
+              stdout: StdioCollector {
+                  onStreamFinished: function() {
+                      try {
+                          var parsed = JSON.parse(text);
+                          launcherWindow.iconPaths = parsed;
+                      } catch (e) {}
+                      launcherWindow.iconsReady = true;
+                  }
               }
           }
 
@@ -216,7 +269,7 @@ in
           function updateClipboardResults() {
               if (!isClipboardMode) return;
               if (clipboardEntries.length === 0) {
-                  results = [{ name: "Loading...", description: "Fetching clipboard history", type: "clipboard", id: "", isLoading: true }];
+                  results = [{ name: "Loading...", type: "clipboard", id: "", isLoading: true }];
                   return;
               }
               var q = query.toLowerCase();
@@ -225,10 +278,10 @@ in
               }).map(function(entry) {
                   var displayName = entry.isImage ? "[Image] " + entry.text : entry.text;
                   if (displayName.length > 60) displayName = displayName.substring(0, 57) + "...";
-                  return { name: displayName, description: entry.isImage ? "Image" : "Text", type: "clipboard", id: entry.id, line: entry.line, isImage: entry.isImage };
+                  return { name: displayName, type: "clipboard", id: entry.id, line: entry.line, isImage: entry.isImage };
               });
               if (matches.length === 0) {
-                  results = [{ name: q !== "" ? "No matches" : "Clipboard is empty", description: q !== "" ? "No clipboard entries match your search" : "Copy something to see it here", type: "clipboard", id: "", isEmpty: true }];
+                  results = [{ name: q !== "" ? "No matches" : "Clipboard is empty", type: "clipboard", id: "", isEmpty: true }];
                   return;
               }
               results = matches;
@@ -296,8 +349,8 @@ in
                       commentScore
                   );
 
-                  if (name === q)              best += 200;
-                  else if (name.startsWith(q)) best += 100;
+                  if (name === q)               best += 200;
+                  else if (name.startsWith(q))  best += 100;
                   else if (name.indexOf(q) >= 0) best += 50;
 
                   scored.push({ app: app, score: best });
@@ -447,25 +500,11 @@ in
                               spacing: 12
 
                               Item {
-                                  id: iconContainer
                                   width: 24
                                   height: 24
                                   visible: modelData.type === "app"
 
-                                  readonly property string resolvedSource: {
-                                      if (modelData.type !== "app" || !modelData.icon) return "";
-                                      var ic = String(modelData.icon);
-                                      if (ic.startsWith("file://")) return ic;
-                                      if (ic.startsWith("/")) {
-                                          if (ic.indexOf("/nix/store/") === 0)
-                                              return "image://icon/" + ic.split("/").pop().replace(/\.[^.]+$/, "");
-                                          var ext = ic.split(".").pop().toLowerCase();
-                                          if (ext === "png" || ext === "svg" || ext === "xpm")
-                                              return "file://" + ic;
-                                          return "image://icon/" + ic.split("/").pop().replace(/\.[^.]+$/, "");
-                                      }
-                                      return "image://icon/" + ic;
-                                  }
+                                  readonly property string src: launcherWindow.iconSource(modelData.icon)
 
                                   Image {
                                       id: appIconImage
@@ -476,14 +515,15 @@ in
                                       fillMode: Image.PreserveAspectFit
                                       cache: true
                                       sourceSize: Qt.size(48, 48)
-                                      source: iconContainer.resolvedSource
+                                      source: parent.src
+                                      visible: status === Image.Ready
                                   }
 
                                   Rectangle {
                                       anchors.fill: parent
                                       color: "${c.base01}"
                                       radius: 4
-                                      visible: appIconImage.status === Image.Error || appIconImage.status === Image.Null
+                                      visible: appIconImage.status !== Image.Ready
 
                                       Text {
                                           anchors.centerIn: parent
@@ -520,7 +560,6 @@ in
                                   Layout.preferredWidth: 60
                                   horizontalAlignment: Text.AlignRight
                                   text: {
-                                      if (modelData.isAction) return "Clear";
                                       if (modelData.isLoading || modelData.isEmpty) return "";
                                       if (modelData.type === "clipboard") return "Paste";
                                       return "Enter";
