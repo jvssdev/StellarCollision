@@ -42,8 +42,6 @@ in
         pkgs.zsh-autosuggestions
         pkgs.zsh-completions
         pkgs.zsh-fast-syntax-highlighting
-        pkgs.exo # necessário pro Thunar
-        pkgs.xdg-terminal-exec # bônus
       ];
 
       files = {
