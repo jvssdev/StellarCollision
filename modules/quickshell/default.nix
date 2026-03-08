@@ -13,6 +13,7 @@ let
     mkOption
     mkIf
     types
+    nameValuePair
     ;
   inherit (builtins) substring;
 
@@ -61,7 +62,17 @@ let
     type == "regular"
     && (lib.hasSuffix ".png" name || lib.hasSuffix ".jpg" name || lib.hasSuffix ".jpeg" name)
   ) (builtins.readDir wallpapersDir);
-  wallpapersList = lib.mapAttrsToList (name: _: toString wallpapersDir + "/" + name) wallpapersFiles;
+  wallpapersList = lib.mapAttrsToList (
+    name: _: "/home/${config.cfg.vars.username}/.config/quickshell/wallpapers/${name}"
+  ) wallpapersFiles;
+  wallpapersSources = builtins.listToAttrs (
+    map (
+      name:
+      nameValuePair "quickshell/wallpapers/${name}" {
+        source = wallpapersDir + "/${name}";
+      }
+    ) (builtins.attrNames wallpapersFiles)
+  );
 
   Wallpaper = import (componentsDir + "/Wallpaper.nix") {
     inherit pkgs lib wallpapersList;
@@ -143,6 +154,7 @@ in
       "quickshell/LockContext.qml".text = LockContext;
       "quickshell/BluetoothService.qml".text = BluetoothService;
       "quickshell/Launcher.qml".text = Launcher;
-    };
+    }
+    // wallpapersSources;
   };
 }
