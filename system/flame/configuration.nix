@@ -55,6 +55,9 @@ in
     };
     mpd.enable = true;
     rmpc.enable = true;
+    lutris = {
+      enable = true;
+    };
 
     vars = {
       withGui = true;
