@@ -29,7 +29,7 @@ in
       pkgs.kdePackages.ffmpegthumbs
       pkgs.kdePackages.ark
       pkgs.kdePackages.kservice
-      pkgs.gparted
+      pkgs.kdePackages.filelight
     ];
 
     hj.xdg.data.files."kio/servicemenus/wezterm-open-here.desktop".text = ''

@@ -64,6 +64,7 @@
     pkgs.hunspellDicts.en_US
     pkgs.hunspellDicts.en_GB-ize
     pkgs.hunspellDicts.pt_BR
+    pkgs.ntfs3g
   ];
 
   security = {

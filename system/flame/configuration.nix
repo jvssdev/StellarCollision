@@ -73,6 +73,7 @@ in
     dconf.enable = true;
     xwayland.enable = true;
     kdeconnect.enable = true;
+    nix-ld.enable = true;
   };
 
   boot = {
