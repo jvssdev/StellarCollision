@@ -4,7 +4,6 @@
   pkgs,
   ...
 }:
-
 let
   inherit (lib)
     mkEnableOption
@@ -18,31 +17,29 @@ in
   options.cfg.portals = {
     enable = mkEnableOption "XDG Desktop Portals configuration";
   };
-
   config = mkIf cfg.enable {
-    systemd.user.services.xdg-desktop-portal = {
-      environment = mkForce {
-        NIX_XDG_DESKTOP_PORTAL_DIR = "/run/current-system/sw/share/xdg-desktop-portal/portals";
-        XDG_DATA_DIRS = "/run/current-system/sw/share:/etc/profiles/per-user/%u/share";
+    systemd.packages = mkIf config.cfg.ghostty.enable [ config.cfg.ghostty.package ];
+    systemd.user.services = {
+      xdg-desktop-portal = {
+        environment = mkForce {
+          NIX_XDG_DESKTOP_PORTAL_DIR = "/run/current-system/sw/share/xdg-desktop-portal/portals";
+          XDG_DATA_DIRS = "/run/current-system/sw/share:/etc/profiles/per-user/%u/share";
+        };
+      };
+      xdg-desktop-portal-gnome = mkIf config.cfg.niri.enable {
+        environment = mkForce {
+          XDG_DATA_DIRS = "/run/current-system/sw/share:/etc/profiles/per-user/%u/share";
+        };
       };
     };
-
-    systemd.user.services.xdg-desktop-portal-gnome = mkIf config.cfg.niri.enable {
-      environment = mkForce {
-        XDG_DATA_DIRS = "/run/current-system/sw/share:/etc/profiles/per-user/%u/share";
-      };
-    };
-
     xdg.portal = {
       enable = true;
       wlr.enable = config.cfg.mango.enable;
-
       extraPortals = [
         pkgs.xdg-desktop-portal-gtk
       ]
       ++ optionals config.cfg.niri.enable [ pkgs.xdg-desktop-portal-gnome ]
       ++ optionals config.cfg.mango.enable [ pkgs.xdg-desktop-portal-wlr ];
-
       config = {
         common = {
           default = [ "gtk" ];

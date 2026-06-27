@@ -134,13 +134,18 @@ in
 
 
        environment {
+          XCURSOR_THEME "${config.cfg.gtk.cursorTheme.name}"
           QT_QPA_PLATFORM "wayland;xcb"
           QT_QPA_PLATFORMTHEME "qt5ct"
           QT_STYLE_OVERRIDE "kvantum"
           GDK_BACKEND "wayland,x11,*"
+          GTK_THEME "${config.cfg.gtk.theme.name}:dark"
+          COLOR_SCHEME "prefer-dark"
         }
 
        cursor {
+         xcursor-theme "${config.cfg.gtk.cursorTheme.name}"
+         xcursor-size 24
          hide-when-typing
          hide-after-inactive-ms 1000
        }
@@ -192,8 +197,10 @@ in
        }
 
        window-rule {
-           match app-id="xdg-desktop-portal-gtk"
+           match app-id=r#"(?i)(xdg-desktop-portal-gtk|org\.freedesktop\.impl\.portal\.desktop\.gtk)"#
            open-floating true
+           default-window-height { proportion 0.6; }
+           default-column-width { proportion 0.5; }
        }
 
        window-rule {
@@ -204,7 +211,7 @@ in
        }
 
        window-rule {
-           match app-id=r#"(?i)(wezterm-yazi-nvim|filechooser|dolphin)"#
+           match app-id=r#"(?i)(ghostty.yazi.nvim|filechooser|dolphin)"#
            open-floating true
            default-window-height { proportion 0.8; }
            default-column-width { proportion 0.8; }
@@ -226,7 +233,8 @@ in
        binds {
            Mod+Shift+Slash { show-hotkey-overlay; }
 
-           Mod+T { spawn "${getExe pkgs.${config.cfg.vars.terminal}}"; }
+           // Mod+T { spawn "${getExe pkgs.${config.cfg.vars.terminal}}"; }
+           Mod+T { spawn "ghostty" "+new-window"; }
            Mod+B { spawn "${config.cfg.vars.browser}"; }
             Mod+A { spawn "quickshell" "ipc" "call" "launcher" "toggle"; }
             Mod+v repeat=false { spawn "quickshell" "ipc" "call" "launcher" "openClipboard"; }

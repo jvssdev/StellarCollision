@@ -342,7 +342,8 @@ in
               onTriggered: networkProc.running = true
           }
           IdleMonitors {
-              manualInhibit: idleInhibitorState.enabled
+              inhibit: idleInhibitorState.enabled
+              window: barWindow
           }
           PanelWindow {
               id: barWindow

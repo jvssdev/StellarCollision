@@ -12,6 +12,8 @@
   time.timeZone = config.cfg.vars.timezone;
 
   environment.systemPackages = [
+
+    pkgs.ente-auth
     pkgs.wget
     pkgs.curl
     pkgs.git
@@ -56,7 +58,7 @@
     pkgs.networkmanagerapplet
     pkgs.qbittorrent
     pkgs.imv
-    pkgs.anydesk
+    pkgs.rustdesk-flutter
     pkgs.haruna
     pkgs.libreoffice
     pkgs.azahar
@@ -83,7 +85,7 @@
   services = {
     gvfs.enable = config.cfg.vars.withGui;
     tumbler.enable = config.cfg.vars.withGui;
-    dbus.implementation = "dbus";
+    dbus.implementation = "broker";
 
     angrr = {
       enable = true;

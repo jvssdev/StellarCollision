@@ -75,6 +75,28 @@ in
   };
 
   config = mkIf cfg.enable {
+    programs.dconf.enable = true;
+    system.activationScripts.dconf-update = {
+      text = "${pkgs.dconf}/bin/dconf update";
+      deps = [ ];
+    };
+    environment.etc = {
+      "dconf/profile/user".text = ''
+        user-db:user
+        system-db:local
+      '';
+
+      "dconf/db/local.d/dark-theme".text = ''
+        [org/gnome/desktop/interface]
+        color-scheme='prefer-dark'
+        gtk-theme='${cfg.theme.name}'
+        icon-theme='${cfg.iconTheme.name}'
+        cursor-theme='${cfg.cursorTheme.name}'
+        cursor-size=${toString cfg.cursorTheme.size}
+        font-name='${cfg.font.name} ${toString cfg.font.size}'
+      '';
+    };
+
     hj = {
       packages = [
         cfg.theme.package

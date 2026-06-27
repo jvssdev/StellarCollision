@@ -31,8 +31,8 @@ in
       yaml-language-server
       taplo
       marksman
-      nodePackages_latest.typescript-language-server
-      nodePackages_latest.vscode-langservers-extracted
+      #nodePackages_latest.typescript-language-server
+      #nodePackages_latest.vscode-langservers-extracted
       qt6.qtdeclarative
       qt6.qttools
       just-lsp

@@ -23,14 +23,15 @@ in
     };
     sessionVariables.enable = true;
     portals.enable = true;
-    ghostty.enable = false;
-    wezterm.enable = true;
+    ghostty.enable = true;
+    wezterm.enable = false;
     zsh.enable = true;
     nvf.enable = true;
     dolphin.enable = true;
     opencode.enable = true;
-    zen-browser.enable = true;
-    helium.enable = true;
+    zen-browser.enable = false;
+    helium.enable = false;
+    firefox.enable = true;
     zed.enable = true;
     keyring.enable = true;
     git.enable = true;
@@ -98,14 +99,17 @@ in
     pathsToLink = [ "/share/icons" ];
     systemPackages = with pkgs; [
       kdePackages.kdialog
+      inetutils
       wtype
       bluetooth-agent.bluetooth-agent
       bluetooth-agent.bluetooth-pair
       qs-backend.icon-resolver
       upower
     ];
+    variables = {
+      PATH = "/run/current-system/sw/bin:/run/wrappers/bin:$PATH";
+    };
   };
-
   services = {
     dbus = {
       enable = true;

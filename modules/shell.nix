@@ -45,6 +45,10 @@ in
       ];
 
       files = {
+        ".zshenv".text = ''
+          unset __NIXOS_SET_ENVIRONMENT_DONE
+        '';
+
         ".zprofile".text = ''
           export PATH="/usr/lib64/qt6/bin:$PATH"
           export PATH="$HOME/.cargo/bin:$PATH"
@@ -64,9 +68,14 @@ in
           HISTFILE="${xdgCache}/zsh/history"
 
           autoload -Uz compinit
+          if [[ -n "${xdgCache}/zsh/zcompdump-$ZSH_VERSION"(#qN.mh+24) ]]; then
+            compinit -d ${xdgCache}/zsh/zcompdump-$ZSH_VERSION
+          else
+            compinit -C -d ${xdgCache}/zsh/zcompdump-$ZSH_VERSION
+          fi
+
           zstyle ':completion:*' menu select
           zmodload zsh/complist
-          compinit -d ${xdgCache}/zsh/zcompdump-$ZSH_VERSION
 
           zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
           WORDCHARS='*?_-.[]~=&;!$%^(){}<>|'
@@ -102,15 +111,15 @@ in
             --color=fg:${c.base05},header:${c.base0D},info:${c.base0C},pointer:${c.base04}
             --color=marker:${c.base0B},fg+:${c.base07},prompt:${c.base0C},hl+:${c.base0C}"
 
-          if [[ "$TERM" != "dumb" ]]; then
-            source ${pkgs.wezterm}/etc/profile.d/wezterm.sh
-          fi
+          # if [[ "$TERM" != "dumb" ]]; then
+          #   source ${pkgs.wezterm}/etc/profile.d/wezterm.sh
+          # fi
 
           eval "$(${getExe pkgs.direnv} hook zsh)"
           eval "$(${getExe pkgs.zoxide} init --cmd cd zsh)"
-          eval "$(${getExe pkgs.atuin} init zsh)"
-          eval "$(${getExe pkgs.starship} init zsh)"
           eval "$(${getExe pkgs.nix-your-shell} zsh)"
+          eval "$(${getExe pkgs.starship} init zsh)"
+          eval "$(${getExe pkgs.atuin} init zsh)"
 
           alias ls="${getExe pkgs.lsd}"
           alias cat="${getExe pkgs.bat} --paging=never"
@@ -160,24 +169,9 @@ in
           style = "bg:${c.base03}"
           format = "[[  $time ](fg:${c.base04} bg:${c.base03})]($style)"
         '';
-
         "xfce4/helpers.rc".text = ''
-          TerminalEmulator=wezterm
+          TerminalEmulator=ghostty
           TerminalEmulatorDismissed=true
-        '';
-
-        "Thunar/uca.xml".text = ''
-          <?xml version="1.0" encoding="UTF-8"?>
-          <actions>
-            <action>
-              <icon>utilities-terminal</icon>
-              <name>Open terminal here</name>
-              <command>wezterm start --cwd "%f"</command>
-              <description>Opens Wezterm in the current directory</description>
-              <patterns>*</patterns>
-              <directories/>
-            </action>
-          </actions>
         '';
       };
     };
@@ -189,7 +183,9 @@ in
         angrr.enable = config.services.angrr.enable;
       };
 
-      zsh.enable = true;
+      zsh = {
+        enable = true;
+      };
     };
   };
 }

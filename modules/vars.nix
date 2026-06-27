@@ -26,12 +26,12 @@ in
 
     terminal = mkOption {
       type = types.str;
-      default = "wezterm";
+      default = "ghostty";
     };
 
     browser = mkOption {
       type = types.str;
-      default = "helium";
+      default = "firefox";
     };
 
     stateVersion = mkOption {

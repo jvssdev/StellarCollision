@@ -14,10 +14,20 @@ in
   import Quickshell
   import Quickshell.Wayland
   import Quickshell.Io
+
   Scope {
       id: idleScope
-      property bool manualInhibit: false
+
+      property bool inhibit: false
+      property var window: null
+
+      IdleInhibitor {
+          window: idleScope.window
+          enabled: idleScope.inhibit || audioPlaying.isPlaying
+      }
+
       QtObject { id: audioPlaying; property bool isPlaying: false }
+
       Process {
           id: audioCheckProc
           command: ["${getExe pkgs.bash}", "-c", "${getExe pkgs.playerctl} -a status 2>/dev/null | grep Playing > /dev/null && echo yes || echo no"]
@@ -29,6 +39,7 @@ in
               }
           }
       }
+
       Timer {
           interval: 2000
           running: true
@@ -36,6 +47,7 @@ in
           triggeredOnStart: true
           onTriggered: audioCheckProc.running = true
       }
+
       function handleIdleAction(action, isIdle) {
           if (!action) return;
           if (action === "lock" && isIdle) lockProc.running = true;
@@ -43,6 +55,7 @@ in
           if (action === "dpms off" && isIdle) dpmsOffProc.running = true;
           if (action === "dpms on" && !isIdle) dpmsOnProc.running = true;
       }
+
       Process {
           id: dpmsOffProc;
           command: ${
@@ -52,6 +65,7 @@ in
               ''["${getExe pkgs.wlopm}", "--off", "*"]''
           }
       }
+
       Process {
           id: dpmsOnProc;
           command: ${
@@ -61,8 +75,10 @@ in
               ''["${getExe pkgs.wlopm}", "--on", "*"]''
           }
       }
+
       Process { id: lockProc; command: ["${quickshellPackage}/bin/quickshell", "ipc", "call", "lockScreen", "toggle"] }
       Process { id: suspendProc; command: ["${getExe' pkgs.systemd "systemctl"}", "suspend"] }
+
       Process {
           id: logindMonitor
           command: ["${getExe' pkgs.dbus "dbus-monitor"}", "--system", "type='signal',interface='org.freedesktop.login1.Manager',member='PrepareForSleep'"]
@@ -75,6 +91,7 @@ in
               }
           }
       }
+
       Variants {
           model: [
               { timeout: 240, idleAction: "dpms off", returnAction: "dpms on" },
@@ -83,7 +100,6 @@ in
           ]
           IdleMonitor {
               required property var modelData
-              enabled: !manualInhibit && !audioPlaying.isPlaying
               timeout: modelData.timeout
               onIsIdleChanged: idleScope.handleIdleAction(isIdle ? modelData.idleAction : modelData.returnAction, isIdle)
           }

@@ -140,73 +140,32 @@ in
           image_filter = "lanczos3"
           image_quality = 90
 
-          [[plugin.prepend_fetchers]]
-          id = "git"
-          url = "*"
-          run = "git"
+          [opener]
+          edit = [
+              { run = 'cmd /c nvim "%1"', block = true, for = "windows" }
+          ]
+          play = [
+              { run = 'start "" "%1"', orphan = true, for = "windows" }
+          ]
+          image = [
+              { run = 'start "" "%1"', orphan = true, for = "windows" }
+          ]
+          pdf = [
+              { run = 'start "" "%1"', orphan = true, for = "windows" }
+          ]
+          extract = [
+              { run = 'tar -xf "%1"', desc = "Extract here", for = "windows" }
+          ]
 
-          [[plugin.prepend_fetchers]]
-          id = "git"
-          url = "*/"
-          run = "git"
-
-          [[opener.play]]
-          run = "haruna \"$@\""
-          orphan = true
-          for = "unix"
-
-          [[opener.image]]
-          run = "imv \"$@\""
-          orphan = true
-          for = "unix"
-
-          [[opener.pdf]]
-          run = "zathura \"$@\""
-          orphan = true
-          for = "unix"
-
-          [[opener.edit]]
-          run = "$EDITOR \"$@\""
-          block = true
-          for = "unix"
-
-          [[open.rules]]
-          mime = "image/*"
-          use = "image"
-
-          [[open.rules]]
-          mime = "application/pdf"
-          use = "pdf"
-
-          [[open.rules]]
-          mime = "video/*"
-          use = "play"
-
-          [[open.rules]]
-          mime = "audio/*"
-          use = "play"
-
-          [[open.rules]]
-          mime = "text/*"
-          use = "edit"
-
-          [[open.rules]]
-          mime = "application/json"
-          use = "edit"
-
-          [[open.rules]]
-          mime = "application/javascript"
-          use = "edit"
-
-          [[open.rules]]
-          mime = "application/x-shellscript"
-          use = "edit"
-
-          [[open.rules]]
-          mime = "application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}"
-          use = ["extract", "reveal"]
-          # mime = "*"
-          # use = "edit"
+          [open]
+          rules = [
+              { mime = "text/*",          use = "edit"  },
+              { mime = "image/*",         use = "image" },
+              { mime = "application/pdf", use = "pdf"   },
+              { mime = "video/*",         use = "play"  },
+              { mime = "audio/*",         use = "play"  },
+              { mime = "*",               use = "edit"  },
+          ]
         '';
 
         "yazi/keymap.toml".text = /* toml */ ''

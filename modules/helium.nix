@@ -56,8 +56,8 @@ let
     vimium = {
       id = "dbepggeogbaibhgnhhndojpepiihcmeb";
     };
-    bettertv = {
-      id = "ajopnjidmegmdimjlfnijceegpefgped";
+    seven-tv = {
+      id = "ammjkodgmmoknidbanneddgankgfejfh";
     };
     i-still-dont-care-about-cookies = {
       id = "edibdbjcniadpccecjdfdjjppcpchdlm";
