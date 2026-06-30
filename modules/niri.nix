@@ -93,7 +93,7 @@ in
        }
 
        layout {
-           gaps 5
+           gaps 0
 
            center-focused-column "never"
            always-center-single-column
@@ -177,7 +177,7 @@ in
        }
 
        window-rule {
-           geometry-corner-radius 12
+           geometry-corner-radius 0
            clip-to-geometry true
        }
 
@@ -189,6 +189,12 @@ in
        window-rule {
            match app-id=r#"(?i)(firefox|zen|zen-browser|zen-beta|chromium|helium)"#
            open-maximized true
+            border {
+                    off
+                }
+            focus-ring {
+                    off
+                }
       }
 
        window-rule {

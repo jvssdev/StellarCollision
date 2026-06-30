@@ -30,7 +30,7 @@ in
     dolphin.enable = true;
     opencode.enable = true;
     zen-browser.enable = false;
-    helium.enable = false;
+    helium.enable = true;
     firefox.enable = true;
     zed.enable = true;
     keyring.enable = true;
