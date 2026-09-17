@@ -8,51 +8,35 @@
 let
   cfg = config.cfg.helium;
 
-  inherit (lib) fix;
-  inherit (lib.attrsets) attrNames mapAttrsToList;
-  inherit (lib.lists) elem;
-  inherit (lib.strings) hasInfix;
+  inherit (lib.attrsets) mapAttrsToList filterAttrs;
+  inherit (lib.lists) singleton;
 
   extensions = {
     dark-reader = {
       id = "eimadpbcbfnmbkopoojfekhnkhdbieeh";
     };
-    sponsorblock = {
-      id = "mnjggcdmjocbbbhaepdhchncahnbgone";
-    };
-    ublock-origin = fix (self: {
+    ublock-origin = {
       id = "cjpalhdlnbpafiamejdnhcphjbkeiagm";
-      filters = {
-
-        internal = attrNames (builtins.fromJSON (builtins.readFile "${inputs.ublock}/assets/assets.json"));
-
-        wanted = [
-          "user-filters"
-          "ublock-filters"
-          "ublock-badware"
-          "ublock-privacy"
-          "ublock-abuse"
-          "ublock-unbreak"
-          "easylist"
-          "easyprivacy"
-          "urlhaus-1"
-          "plowe-0"
-
-          "https://raw.githubusercontent.com/DandelionSprout/adfilt/refs/heads/master/ClearURLs%20for%20uBo/clear_urls_uboified.txt "
-          "https://raw.githubusercontent.com/yokoffing/filterlists/refs/heads/main/privacy_essentials.txt "
-          "https://raw.githubusercontent.com/DandelionSprout/adfilt/refs/heads/master/LegitimateURLShortener.txt "
-          "https://raw.githubusercontent.com/yokoffing/filterlists/refs/heads/main/annoyance_list.txt "
-          "https://raw.githubusercontent.com/DandelionSprout/adfilt/refs/heads/master/BrowseWebsitesWithoutLoggingIn.txt "
-        ];
-
-        warnings = builtins.filter (
-          name: !(hasInfix "://" name || elem name self.filters.internal)
-        ) self.filters.wanted;
-      };
-    });
+      policy.toOverwrite.filterLists = [
+        "user-filters"
+        "ublock-filters"
+        "ublock-badware"
+        "ublock-privacy"
+        "ublock-abuse"
+        "ublock-unbreak"
+        "easylist"
+        "easyprivacy"
+        "urlhaus-1"
+        "plowe-0"
+        "https://raw.githubusercontent.com/DandelionSprout/adfilt/refs/heads/master/ClearURLs%20for%20uBo/clear_urls_uboified.txt"
+        "https://raw.githubusercontent.com/yokoffing/filterlists/refs/heads/main/privacy_essentials.txt"
+        "https://raw.githubusercontent.com/DandelionSprout/adfilt/refs/heads/master/LegitimateURLShortener.txt"
+        "https://raw.githubusercontent.com/yokoffing/filterlists/refs/heads/main/annoyance_list.txt"
+        "https://raw.githubusercontent.com/DandelionSprout/adfilt/refs/heads/master/BrowseWebsitesWithoutLoggingIn.txt"
+      ];
+    };
     violentmonkey = {
       id = "jinjaccalgkegednnccohejagnlnfdag";
-      preferences.user_scripts_enabled = true;
     };
     vimium = {
       id = "dbepggeogbaibhgnhhndojpepiihcmeb";
@@ -68,40 +52,45 @@ let
     };
     bypass-paywalls = {
       id = "lkbebcjgcmobigpeffafkodonchffocl";
-      update_url = "https://gitflic.ru/project/magnolia1234/bpc_updates/blob/raw?file=updates.xml";
+    };
+    control-panel-for-youtube = {
+      id = "lodcanccmfbpjjpnngindkkmiehimile";
     };
   };
 
-  policy = {
-    ExtensionSettings = builtins.listToAttrs (
-      mapAttrsToList (_: ext: {
-        name = ext.id;
-        value = {
-          installation_mode = "normal_installed";
-          update_url = ext.update_url or "https://services.helium.imput.net/ext";
-        };
-      }) extensions
-    );
+  forcelist = mapAttrsToList (_: ext: ext.id) (
+    filterAttrs (_: ext: !(ext.preinstalled or false)) extensions
+  );
 
-    ExtensionInstallAllowlist = mapAttrsToList (_: ext: ext.id) extensions;
+  policy = {
+    ExtensionInstallBlocklist = singleton "*";
+    ExtensionInstallAllowlist = forcelist;
+    ExtensionInstallForcelist = forcelist;
 
     ExtensionInstallSources = [
       "https://services.helium.imput.net/*"
       "https://gitflic.ru/*"
     ];
 
-    "3rdparty".extensions.${extensions.ublock-origin.id}.toOverwrite.filterLists =
-      extensions.ublock-origin.filters.wanted;
+    ExtensionSettings = lib.concatMapAttrs (
+      _: ext: lib.optionalAttrs (ext ? settings) { ${ext.id} = ext.settings; }
+    ) extensions;
+
+    "3rdparty".extensions = lib.concatMapAttrs (
+      _: ext: lib.optionalAttrs (ext ? policy) { ${ext.id} = ext.policy; }
+    ) extensions;
 
     DefaultBrowserSettingEnabled = false;
-    RestoreOnStartup = 1;
     DnsOverHttpsMode = "automatic";
     HttpsOnlyMode = "allowed";
     MetricsReportingEnabled = false;
+
+    RestoreOnStartup = 1;
+
     DefaultSearchProviderEnabled = true;
     DefaultSearchProviderName = "DuckDuckGo";
-    DefaultSearchProviderSearchURL = "https://duckduckgo.com/?q= {searchTerms}";
-    DefaultSearchProviderSuggestURL = "https://duckduckgo.com/ac/?q= {searchTerms}";
+    DefaultSearchProviderSearchURL = "https://duckduckgo.com/?q={searchTerms}";
+    DefaultSearchProviderSuggestURL = "https://duckduckgo.com/ac/?q={searchTerms}";
     SearchSuggestEnabled = true;
   };
 
@@ -136,13 +125,21 @@ let
   '';
 
   heliumPrefsScript = pkgs.writeShellScript "helium-set-prefs" ''
+    set -euo pipefail
     PREFS_DIR="$HOME/.config/net.imput.helium/Default"
     PREFS_FILE="$PREFS_DIR/Preferences"
     mkdir -p "$PREFS_DIR"
+
     if [ ! -f "$PREFS_FILE" ] || ! ${pkgs.jq}/bin/jq empty "$PREFS_FILE" 2>/dev/null; then
       echo '{}' > "$PREFS_FILE"
     fi
-    ${pkgs.jq}/bin/jq '.browser.custom_chrome_frame = false' "$PREFS_FILE" > "$PREFS_FILE.tmp" \
+
+    ${pkgs.jq}/bin/jq '
+      .browser.custom_chrome_frame = false
+      | .helium.completed_onboarding = true
+      | .helium.services.user_consented = true
+      | .download.prompt_for_download = true
+    ' "$PREFS_FILE" > "$PREFS_FILE.tmp" \
       && mv "$PREFS_FILE.tmp" "$PREFS_FILE"
   '';
 
@@ -174,6 +171,9 @@ in
       ];
     };
 
-    environment.etc."chromium/policies/managed/policies.json".text = lib.generators.toJSON { } policy;
+    environment.etc = {
+      "chromium/policies/managed/policies.json".text = builtins.toJSON policy;
+      "helium/policies/managed/policies.json".text = builtins.toJSON policy;
+    };
   };
 }
