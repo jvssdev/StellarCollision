@@ -15,8 +15,8 @@ in
 
   cfg = {
     drivers.intel.enable = true;
-    mango.enable = false;
-    niri.enable = true;
+    mango.enable = true;
+    niri.enable = false;
     quickshell = {
       enable = true;
       iconResolverPath = lib.getExe qs-backend.icon-resolver;

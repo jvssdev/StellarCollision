@@ -19,16 +19,4 @@
     (lib.mkAliasOptionModule [ "hj" ] [ "hjem" "users" config.cfg.vars.username ])
   ];
 
-  config = lib.mkIf config.cfg.hjem.enable {
-    hjem = {
-      clobberByDefault = true;
-      linker = inputs'.hjem.packages.smfh;
-      users = {
-        "${config.cfg.vars.username}" = {
-          user = "${config.cfg.vars.username}";
-          directory = "/home/${config.cfg.vars.username}";
-        };
-      };
-    };
-  };
 }

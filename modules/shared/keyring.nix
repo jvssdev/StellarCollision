@@ -25,7 +25,7 @@ in
       };
       dbus = {
         packages = [
-          pkgs.gcr
+          pkgs.gcr_4
           pkgs.seahorse
         ];
       };
