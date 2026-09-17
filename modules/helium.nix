@@ -52,6 +52,7 @@ let
     });
     violentmonkey = {
       id = "jinjaccalgkegednnccohejagnlnfdag";
+      preferences.user_scripts_enabled = true;
     };
     vimium = {
       id = "dbepggeogbaibhgnhhndojpepiihcmeb";

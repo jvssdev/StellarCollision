@@ -13,16 +13,18 @@ in
         };
       };
       illuminate.enable = true;
-      breadcrumbs = {
-        enable = true;
-        navbuddy.enable = true;
-      };
     };
 
     statusline.lualine = {
       enable = true;
-      icons.enable = true;
-      globalStatus = true;
+      setupOpts.options = {
+        icons_enabled = true;
+        globalstatus = true;
+      };
+      integrations.breadcrumbs = {
+        nvim-navic.enable = true;
+        navbuddy.enable = true;
+      };
     };
 
     git = {
