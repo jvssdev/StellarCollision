@@ -54,8 +54,8 @@ in
         "application/x-bittorrent" = "org.qbittorrent.qBittorrent.desktop";
         "x-scheme-handler/magnet" = "org.qbittorrent.qBittorrent.desktop";
 
-        "x-scheme-handler/terminal" = "org.wezfurlong.wezterm.desktop";
-        "x-terminal-emulator" = "org.wezfurlong.wezterm.desktop";
+        "x-scheme-handler/terminal" = "com.mitchellh.ghostty.desktop";
+        "x-terminal-emulator" = "com.mitchellh.ghostty.desktop";
       };
     };
   };

@@ -19,6 +19,7 @@ in
       import Quickshell.Bluetooth
       import Quickshell.Services.Pam
       import Quickshell.Services.Notifications
+      import Quickshell.Services.Pipewire
       import "BatteryMonitor.qml"
       import "LockContext.qml"
       import "LockSurface.qml"
@@ -164,10 +165,13 @@ in
               id: idleInhibitorState
               property bool enabled: false
           }
+          PwObjectTracker {
+              objects: [Pipewire.defaultAudioSink]
+          }
           QtObject {
               id: volume
-              property int level: 0
-              property bool muted: false
+              readonly property int level: Math.round((Pipewire.defaultAudioSink?.audio?.volume ?? 0) * 100)
+              readonly property bool muted: Pipewire.defaultAudioSink?.audio?.muted ?? false
           }
 
           QtObject {
@@ -189,26 +193,6 @@ in
           }
           property var lastCpuIdle: 0
           property var lastCpuTotal: 0
-          Process {
-              id: volumeProc
-              command: ["${getExe' pkgs.wireplumber "wpctl"}", "get-volume", "@DEFAULT_AUDIO_SINK@"]
-              stdout: SplitParser {
-                  onRead: data => {
-                      if (!data) return
-                      const out = data.trim()
-                      volume.muted = out.includes("[MUTED]")
-                      const match = out.match(/Volume: ([0-9.]+)/)
-                      if (match) volume.level = Math.round(parseFloat(match[1]) * 100)
-                  }
-              }
-          }
-          Timer {
-              interval: 1000
-              running: true
-              repeat: true
-              triggeredOnStart: true
-              onTriggered: volumeProc.running = true
-          }
           Process {
               id: cpuProc
               command: ["${getExe pkgs.bash}", "-c", "head -1 /proc/stat"]

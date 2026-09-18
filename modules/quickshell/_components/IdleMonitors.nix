@@ -14,6 +14,7 @@ in
   import Quickshell
   import Quickshell.Wayland
   import Quickshell.Io
+  import Quickshell.Services.Mpris
 
   Scope {
       id: idleScope
@@ -26,26 +27,14 @@ in
           enabled: idleScope.inhibit || audioPlaying.isPlaying
       }
 
-      QtObject { id: audioPlaying; property bool isPlaying: false }
-
-      Process {
-          id: audioCheckProc
-          command: ["${getExe pkgs.bash}", "-c", "${getExe pkgs.playerctl} -a status 2>/dev/null | grep Playing > /dev/null && echo yes || echo no"]
-          stdout: SplitParser {
-              onRead: data => {
-                  if (data) {
-                      audioPlaying.isPlaying = data.trim() === "yes"
-                  }
+      QtObject {
+          id: audioPlaying
+          readonly property bool isPlaying: {
+              for (const p of Mpris.players.values) {
+                  if (p.playbackState === MprisPlaybackState.Playing) return true
               }
+              return false
           }
-      }
-
-      Timer {
-          interval: 2000
-          running: true
-          repeat: true
-          triggeredOnStart: true
-          onTriggered: audioCheckProc.running = true
       }
 
       function handleIdleAction(action, isIdle) {
