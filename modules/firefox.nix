@@ -224,7 +224,10 @@ in
           Default=1
         '';
 
-        ".mozilla/firefox/default/user.js".text = userJsContent;
+        ".mozilla/firefox/default/user.js" = {
+          text = userJsContent;
+          clobber = true;
+        };
       };
     };
   };

@@ -140,8 +140,15 @@ in
       "quickshell/PowerButton.qml".text = PowerButton;
       "quickshell/PowerMenu.qml".text = PowerMenu;
       "quickshell/WorkspaceModule.qml".text = WorkspaceModule;
-      "quickshell/IdleMonitors.qml".text = IdleMonitors;
-      "quickshell/shell.qml".text = Shell;
+      "quickshell/IdleMonitors.qml" = {
+        text = IdleMonitors;
+        clobber = true;
+      };
+
+      "quickshell/shell.qml" = {
+        text = Shell;
+        clobber = true;
+      };
       "quickshell/Wallpaper.qml".text = Wallpaper;
       "quickshell/WallpaperPicker.qml".text = WallpaperPicker;
       "quickshell/OverviewWallpaper.qml".text = OverviewWallpaper;

@@ -27,22 +27,25 @@ in
     hj.packages = [
       cfg.package
     ];
-    hj.xdg.config.files."keepassxc/keepassxc.ini".text = /* ini */ ''
-      [General]
-      ConfigVersion=2
-      UseAtomicSaves=true
+    hj.xdg.config.files."keepassxc/keepassxc.ini" = {
+      text = /* ini */ ''
+        [General]
+        ConfigVersion=2
+        UseAtomicSaves=true
 
-      [Browser]
-      AlwaysAllowAccess=true
-      Enabled=true
-      SearchInAllDatabases=true
+        [Browser]
+        AlwaysAllowAccess=true
+        Enabled=true
+        SearchInAllDatabases=true
 
-      [GUI]
-      ApplicationTheme=classic
-      CompactMode=true
+        [GUI]
+        ApplicationTheme=classic
+        CompactMode=true
 
-      [PasswordGenerator]
-      Length=24
-    '';
+        [PasswordGenerator]
+        Length=24
+      '';
+      type = "copy";
+    };
   };
 }
