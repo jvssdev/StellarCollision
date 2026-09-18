@@ -66,6 +66,13 @@ let
       Locked = true;
     };
 
+    AIControls = {
+      Default = {
+        Value = "blocked";
+        Locked = true;
+      };
+    };
+
     Homepage = {
       StartPage = "none";
       Locked = true;
@@ -131,7 +138,6 @@ let
           "keepassxc-browser@keepassxc.org" = "keepassxc-browser";
           "sponsorblocker@ajay.app" = "sponsorblock";
           "seventv-next@7tv.app" = "7tv-new";
-          "{d7742d87-e61d-4b78-b8a1-b469842139fa}" = "vimium-ff";
           "{c2c003ee-bd69-42a2-b0e9-6f34222cb046}" = "auto-tab-discard";
         };
   };
@@ -163,6 +169,12 @@ let
     "layout.css.devPixelsPerPx" = "1.0";
     "browser.search.defaultenginename" = "DuckDuckGo";
     "browser.search.defaultenginename.private" = "DuckDuckGo";
+    "browser.ai.control.default" = "blocked";
+    "browser.ai.control.sidebarChatbot" = "blocked";
+    "browser.ai.control.linkPreviewKeyPoints" = "blocked";
+    "browser.ai.control.smartTabGroups" = "blocked";
+    "browser.ai.control.translations" = "blocked";
+    "browser.ai.control.pdfjsAltText" = "blocked";
   };
 
   userJsContent = lib.concatStringsSep "\n" (
