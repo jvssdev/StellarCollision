@@ -7,7 +7,6 @@
 
 let
   bluetooth-agent = pkgs.callPackage ./bluetooth-agent { };
-  qs-backend = pkgs.callPackage ./qs_backend { };
 in
 
 {
@@ -19,7 +18,6 @@ in
     niri.enable = true;
     quickshell = {
       enable = true;
-      iconResolverPath = lib.getExe qs-backend.icon-resolver;
     };
     sessionVariables.enable = true;
     portals.enable = true;
@@ -103,7 +101,6 @@ in
       wtype
       bluetooth-agent.bluetooth-agent
       bluetooth-agent.bluetooth-pair
-      qs-backend.icon-resolver
       upower
     ];
     variables = {

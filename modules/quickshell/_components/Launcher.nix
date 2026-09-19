@@ -1,7 +1,6 @@
 {
   fontFamily,
   colors,
-  iconResolverPath,
   ...
 }:
 let
@@ -54,8 +53,6 @@ in
           property var results: []
           property var appsCache: []
           property bool appsLoaded: false
-          property bool iconsReady: false
-          property var iconPaths: ({})
           property bool isClipboardMode: false
           property var clipboardEntries: []
 
@@ -86,26 +83,7 @@ in
 
               appsCache = filtered;
               appsLoaded = true;
-              resolveIcons();
               doSearch();
-          }
-
-          function resolveIcons() {
-              var iconNames = [];
-              var seen = {};
-              for (var i = 0; i < appsCache.length; i++) {
-                  var ic = String(appsCache[i].icon || "");
-                  if (ic && !seen[ic]) {
-                      seen[ic] = true;
-                      iconNames.push(ic);
-                  }
-              }
-              if (iconNames.length === 0) {
-                  iconsReady = true;
-                  return;
-              }
-              iconResolverProc.command = ["${iconResolverPath}"].concat(iconNames);
-              iconResolverProc.running = true;
           }
 
           function iconSource(iconName) {
@@ -115,12 +93,11 @@ in
               if (ic.startsWith("/")) {
                   if (ic.indexOf("/nix/store/") === 0) {
                       var base = ic.split("/").pop().replace(/\.[^.]+$/, "");
-                      return iconPaths[base] ? "file://" + iconPaths[base] : "";
+                      return Quickshell.iconPath(base, true);
                   }
                   return "file://" + ic;
               }
-              var resolved = iconPaths[ic];
-              return resolved ? "file://" + resolved : "";
+              return Quickshell.iconPath(ic, true);
           }
 
           Timer {
@@ -135,23 +112,7 @@ in
               function onValuesChanged() {
                   launcherWindow.appsLoaded = false;
                   launcherWindow.appsCache = [];
-                  launcherWindow.iconPaths = ({});
-                  launcherWindow.iconsReady = false;
                   launcherWindow.loadApps();
-              }
-          }
-
-          Process {
-              id: iconResolverProc
-              running: false
-              stdout: StdioCollector {
-                  onStreamFinished: function() {
-                      try {
-                          var parsed = JSON.parse(text);
-                          launcherWindow.iconPaths = parsed;
-                      } catch (e) {}
-                      launcherWindow.iconsReady = true;
-                  }
               }
           }
 

@@ -91,7 +91,6 @@ let
     inherit pkgs lib;
     fontFamily = config.cfg.fonts.monospace.name;
     colors = c;
-    inherit (cfg) iconResolverPath;
   };
 in
 {
@@ -105,11 +104,6 @@ in
       type = types.package;
       default = quickshell;
       description = "The Quickshell package to use";
-    };
-    iconResolverPath = mkOption {
-      type = types.str;
-      default = "icon-resolver";
-      description = "Absolute path to the icon-resolver binary";
     };
   };
 
