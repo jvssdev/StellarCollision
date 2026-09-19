@@ -38,7 +38,6 @@ in
         pkgs.bat
         pkgs.lsd
         pkgs.zoxide
-        pkgs.wezterm
         pkgs.zsh-autosuggestions
         pkgs.zsh-completions
         pkgs.zsh-fast-syntax-highlighting

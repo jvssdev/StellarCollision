@@ -49,6 +49,7 @@ let
   LockSurface = import (componentsDir + "/LockSurface.nix") { };
   BluetoothService = import (componentsDir + "/BluetoothService.nix") { };
   BatteryMonitor = import (componentsDir + "/BatteryMonitor.nix") { inherit pkgs lib; };
+  PolkitDialog = import (componentsDir + "/PolkitDialog.nix") { };
   Shell = import (componentsDir + "/shell.nix") {
     inherit pkgs lib config;
     quickshellPackage = cfg.package;
@@ -167,6 +168,10 @@ in
         clobber = true;
       };
       "quickshell/Launcher.qml".text = Launcher;
+      "quickshell/PolkitDialog.qml" = {
+        text = PolkitDialog;
+        clobber = true;
+      };
     }
     // wallpapersSources;
   };

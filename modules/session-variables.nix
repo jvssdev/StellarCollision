@@ -43,7 +43,7 @@ in
 
       GDK_DPI_SCALE = "1.45";
 
-      TERMINAL = "wezterm";
+      TERMINAL = "ghostty";
 
       EDITOR = "nvim";
       VISUAL = "nvim";

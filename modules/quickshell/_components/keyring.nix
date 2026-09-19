@@ -32,10 +32,7 @@ in
     };
 
     security = {
-      polkit = {
-        enable = true;
-        enablePkexecWrapper = true;
-      };
+      polkit.enable = true;
       pam = {
         services = {
           login = {

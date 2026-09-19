@@ -22,6 +22,7 @@ in
   import Quickshell.Services.Notifications
   import Quickshell.Networking
   import Quickshell.Services.Pipewire
+  import Quickshell.Services.Polkit
   import "BatteryMonitor.qml"
   import "LockContext.qml"
   import "LockSurface.qml"
@@ -287,6 +288,7 @@ in
           inhibit: idleInhibitorState.enabled
           window: barWindow
       }
+      PolkitDialog { }
       PanelWindow {
           id: barWindow
           anchors {
