@@ -377,7 +377,7 @@ in
                       color: theme.fgSubtle
                   }
                   Text {
-                      text: volume.muted ? " Muted " : " " + " " + volume.level + "%"
+                      text: volume.muted ? " Muted " : " "
                       color: volume.muted ? theme.fgSubtle : theme.blue
                       font {
                           family: theme.fontFamily

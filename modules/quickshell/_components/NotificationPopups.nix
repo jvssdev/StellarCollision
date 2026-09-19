@@ -28,6 +28,7 @@ _:
       Region {
           id: popupMask
           item: notificationColumn
+          radius: theme.radius
       }
 
       anchors {

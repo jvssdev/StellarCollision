@@ -72,15 +72,25 @@ if isNiri then
             if (wifiDevice) wifiDevice.scannerEnabled = wifiPageVisible
         }
 
-        property var audioSink: Pipewire.defaultAudioSink
-        property bool audioReady: audioSink !== null && audioSink.audio !== null && (audioSink.bound || false)
-        property var audioObj: audioReady ? audioSink.audio : null
-        property int volumeLevel: (audioObj !== null) ? Math.round((audioObj.volume || 0.5) * 100) : 50
-        property bool isMuted: (audioObj !== null) ? (audioObj.muted || false) : false
-
         PwObjectTracker {
-            objects: [audioSink]
+            objects: [Pipewire.defaultAudioSink]
         }
+
+        // Sync with system default output (same source as the bar / pavucontrol)
+        readonly property real sinkVolume: {
+            const sink = Pipewire.defaultAudioSink
+            if (!sink || !sink.audio)
+                return -1
+            return sink.audio.volume ?? -1
+        }
+
+        property int volumeLevel: {
+            if (sinkVolume < 0)
+                return 0
+            return Math.round(Math.min(sinkVolume, 1.0) * 100)
+        }
+
+        property bool isMuted: Pipewire.defaultAudioSink?.audio?.muted ?? false
 
         function findWifiNetwork(ssid) {
             if (!wifiDevice) return null
@@ -151,9 +161,10 @@ if isNiri then
         }
 
         function setVolume(newVal) {
-            if (audioReady && audioObj) {
-                audioObj.muted = false
-                audioObj.volume = newVal / 100
+            const sink = Pipewire.defaultAudioSink
+            if (sink && sink.audio) {
+                sink.audio.muted = false
+                sink.audio.volume = Math.max(0, Math.min(1.0, newVal / 100))
             } else {
                 volumeSetProc.command = ["${getExe' pkgs.wireplumber "wpctl"}", "set-volume", "@DEFAULT_AUDIO_SINK@", (newVal / 100).toString()]
                 volumeSetProc.running = true
@@ -161,8 +172,9 @@ if isNiri then
         }
 
         function toggleMute() {
-            if (audioReady && audioObj) {
-                audioObj.muted = !audioObj.muted
+            const sink = Pipewire.defaultAudioSink
+            if (sink && sink.audio) {
+                sink.audio.muted = !sink.audio.muted
             } else {
                 volumeMuteProc.running = true
             }
@@ -299,6 +311,7 @@ if isNiri then
             property bool isMuted: false
             property var controlTheme: null
             property var valueChangedHandler: null
+            property bool liveValue: false
 
             height: 70
             radius: 8
@@ -372,13 +385,13 @@ if isNiri then
                         onPositionChanged: (mouse) => {
                             if (pressed) {
                                 var newVal = Math.max(0, Math.min(100, (mouse.x / width) * 100))
-                                sliderCard.value = Math.round(newVal)
+                                if (!sliderCard.liveValue) sliderCard.value = Math.round(newVal)
                                 if (sliderCard.valueChangedHandler) sliderCard.valueChangedHandler(newVal)
                             }
                         }
                         onClicked: (mouse) => {
                             var newVal = Math.max(0, Math.min(100, (mouse.x / width) * 100))
-                            sliderCard.value = Math.round(newVal)
+                            if (!sliderCard.liveValue) sliderCard.value = Math.round(newVal)
                             if (sliderCard.valueChangedHandler) sliderCard.valueChangedHandler(newVal)
                         }
                     }
@@ -1360,6 +1373,7 @@ if isNiri then
                             accentColor: root.theme.blue
                             isMuted: root.isMuted
                             controlTheme: root.theme
+                            liveValue: true
                             valueChangedHandler: (newVal) => root.setVolume(newVal)
                         }
 
