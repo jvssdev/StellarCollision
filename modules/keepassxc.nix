@@ -45,7 +45,7 @@ in
         [PasswordGenerator]
         Length=24
       '';
-      type = "copy";
+      clobber = true;
     };
   };
 }

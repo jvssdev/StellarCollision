@@ -18,6 +18,7 @@ if isNiri then
     import Quickshell.Io
     import Quickshell.Services.Mpris
     import Quickshell.Services.Pipewire
+    import Quickshell.Networking
 
     import "BluetoothService.qml"
 
@@ -26,7 +27,6 @@ if isNiri then
         property bool shown: false
         property var theme: null
         property var batteryObj: null
-        property var networkObj: null
         property int brightnessLevel: 50
         property bool bluetoothPageVisible: false
         property bool wifiPageVisible: false
@@ -36,35 +36,40 @@ if isNiri then
                 BluetoothService.setScanActive(true);
             }
         }
-        property bool wifiEnabled: false
-        property bool wifiScanning: false
-        property var wifiNetworks: []
-        property string currentWifiSsid: ""
-        property bool wifiConnecting: false
+
+        readonly property var wifiDevice: {
+            for (const d of Networking.devices.values) {
+                if (d.type === DeviceType.Wifi) return d
+            }
+            return null
+        }
+        property bool wifiEnabled: Networking.wifiEnabled
+        property bool wifiScanning: wifiDevice?.scannerEnabled ?? false
+        readonly property var wifiNetworks: {
+            if (!wifiDevice) return []
+            const nets = wifiDevice.networks.values.map(n => ({
+                ssid: n.name,
+                signal: Math.round(n.signalStrength * 100),
+                secure: n.security !== WifiSecurityType.Open,
+                active: n.connected,
+                saved: n.known,
+                connecting: n.stateChanging
+            }))
+            nets.sort((a, b) => {
+                if (a.active) return -1
+                if (b.active) return 1
+                return b.signal - a.signal
+            })
+            return nets
+        }
         property string pendingWifiSsid: ""
+        readonly property var pendingWifiNetwork: root.findWifiNetwork(root.pendingWifiSsid)
         property bool wifiPasswordPageVisible: false
         property bool airplaneMode: false
         property bool dndEnabled: false
 
-        onShownChanged: {
-            if (shown && networkObj && !root.airplaneMode) {
-                root.wifiEnabled = networkObj.type === "wifi"
-                root.currentWifiSsid = networkObj.ssid || ""
-            }
-        }
-
         onWifiPageVisibleChanged: {
-            if (wifiPageVisible && networkObj && !root.airplaneMode) {
-                root.wifiEnabled = networkObj.type === "wifi"
-                wifiListProc.running = true
-            }
-        }
-
-        onNetworkObjChanged: {
-            if (networkObj && !root.airplaneMode) {
-                root.wifiEnabled = networkObj.type === "wifi"
-                root.currentWifiSsid = networkObj.ssid || ""
-            }
+            if (wifiDevice) wifiDevice.scannerEnabled = wifiPageVisible
         }
 
         property var audioSink: Pipewire.defaultAudioSink
@@ -77,151 +82,65 @@ if isNiri then
             objects: [audioSink]
         }
 
-        Process {
-            id: wifiListProc
-            running: false
-            command: ["${getExe pkgs.bash}", "-c", "nmcli -t -f SSID,SIGNAL,SECURITY,ACTIVE dev wifi list 2>/dev/null | head -20"]
-            property string buffer: ""
-            onRunningChanged: {
-                if (running) {
-                    root.wifiScanning = true
-                }
-                if (!running && buffer) {
-                    var lines = buffer.trim().split("\n")
-                    var uniqueSsids = {}
-                    var networks = []
-                    for (var i = 0; i < lines.length; i++) {
-                        var line = lines[i].trim()
-                        if (!line) continue
-                        var parts = line.split(":")
-                        if (parts.length < 4) continue
-                        var active = parts[parts.length - 1] === "yes"
-                        var security = parts[parts.length - 2]
-                        var signal = parseInt(parts[parts.length - 3])
-                        var ssid = parts.slice(0, parts.length - 3).join(":")
-                        if (isNaN(signal)) signal = 0
-                        if (ssid && !uniqueSsids[ssid]) {
-                            uniqueSsids[ssid] = true
-                            networks.push({
-                                ssid: ssid,
-                                signal: signal,
-                                security: security,
-                                active: active,
-                                saved: false
-                            })
-                        }
-                    }
-                    networks.sort((a, b) => {
-                        if (a.active) return -1
-                        if (b.active) return 1
-                        return b.signal - a.signal
-                    })
-                    root.wifiNetworks = networks
-                    root.wifiScanning = false
-                    buffer = ""
-                }
+        function findWifiNetwork(ssid) {
+            if (!wifiDevice) return null
+            for (const n of wifiDevice.networks.values) {
+                if (n.name === ssid) return n
             }
-            stdout: SplitParser {
-                onRead: data => {
-                    wifiListProc.buffer += data + "\n"
-                }
-            }
-        }
-
-        Process {
-            id: wifiRescanProc
-            running: false
-            command: ["${getExe pkgs.bash}", "-c", "nmcli device wifi rescan 2>/dev/null"]
-            onRunningChanged: {
-                if (!running) {
-                    wifiListProc.running = true
-                }
-            }
-        }
-
-        Process {
-            id: wifiToggleProc
-            running: false
-            command: ["${getExe pkgs.bash}", "-c", "true"]
-            onRunningChanged: if (!running) {
-                if (root.wifiEnabled) {
-                    wifiListProc.running = true
-                }
-            }
-        }
-
-        Process {
-            id: wifiConnectProc
-            running: false
-            command: ["${getExe pkgs.bash}", "-c", "true"]
-            onRunningChanged: if (!running) {
-                root.wifiConnecting = false
-                root.wifiPasswordPageVisible = false
-                wifiListProc.running = true
-            }
-        }
-
-        Process {
-            id: wifiDisconnectProc
-            running: false
-            command: ["${getExe pkgs.bash}", "-c", "nmcli dev disconnect iface wlan0"]
-            onRunningChanged: if (!running) {
-                wifiListProc.running = true
-            }
-        }
-
-        Process {
-            id: wifiForgetProc
-            running: false
-            command: ["${getExe pkgs.bash}", "-c", "true"]
-            onRunningChanged: if (!running) {
-                wifiListProc.running = true
-            }
+            return null
         }
 
         function forgetWifi(ssid) {
-            wifiForgetProc.command = ["${getExe pkgs.bash}", "-c", "nmcli connection delete id '" + ssid + "'"]
-            wifiForgetProc.running = true
+            const net = findWifiNetwork(ssid)
+            if (net) net.forget()
         }
 
         function scanWifi() {
-            wifiRescanProc.running = true
+            if (wifiDevice) wifiDevice.scannerEnabled = true
         }
 
         function toggleWifi() {
             if (root.airplaneMode) return
-            var newState = !root.wifiEnabled
-            root.wifiEnabled = newState
-            wifiToggleProc.command = ["${getExe pkgs.bash}", "-c", "nmcli radio wifi " + (newState ? "on" : "off")]
-            wifiToggleProc.running = true
+            Networking.wifiEnabled = !Networking.wifiEnabled
         }
 
         function toggleAirplaneMode() {
             root.airplaneMode = !root.airplaneMode
-            if (root.airplaneMode) {
-                root.wifiEnabled = false
-                wifiToggleProc.command = ["${getExe pkgs.bash}", "-c", "nmcli radio wifi off"]
-                wifiToggleProc.running = true
-            } else {
-                root.wifiEnabled = false
-                wifiToggleProc.command = ["${getExe pkgs.bash}", "-c", "nmcli radio wifi on"]
-                wifiToggleProc.running = true
+            Networking.wifiEnabled = !root.airplaneMode
+            BluetoothService.setBluetoothEnabled(!root.airplaneMode)
+        }
+
+        property string wifiError: ""
+
+        Timer {
+            id: wifiErrorTimer
+            interval: 4000
+            onTriggered: root.wifiError = ""
+        }
+
+        Connections {
+            target: root.pendingWifiNetwork
+            enabled: root.pendingWifiNetwork !== null
+            function onConnectionFailed(reason) {
+                if (reason === ConnectionFailReason.NoSecrets) {
+                    root.wifiPasswordPageVisible = true
+                } else {
+                    root.wifiError = ConnectionFailReason.toString(reason)
+                    wifiErrorTimer.restart()
+                }
             }
         }
 
         function connectWifi(ssid, password) {
-            root.wifiConnecting = true
             root.wifiPasswordPageVisible = false
-            if (password) {
-                wifiConnectProc.command = ["${getExe pkgs.bash}", "-c", "nmcli dev wifi connect '" + ssid + "' password '" + password + "'"]
-            } else {
-                wifiConnectProc.command = ["${getExe pkgs.bash}", "-c", "nmcli dev wifi connect '" + ssid + "'"]
-            }
-            wifiConnectProc.running = true
+            const net = findWifiNetwork(ssid)
+            if (!net) return
+            if (password) net.connectWithPsk(password)
+            else net.connect()
         }
 
         function disconnectWifi() {
-            wifiDisconnectProc.running = true
+            if (wifiDevice) wifiDevice.disconnect()
         }
 
         function getWifiIcon(signal) {
@@ -1284,6 +1203,16 @@ if isNiri then
                             anchors.margins: 12
                             spacing: 8
 
+                            Text {
+                                Layout.fillWidth: true
+                                visible: root.wifiError !== ""
+                                text: root.wifiError
+                                font.family: root.theme.fontFamily
+                                font.pixelSize: 11
+                                color: root.theme.red
+                                wrapMode: Text.WordWrap
+                            }
+
                             ListView {
                                 id: wifiListView
                                 Layout.fillWidth: true
@@ -1300,7 +1229,7 @@ if isNiri then
                                     secure: modelData.secure || false
                                     active: modelData.active || false
                                     saved: modelData.saved || false
-                                    connecting: root.wifiConnecting && root.pendingWifiSsid === modelData.ssid
+                                    connecting: modelData.connecting
                                     controlTheme: root.theme
                                 }
                             }

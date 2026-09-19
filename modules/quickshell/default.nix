@@ -136,7 +136,10 @@ in
       "quickshell/BatteryMonitor.qml".text = BatteryMonitor;
       "quickshell/NotificationPopups.qml".text = NotificationPopups;
       "quickshell/NotificationCenter.qml".text = NotificationCenter;
-      "quickshell/ControlCenter.qml".text = ControlCenter;
+      "quickshell/ControlCenter.qml" = {
+        text = ControlCenter;
+        clobber = true;
+      };
       "quickshell/PowerButton.qml".text = PowerButton;
       "quickshell/PowerMenu.qml".text = PowerMenu;
       "quickshell/WorkspaceModule.qml".text = WorkspaceModule;
@@ -159,7 +162,10 @@ in
       '';
       "quickshell/LockSurface.qml".text = LockSurface;
       "quickshell/LockContext.qml".text = LockContext;
-      "quickshell/BluetoothService.qml".text = BluetoothService;
+      "quickshell/BluetoothService.qml" = {
+        text = BluetoothService;
+        clobber = true;
+      };
       "quickshell/Launcher.qml".text = Launcher;
     }
     // wallpapersSources;
