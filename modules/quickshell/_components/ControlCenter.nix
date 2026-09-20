@@ -16,6 +16,7 @@ if isNiri then
     import Quickshell
     import Quickshell.Wayland
     import Quickshell.Io
+    import QtCore
     import Quickshell.Services.Mpris
     import Quickshell.Services.Pipewire
     import Quickshell.Networking
@@ -68,6 +69,199 @@ if isNiri then
         property bool airplaneMode: false
         property bool dndEnabled: false
 
+        // ── Session persistence (Dank-style FileView JSON) ─────────────────
+        // Survives pkill / logout / QS restart
+        property bool _sessionReady: false
+        property bool _sessionApplying: false
+
+        readonly property string sessionStateDir: {
+            let base = StandardPaths.writableLocation(StandardPaths.GenericStateLocation).toString()
+            if (base.startsWith("file://"))
+                base = base.substring(7)
+            return base + "/stellar"
+        }
+        readonly property string sessionStatePath: root.sessionStateDir + "/session.json"
+
+        FileView {
+            id: sessionFile
+            path: root.sessionStatePath
+            blockLoading: true
+            blockWrites: true
+            atomicWrites: true
+            watchChanges: false
+            printErrors: false
+            onLoaded: root._loadSessionState()
+            Component.onCompleted: sessionMkdirProc.running = true
+        }
+
+        Process {
+            id: sessionMkdirProc
+            running: false
+            command: ["${getExe' pkgs.coreutils "mkdir"}", "-p", root.sessionStateDir]
+            onExited: code => {
+                sessionFile.reload()
+                // If file still missing, onLoaded may not fire — force ready + write defaults
+                sessionReadyFallback.restart()
+            }
+        }
+
+        Timer {
+            id: sessionReadyFallback
+            interval: 800
+            repeat: false
+            onTriggered: {
+                // Only mark ready — never write here (avoids clobbering airplaneMode
+                // before FileView finishes loading session.json)
+                if (!root._sessionReady)
+                    root._sessionReady = true
+            }
+        }
+
+        function _loadSessionState() {
+            root._sessionApplying = true
+            try {
+                const raw = sessionFile.text()
+                if (raw && raw.trim().length > 0) {
+                    const obj = JSON.parse(raw)
+                    if (typeof obj.brightnessLevel === "number") {
+                        const pct = Math.max(0, Math.min(100, Math.round(obj.brightnessLevel)))
+                        root.brightnessLevel = pct
+                        brightnessSetProc.running = false
+                        brightnessSetProc.command = ["${getExe pkgs.brightnessctl}", "-n2", "set", pct + "%"]
+                        brightnessSetProc.running = true
+                    }
+                    // Airplane first so UI binding is correct before side effects
+                    if (typeof obj.airplaneMode === "boolean") {
+                        root.airplaneMode = !!obj.airplaneMode
+                        console.warn("session: loaded airplaneMode =", root.airplaneMode)
+                        if (root.airplaneMode)
+                            sessionAirplaneRestoreTimer.restart()
+                    }
+                    // BT only if not in airplane (airplane restore will force off)
+                    if (typeof obj.bluetoothEnabled === "boolean" && !root.airplaneMode) {
+                        BluetoothService.setBluetoothEnabled(obj.bluetoothEnabled)
+                    }
+                    if (typeof obj.nightLightTemperature === "number") {
+                        root.nightLightTemperature = Math.max(2500, Math.min(6500, Math.round(obj.nightLightTemperature)))
+                    }
+                    if (obj.nightLightEnabled === true) {
+                        sessionNightRestoreTimer.restart()
+                    } else if (obj.nightLightEnabled === false) {
+                        root.nightLightEnabled = false
+                    }
+                    if (typeof obj.dndEnabled === "boolean")
+                        root.dndEnabled = obj.dndEnabled
+                }
+            } catch (e) {
+                console.warn("session.json parse failed:", e)
+            }
+            root._sessionApplying = false
+            root._sessionReady = true
+            // Re-assert airplane UI after bindings settle (Control Center may mount later)
+            if (root.airplaneMode)
+                sessionAirplaneUiTimer.restart()
+        }
+
+        Timer {
+            id: sessionAirplaneUiTimer
+            interval: 1000
+            repeat: false
+            onTriggered: {
+                if (!root.airplaneMode)
+                    return
+                // force property notification for QuickToggle binding
+                root.airplaneMode = false
+                root.airplaneMode = true
+                Networking.wifiEnabled = false
+                BluetoothService.setBluetoothEnabled(false)
+                console.warn("session: airplaneMode restored ON")
+            }
+        }
+
+        Timer {
+            id: sessionNightRestoreTimer
+            interval: 400
+            repeat: false
+            onTriggered: root.startNightLight(root.nightLightTemperature)
+        }
+
+        // Apply radio kill after Networking/BT services are up; re-assert UI flag
+        Timer {
+            id: sessionAirplaneRestoreTimer
+            interval: 600
+            repeat: false
+            onTriggered: {
+                if (!root.airplaneMode)
+                    return
+                root.airplaneMode = true
+                Networking.wifiEnabled = false
+                BluetoothService.setBluetoothEnabled(false)
+            }
+        }
+
+        function flushSessionState() {
+            if (root._sessionApplying)
+                return
+            // mark ready so first Airplane toggle still persists
+            root._sessionReady = true
+            sessionSaveTimer.stop()
+            const obj = {
+                brightnessLevel: root.brightnessLevel,
+                bluetoothEnabled: root.airplaneMode ? false : BluetoothService.enabled,
+                nightLightEnabled: root.nightLightEnabled,
+                nightLightTemperature: root.nightLightTemperature,
+                dndEnabled: root.dndEnabled,
+                airplaneMode: root.airplaneMode
+            }
+            try {
+                sessionFile.setText(JSON.stringify(obj, null, 2) + "\n")
+            } catch (e) {
+                console.warn("session.json save failed:", e)
+            }
+        }
+
+        function saveSessionState() {
+            if (!root._sessionReady || root._sessionApplying)
+                return
+            sessionSaveTimer.restart()
+        }
+
+        Timer {
+            id: sessionSaveTimer
+            interval: 300
+            repeat: false
+            onTriggered: {
+                if (!root._sessionReady || root._sessionApplying)
+                    return
+                const obj = {
+                    brightnessLevel: root.brightnessLevel,
+                    bluetoothEnabled: BluetoothService.enabled,
+                    nightLightEnabled: root.nightLightEnabled,
+                    nightLightTemperature: root.nightLightTemperature,
+                    dndEnabled: root.dndEnabled,
+                    airplaneMode: root.airplaneMode
+                }
+                try {
+                    sessionFile.setText(JSON.stringify(obj, null, 2) + "\n")
+                } catch (e) {
+                    console.warn("session.json save failed:", e)
+                }
+            }
+        }
+
+        // Debounced persist on relevant changes
+        onBrightnessLevelChanged: root.saveSessionState()
+        onNightLightEnabledChanged: root.saveSessionState()
+        onNightLightTemperatureChanged: root.saveSessionState()
+        onDndEnabledChanged: root.saveSessionState()
+        onAirplaneModeChanged: root.flushSessionState()
+
+        Connections {
+            target: BluetoothService
+            function onEnabledChanged() { root.saveSessionState() }
+        }
+
+
         onWifiPageVisibleChanged: {
             if (wifiDevice) wifiDevice.scannerEnabled = wifiPageVisible
         }
@@ -118,6 +312,7 @@ if isNiri then
             root.airplaneMode = !root.airplaneMode
             Networking.wifiEnabled = !root.airplaneMode
             BluetoothService.setBluetoothEnabled(!root.airplaneMode)
+            root.flushSessionState()
         }
 
         property string wifiError: ""
@@ -186,21 +381,142 @@ if isNiri then
 
         property bool nightLightEnabled: false
         property int nightLightTemperature: 4500
+        property bool _nightLightUserAdjust: false
+        property int _pendingNightTemp: -1
+
+        // Same invocation that used to work on this niri setup:
+        //   gammastep -P -O <temp>
+        // Do NOT force -m wayland/drm — that broke gamma on this machine.
+        Process {
+            id: nightLightDaemon
+            running: false
+            command: ["${getExe pkgs.gammastep}", "-P", "-O", "4500"]
+            stderr: SplitParser {
+                onRead: data => console.warn("gammastep:", data)
+            }
+            onRunningChanged: {
+                if (!running && root.nightLightEnabled && !root._nightLightUserAdjust)
+                    root.nightLightEnabled = false
+            }
+        }
 
         Process {
-            id: nightLightProc
+            id: nightLightKillProc
             running: false
-            command: ["bash", "-c", "true"]
+            command: ["${getExe' pkgs.procps "pkill"}", "-9", "-x", "gammastep"]
+        }
+
+        function startNightLight(temp) {
+            temp = Math.max(2500, Math.min(6500, Math.round(temp || root.nightLightTemperature)))
+            root._nightLightUserAdjust = true
+            root.nightLightTemperature = temp
+            root.nightLightEnabled = true
+
+            // stop previous instance, then start with new temp
+            nightLightDaemon.running = false
+            nightLightKillProc.running = false
+            nightLightKillProc.running = true
+
+            nightLightDaemon.command = [
+                "${getExe pkgs.gammastep}",
+                "-P",
+                "-O", "" + temp
+            ]
+            // small delay so pkill finishes
+            nightLightStartTimer.restart()
+        }
+
+        Timer {
+            id: nightLightStartTimer
+            interval: 250
+            repeat: false
+            onTriggered: {
+                nightLightDaemon.running = true
+                nightLightUnlockTimer.restart()
+            }
+        }
+
+        Timer {
+            id: nightLightUnlockTimer
+            interval: 600
+            repeat: false
+            onTriggered: root._nightLightUserAdjust = false
+        }
+
+        function stopNightLight() {
+            root._nightLightUserAdjust = true
+            root.nightLightEnabled = false
+            nightLightDaemon.running = false
+            nightLightKillProc.running = false
+            nightLightKillProc.running = true
+            // avoid hanging `gammastep -x` — pkill is enough to drop the ramp on many setups
+            nightLightUnlockTimer.restart()
         }
 
         function toggleNightLight() {
-            root.nightLightEnabled = !root.nightLightEnabled
-            if (root.nightLightEnabled) {
-                nightLightProc.command = ["bash", "-c", "pkill gammastep 2>/dev/null; gammastep -P -O " + root.nightLightTemperature + " &"]
-                nightLightProc.startDetached()
-            } else {
-                nightLightProc.command = ["bash", "-c", "pkill gammastep 2>/dev/null; gammastep -x"]
-                nightLightProc.running = true
+            if (root.nightLightEnabled || nightLightDaemon.running)
+                root.stopNightLight()
+            else
+                root.startNightLight(root.nightLightTemperature)
+        }
+
+        function setNightLightTemp(temp) {
+            temp = Math.max(2500, Math.min(6500, Math.round(temp)))
+            root.nightLightTemperature = temp
+            root._pendingNightTemp = temp
+            root.nightLightEnabled = true
+            nightLightApplyTimer.restart()
+        }
+
+        Timer {
+            id: nightLightApplyTimer
+            interval: 200
+            repeat: false
+            onTriggered: {
+                if (root._pendingNightTemp >= 0)
+                    root.startNightLight(root._pendingNightTemp)
+                root._pendingNightTemp = -1
+            }
+        }
+
+        // Re-detect external/orphan gammastep after QS restart
+        Process {
+            id: checkNightLightProc
+            running: false
+            command: ["${getExe pkgs.bash}", "-c",
+                "pid=$(${getExe' pkgs.procps "pgrep"} -x gammastep 2>/dev/null | head -n1); "
+                + "if [ -z \"$pid\" ]; then echo '0:'; exit 0; fi; "
+                + "cmd=$(tr '\\0' ' ' < /proc/$pid/cmdline 2>/dev/null || true); "
+                + "temp=$(printf '%s' \"$cmd\" | ${getExe pkgs.gnugrep} -oE -- '-O[[:space:]]*[0-9]+' | ${getExe pkgs.gnugrep} -oE '[0-9]+' | head -n1); "
+                + "echo \"1:''${temp:-}\""
+            ]
+            stdout: SplitParser {
+                onRead: data => {
+                    if (root._nightLightUserAdjust || nightLightDaemon.running)
+                        return
+                    const s = data.trim()
+                    const idx = s.indexOf(":")
+                    if (idx < 0) return
+                    if (s.substring(0, idx) === "1") {
+                        root.nightLightEnabled = true
+                        const t = parseInt(s.substring(idx + 1), 10)
+                        if (!isNaN(t) && t >= 2500 && t <= 6500)
+                            root.nightLightTemperature = t
+                    }
+                }
+            }
+        }
+
+        Timer {
+            interval: 4000
+            running: true
+            repeat: true
+            triggeredOnStart: true
+            onTriggered: {
+                if (!root._nightLightUserAdjust && !nightLightDaemon.running) {
+                    checkNightLightProc.running = false
+                    checkNightLightProc.running = true
+                }
             }
         }
 
@@ -214,41 +530,19 @@ if isNiri then
         property bool mediaPlaying: activePlayer?.isPlaying || false
 
         function getActivePlayer() {
-            var players = Mpris.players.values;
-            if (players.length === 0) return null;
+            var players = Mpris.players.values
+            if (players.length === 0) return null
             for (var i = 0; i < players.length; i++) {
-                if (players[i].isPlaying) return players[i];
+                if (players[i].isPlaying) return players[i]
             }
-            return players[0];
+            return players[0]
         }
 
         Timer {
             interval: 1000
             running: true
             repeat: true
-            onTriggered: {
-                root.activePlayer = root.getActivePlayer()
-            }
-        }
-
-        function setNightLightTemp(temp) {
-            root.nightLightTemperature = temp
-            nightLightProc.command = ["bash", "-c", "pkill gammastep 2>/dev/null; gammastep -P -O " + temp + " &"]
-            if (!root.nightLightEnabled) {
-                root.nightLightEnabled = true
-            }
-            nightLightProc.startDetached()
-        }
-
-        Process {
-            id: checkNightLightProc
-            running: true
-            command: ["${getExe pkgs.bash}", "-c", "pgrep gammastep > /dev/null && echo 1 || echo 0"]
-            stdout: SplitParser {
-                onRead: data => {
-                    root.nightLightEnabled = data.trim() === "1"
-                }
-            }
+            onTriggered: root.activePlayer = root.getActivePlayer()
         }
 
         component QuickToggle: Rectangle {
@@ -863,20 +1157,36 @@ if isNiri then
             }
         }
 
+        function refreshBrightness() {
+            brightnessGetProc.running = false
+            brightnessGetProc.running = true
+        }
+
         Process {
             id: brightnessGetProc
-            command: ["${getExe pkgs.brightnessctl}", "-m", "get"]
+            running: false
+            // machine-readable: device,class,current,percent%,max
+            command: ["${getExe pkgs.brightnessctl}", "-m", "info"]
             stdout: SplitParser {
                 onRead: data => {
-                    if (data) {
-                        var parts = data.trim().split(",")
-                        if (parts.length >= 4) {
-                            var current = parseInt(parts[2])
-                            var max = parseInt(parts[3])
-                            if (max > 0) {
-                                root.brightnessLevel = Math.round((current / max) * 100)
-                            }
+                    if (!data)
+                        return
+                    const line = data.trim().split(/\n/)[0]
+                    const parts = line.split(",")
+                    // Prefer the percentage field (e.g. "40%") — same scale as `set N%` without -e
+                    if (parts.length >= 4) {
+                        const pct = parseInt(parts[3], 10)
+                        if (!isNaN(pct) && pct >= 0 && pct <= 100) {
+                            root.brightnessLevel = pct
+                            return
                         }
+                    }
+                    // Fallback: current/max
+                    if (parts.length >= 5) {
+                        const current = parseInt(parts[2], 10)
+                        const max = parseInt(parts[4], 10)
+                        if (max > 0 && !isNaN(current))
+                            root.brightnessLevel = Math.round((current / max) * 100)
                     }
                 }
             }
@@ -884,15 +1194,23 @@ if isNiri then
 
         Process {
             id: brightnessSetProc
-            command: ["${getExe pkgs.brightnessctl}", "-e4", "-n2", "set", "50%"]
+            running: false
+            // linear % (no -e) so set matches the percentage we read from -m info
+            command: ["${getExe pkgs.brightnessctl}", "-n2", "set", "50%"]
         }
 
         Timer {
-            interval: 5000
+            interval: root.shown ? 1500 : 5000
             running: true
             repeat: true
             triggeredOnStart: true
-            onTriggered: brightnessGetProc.running = true
+            onTriggered: root.refreshBrightness()
+        }
+
+        onShownChanged: {
+            if (shown) {
+                root.refreshBrightness()
+            }
         }
 
         Process {
@@ -1358,7 +1676,8 @@ if isNiri then
                                         from: 2500
                                         to: 6500
                                         value: root.nightLightTemperature
-                                        onValueChanged: root.setNightLightTemp(Math.round(value))
+                                        // only apply when user moves — avoid restart loop when syncing from system
+                                        onMoved: root.setNightLightTemp(Math.round(value))
                                     }
                                     Text { text: "6500"; font.pixelSize: 9; color: root.theme.fgMuted }
                                 }
@@ -1385,9 +1704,14 @@ if isNiri then
                             accentColor: root.theme.yellow
                             controlTheme: root.theme
                             valueChangedHandler: (newVal) => {
-                                brightnessSetProc.command = ["${getExe pkgs.brightnessctl}", "-e4", "-n2", "set", newVal + "%"]
+                                const pct = Math.max(0, Math.min(100, Math.round(newVal)))
+                                root.brightnessLevel = pct
+                                brightnessSetProc.running = false
+                                // linear percentage — same scale as brightnessGetProc
+                                brightnessSetProc.command = ["${getExe pkgs.brightnessctl}", "-n2", "set", pct + "%"]
                                 brightnessSetProc.running = true
                             }
+                            liveValue: true
                         }
 
                         Rectangle {
