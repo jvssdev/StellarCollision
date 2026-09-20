@@ -16,24 +16,70 @@ let
       id = "eimadpbcbfnmbkopoojfekhnkhdbieeh";
     };
     ublock-origin = {
-      id = "cjpalhdlnbpafiamejdnhcphjbkeiagm";
-      policy.toOverwrite.filterLists = [
-        "user-filters"
-        "ublock-filters"
-        "ublock-badware"
-        "ublock-privacy"
-        "ublock-abuse"
-        "ublock-unbreak"
-        "easylist"
-        "easyprivacy"
-        "urlhaus-1"
-        "plowe-0"
-        "https://raw.githubusercontent.com/DandelionSprout/adfilt/refs/heads/master/ClearURLs%20for%20uBo/clear_urls_uboified.txt"
-        "https://raw.githubusercontent.com/yokoffing/filterlists/refs/heads/main/privacy_essentials.txt"
-        "https://raw.githubusercontent.com/DandelionSprout/adfilt/refs/heads/master/LegitimateURLShortener.txt"
-        "https://raw.githubusercontent.com/yokoffing/filterlists/refs/heads/main/annoyance_list.txt"
-        "https://raw.githubusercontent.com/DandelionSprout/adfilt/refs/heads/master/BrowseWebsitesWithoutLoggingIn.txt"
-      ];
+      id = "blockjmkbacgjkknlgpkjjiijinjdanf";
+      preinstalled = true;
+
+      policy = {
+        userSettings = [
+          [
+            "suspendUntilListsAreLoaded"
+            "true"
+          ]
+          [
+            "userFiltersTrusted"
+            "true"
+          ]
+        ];
+
+        toOverwrite = {
+          filterLists = [
+            "user-filters"
+            "ublock-filters"
+            "ublock-badware"
+            "ublock-privacy"
+            "ublock-abuse"
+            "ublock-unbreak"
+            "easylist"
+            "easyprivacy"
+            "urlhaus-1"
+            "plowe-0"
+          ];
+
+          # filters = [
+          #   # Reddit: allow pages that would otherwise be affected by the redirect rules.
+          #   "@@||reddit.com/media$document"
+          #   "@@||reddit.com/mod$document"
+          #   "@@||reddit.com/poll$document"
+          #   "@@||reddit.com/settings$document"
+          #   "@@||reddit.com/topics$document"
+          #   "@@||reddit.com/community-points$document"
+          #   "@@||reddit.com/appeal$document"
+          #   "@@||reddit.com/appeals$document"
+          #   "@@||reddit.com/notifications$document"
+          #   "@@||reddit.com/message/compose/$document"
+          #   "@@||reddit.com/mail^$document"
+          #   "@@||reddit.com/answers^$document"
+          #   "@@||reddit.com/r/subreddit^$document"
+          #
+          #   # Reddit: exceptions for subreddit share links and old-reddit query parameter.
+          #   ''@@/^https:\/\/\w*\.?reddit\.com\/r\/[A-Za-z0-9_]+\/s\//$document''
+          #   ''@@/^https:\/\/\w*\.?reddit\.com\/.*[?&]new_reddit=true(?:$|[&#])/$document''
+          #
+          #   # Reddit: redirect gallery links to the corresponding old Reddit page.
+          #   ''||reddit.com/gallery/$document,uritransform=/^https:\/\/(?:www\.|np\.|amp\.|i\.)?reddit\.com\/gallery\/(.*)/https:\/\/old.reddit.com\/comments\/\$1/''
+          #
+          #   # Reddit: redirect Reddit pages to old.reddit.com.
+          #   ''||reddit.com^$document,uritransform=/^https:\/\/(?:www\.|np\.|amp\.|i\.)?reddit\.com\/(?!gallery\/)/https:\/\/old.reddit.com\//''
+          #
+          #   # Reddit: remove old Reddit's cookie policy and redesign opt-in prompt.
+          #   "old.reddit.com##:is(#eu-cookie-policy, #redesign-beta-optin-btn)"
+          #
+          #   # Reddit: enlarge thumbnails while preserving aspect ratio and position.
+          #   "old.reddit.com##.link > .thumbnail:style(float:left !important; width:200px !important; height:auto !important; max-height:280px !important; margin:0 12px 5px 0 !important; overflow:hidden !important;)"
+          #   "old.reddit.com##.link > .thumbnail > img:style(display:block !important; width:auto !important; height:auto !important; max-width:200px !important; max-height:280px !important;)"
+          # ];
+        };
+      };
     };
     violentmonkey = {
       id = "jinjaccalgkegednnccohejagnlnfdag";
@@ -173,7 +219,12 @@ in
 
     environment.etc = {
       "chromium/policies/managed/policies.json".text = builtins.toJSON policy;
-      "helium/policies/managed/policies.json".text = builtins.toJSON policy;
+
+      "chromium/policies/managed/ublock.json".text = builtins.toJSON {
+        "3rdparty".extensions = {
+          "blockjmkbacgjkknlgpkjjiijinjdanf" = extensions.ublock-origin.policy;
+        };
+      };
     };
   };
 }

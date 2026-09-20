@@ -77,7 +77,7 @@ in
       palette = 14=${strip c.base0C}
       palette = 15=${strip c.base06}
       shell-integration = zsh
-      shell-integration-features = sudo,title,no-cursor
+      shell-integration-features = sudo,no-title,no-cursor
       window-decoration = false
     '';
   };

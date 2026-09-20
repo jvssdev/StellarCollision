@@ -66,6 +66,12 @@ in
           SAVEHIST=100000
           HISTFILE="${xdgCache}/zsh/history"
 
+          function set-tab-title() {
+              print -Pn "\e]0;%~\a"
+          }
+
+          precmd_functions+=(set-tab-title)
+
           autoload -Uz compinit
           if [[ -n "${xdgCache}/zsh/zcompdump-$ZSH_VERSION"(#qN.mh+24) ]]; then
             compinit -d ${xdgCache}/zsh/zcompdump-$ZSH_VERSION

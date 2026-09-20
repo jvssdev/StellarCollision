@@ -133,7 +133,6 @@ if isNiri then
                     // Airplane first so UI binding is correct before side effects
                     if (typeof obj.airplaneMode === "boolean") {
                         root.airplaneMode = !!obj.airplaneMode
-                        console.warn("session: loaded airplaneMode =", root.airplaneMode)
                         if (root.airplaneMode)
                             sessionAirplaneRestoreTimer.restart()
                     }
@@ -174,7 +173,6 @@ if isNiri then
                 root.airplaneMode = true
                 Networking.wifiEnabled = false
                 BluetoothService.setBluetoothEnabled(false)
-                console.warn("session: airplaneMode restored ON")
             }
         }
 
@@ -391,9 +389,6 @@ if isNiri then
             id: nightLightDaemon
             running: false
             command: ["${getExe pkgs.gammastep}", "-P", "-O", "4500"]
-            stderr: SplitParser {
-                onRead: data => console.warn("gammastep:", data)
-            }
             onRunningChanged: {
                 if (!running && root.nightLightEnabled && !root._nightLightUserAdjust)
                     root.nightLightEnabled = false
