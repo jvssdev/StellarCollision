@@ -377,8 +377,8 @@ in
                       color: theme.fgSubtle
                   }
                   Text {
-                      text: volume.muted ? " Muted " : " "
-                      color: volume.muted ? theme.fgSubtle : theme.blue
+                      text: volume.muted ? " " : (volume.level === 0 ? " " : " ")
+                      color: (volume.muted || volume.level === 0) ? theme.fgSubtle : theme.blue
                       font {
                           family: theme.fontFamily
                           pixelSize: theme.fontPixelSize
@@ -481,7 +481,6 @@ in
                           onClicked: powerMenu.shown = true
                       }
                   }
-                  Item { width: theme.padding / 2 }
               }
           }
       }
