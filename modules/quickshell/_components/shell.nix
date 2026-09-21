@@ -56,12 +56,18 @@ in
               notification.tracked = true
               var entry = {
                   id: notification.id,
-                  appName: notification.appName,
-                  summary: notification.summary,
-                  body: notification.body,
-                  urgency: notification.urgency
+                  appName: notification.appName || "",
+                  summary: notification.summary || "",
+                  body: notification.body || "",
+                  urgency: notification.urgency !== undefined ? notification.urgency : 1,
+                  appIcon: notification.appIcon || "",
+                  image: notification.image || "",
+                  time: Date.now()
               }
-              root.notificationHistory = [entry].concat(root.notificationHistory)
+              // keep a reasonable history limit (inspired by Caelestia)
+              var h = [entry].concat(root.notificationHistory)
+              if (h.length > 80) h = h.slice(0, 80)
+              root.notificationHistory = h
           }
       }
 
