@@ -403,7 +403,7 @@ in
                           if (connectedCount > 0) return "󰂯 " + connectedCount;
                           return "󰂯";
                       }
-                      color: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? theme.darkBlue : theme.blue
+                      color: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? theme.darkBlue : theme.fgSubtle
                       font {
                           family: theme.fontFamily
                           pixelSize: theme.fontPixelSize
