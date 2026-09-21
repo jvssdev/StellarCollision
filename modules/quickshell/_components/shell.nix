@@ -309,46 +309,6 @@ in
                   WorkspaceModule {}
                   Item { Layout.fillWidth: true }
                   Text {
-                      text: idleInhibitorState.enabled ? "󰛊" : "󰾆"
-                      color: idleInhibitorState.enabled ? theme.orange : theme.fgMuted
-                      font {
-                          family: theme.fontFamily
-                          pixelSize: theme.fontPixelSize
-                          bold: true
-                      }
-                      Layout.rightMargin: theme.spacing / 2
-                      MouseArea {
-                          anchors.fill: parent
-                          cursorShape: Qt.PointingHandCursor
-                          onClicked: idleInhibitorState.enabled = !idleInhibitorState.enabled
-                      }
-                  }
-                  Text {
-                      id: clockText
-                      text: Qt.formatDateTime(new Date(), "HH:mm dd/MM")
-                      color: theme.darkBlue
-                      font {
-                          family: theme.fontFamily
-                          pixelSize: theme.fontPixelSize
-                          bold: true
-                      }
-                      Layout.rightMargin: theme.spacing / 2
-                      Timer {
-                          interval: 1000
-                          running: true
-                          repeat: true
-                          onTriggered: clockText.text = Qt.formatDateTime(new Date(), "HH:mm dd/MM")
-                      }
-                  }
-                  Rectangle {
-                      Layout.preferredWidth: theme.borderWidth
-                      Layout.preferredHeight: 16
-                      Layout.alignment: Qt.AlignVCenter
-                      Layout.leftMargin: 0
-                      Layout.rightMargin: theme.spacing / 2
-                      color: theme.fgSubtle
-                  }
-                  Text {
                       text: " " + cpu.usage + "%"
                       color: cpu.usage > 85 ? theme.red : theme.green
                       font {
@@ -377,19 +337,14 @@ in
                       color: theme.fgSubtle
                   }
                   Text {
-                      text: volume.muted ? " " : (volume.level === 0 ? " " : " ")
-                      color: (volume.muted || volume.level === 0) ? theme.fgSubtle : theme.blue
+                      text: network.icon
+                      color: !network.connected ? theme.fgMuted : (network.type === "ethernet" ? theme.darkBlue : theme.blue)
                       font {
                           family: theme.fontFamily
                           pixelSize: theme.fontPixelSize
                           bold: true
                       }
                       Layout.rightMargin: theme.spacing / 2
-                      MouseArea {
-                          anchors.fill: parent
-                          cursorShape: Qt.PointingHandCursor
-                          onClicked: pavuProcess.running = true
-                      }
                   }
                   Text {
                       text: {
@@ -412,14 +367,34 @@ in
                       Layout.rightMargin: theme.spacing / 2
                   }
                   Text {
-                      text: network.icon
-                      color: !network.connected ? theme.fgMuted : (network.type === "ethernet" ? theme.darkBlue : theme.blue)
+                      text: volume.muted ? " " : (volume.level === 0 ? " " : " ")
+                      color: (volume.muted || volume.level === 0) ? theme.fgSubtle : theme.blue
                       font {
                           family: theme.fontFamily
                           pixelSize: theme.fontPixelSize
                           bold: true
                       }
                       Layout.rightMargin: theme.spacing / 2
+                      MouseArea {
+                          anchors.fill: parent
+                          cursorShape: Qt.PointingHandCursor
+                          onClicked: pavuProcess.running = true
+                      }
+                  }
+                  Text {
+                      text: idleInhibitorState.enabled ? "󰛊" : "󰾆"
+                      color: idleInhibitorState.enabled ? theme.orange : theme.fgMuted
+                      font {
+                          family: theme.fontFamily
+                          pixelSize: theme.fontPixelSize
+                          bold: true
+                      }
+                      Layout.rightMargin: theme.spacing / 2
+                      MouseArea {
+                          anchors.fill: parent
+                          cursorShape: Qt.PointingHandCursor
+                          onClicked: idleInhibitorState.enabled = !idleInhibitorState.enabled
+                      }
                   }
                   Text {
                       text: controlCenter.dndEnabled ? "󰂛" : "󰂚"
@@ -480,6 +455,23 @@ in
                           cursorShape: Qt.PointingHandCursor
                           onClicked: powerMenu.shown = true
                       }
+                  }
+              }
+              Text {
+                  id: clockText
+                  anchors.centerIn: parent
+                  text: Qt.formatDateTime(new Date(), "ddd HH:mm dd/MM")
+                  color: theme.darkBlue
+                  font {
+                      family: theme.fontFamily
+                      pixelSize: theme.fontPixelSize
+                      bold: true
+                  }
+                  Timer {
+                      interval: 1000
+                      running: true
+                      repeat: true
+                      onTriggered: clockText.text = Qt.formatDateTime(new Date(), "ddd HH:mm dd/MM")
                   }
               }
           }
