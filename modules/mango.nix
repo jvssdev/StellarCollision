@@ -166,6 +166,7 @@ in
       bind=SUPER,n,spawn,${getExe quickshell} ipc call notificationCenter toggle
       bind=SUPER,b,spawn,${config.cfg.vars.browser}
       bind=SUPER,x,spawn,${getExe quickshell} ipc call powerMenu toggle
+      bind=SUPER,y,spawn,${getExe quickshell} ipc call wallpaperPicker toggle
       bind=SUPER,p,spawn,${getExe screenshot}
       bind=SUPER,v,spawn,${getExe clipboard.fuzzel-clipboard}
       bind=SUPER+SHIFT,v,spawn,${getExe clipboard.fuzzel-clipboard-clear}

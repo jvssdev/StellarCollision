@@ -115,6 +115,63 @@ else if isMango then
     RowLayout {
         id: workspaceModule
         spacing: 4
+
+        // New mmsg IPC is JSON-only:
+        //   mmsg get all-tags  → { "all_tags": [ { "monitor": "...", "tags": [ { index, is_active, is_urgent, layout, client_count }, ... ] }, ... ] }
+        //   mmsg watch all-tags → streams the same shape on change
+        function applyTagsJson(obj) {
+            if (!obj)
+                return;
+
+            // Prefer focused monitor entry if present; otherwise first entry
+            let tags = null;
+            let layoutSymbol = "";
+            if (obj.all_tags && obj.all_tags.length > 0) {
+                // Use first monitor for now (single-monitor is common; multi can be refined later)
+                const entry = obj.all_tags[0];
+                tags = entry.tags || [];
+            } else if (obj.tags) {
+                tags = obj.tags;
+            }
+            if (!tags)
+                return;
+
+            for (let i = 0; i < 9; i++) {
+                dwlTagsModel.setProperty(i, "isActive", false);
+                dwlTagsModel.setProperty(i, "isOccupied", false);
+                dwlTagsModel.setProperty(i, "isUrgent", false);
+            }
+
+            for (let t = 0; t < tags.length; t++) {
+                const tag = tags[t];
+                const id = tag.index | 0;
+                if (id < 1 || id > 9)
+                    continue;
+                const active = !!tag.is_active;
+                const urgent = !!tag.is_urgent;
+                const occupied = (tag.client_count | 0) > 0;
+                dwlTagsModel.setProperty(id - 1, "isActive", active);
+                dwlTagsModel.setProperty(id - 1, "isOccupied", occupied);
+                dwlTagsModel.setProperty(id - 1, "isUrgent", urgent);
+                if (active && tag.layout)
+                    layoutSymbol = String(tag.layout).replace(/[\[\]]/g, "");
+            }
+            dwlLayoutText.text = layoutSymbol ? "[" + layoutSymbol + "]" : "";
+        }
+
+        function parseMmsgJson(data) {
+            if (!data)
+                return;
+            const text = data.trim();
+            if (!text || text[0] !== "{")
+                return;
+            try {
+                applyTagsJson(JSON.parse(text));
+            } catch (e) {
+                console.log("WorkspaceModule: failed to parse mmsg JSON:", e);
+            }
+        }
+
         RowLayout {
             spacing: 12
             Row {
@@ -161,56 +218,27 @@ else if isMango then
         }
         Process {
             id: dwlUpdateProc
-            command: ["mmsg", "-g"]
+            command: ["mmsg", "get", "all-tags"]
             stdout: SplitParser {
-                onRead: data => {
-                    if (!data) return;
-                    const parts = data.trim().split(/\s+/);
-
-                    const tagIndex = parts.indexOf("tag");
-                    if (tagIndex !== -1 && parts.length > tagIndex + 4) {
-                        const id = parseInt(parts[tagIndex + 1]);
-                        if (id >= 1 && id <= 9) {
-                            const state = parts[tagIndex + 2];
-                            const active = state === "1";
-                            const urgent = state === "2";
-                            const occupied = parseInt(parts[tagIndex + 3]) > 0;
-
-                            dwlTagsModel.setProperty(id - 1, "isActive", active);
-                            dwlTagsModel.setProperty(id - 1, "isOccupied", occupied);
-                            dwlTagsModel.setProperty(id - 1, "isUrgent", urgent);
-                        }
-                    }
-
-                    const layoutIndex = parts.indexOf("layout");
-                    if (layoutIndex !== -1 && parts.length > layoutIndex + 1) {
-                        const symbol = parts[layoutIndex + 1] || "";
-                        dwlLayoutText.text = symbol ? "[" + symbol.replace(/[\[\]]/g, "") + "]" : "";
-                    }
-                }
+                onRead: data => workspaceModule.parseMmsgJson(data)
             }
         }
         Process {
             id: dwlWatchProc
-            command: ["mmsg", "-w"]
+            command: ["mmsg", "watch", "all-tags"]
             running: true
             stdout: SplitParser {
-                onRead: data => {
-                    if (data.trim()) {
-                        dwlUpdateProc.running = true;
-                    }
-                }
+                onRead: data => workspaceModule.parseMmsgJson(data)
             }
         }
         Timer {
-            interval: 250
+            interval: 2000
             running: true
             repeat: true
             triggeredOnStart: true
             onTriggered: {
-                if (!dwlUpdateProc.running) {
+                if (!dwlUpdateProc.running)
                     dwlUpdateProc.running = true;
-                }
             }
         }
         Component.onCompleted: dwlUpdateProc.running = true

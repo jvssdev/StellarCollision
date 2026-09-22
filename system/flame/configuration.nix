@@ -14,11 +14,9 @@ in
 
   cfg = {
     drivers.intel.enable = true;
-    mango.enable = false;
-    niri.enable = true;
-    quickshell = {
-      enable = true;
-    };
+    mango.enable = true;
+    niri.enable = false;
+    quickshell.enable = true;
     sessionVariables.enable = true;
     portals.enable = true;
     ghostty.enable = true;

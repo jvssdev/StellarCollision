@@ -8,7 +8,7 @@
 let
   inherit (lib) getExe getExe';
 in
-if isNiri then
+if isNiri || isMango then
   /* qml */ ''
     import QtQuick
     import QtQuick.Layouts
@@ -1877,20 +1877,6 @@ if isNiri then
         }
     }
   ''
-else if isMango then
-  /* qml */ ''
-    import QtQuick
-    import Quickshell
-    Scope {
-        id: root
-        property bool shown: false
-        property var theme: null
-
-        function toggle() {
-            shown = !shown
-        }
-    }
-  ''
 else
   /* qml */ ''
     import QtQuick
@@ -1899,6 +1885,8 @@ else
         id: root
         property bool shown: false
         property var theme: null
+        property var batteryObj: null
+        property bool dndEnabled: false
 
         function toggle() {
             shown = !shown
