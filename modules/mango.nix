@@ -162,14 +162,14 @@ in
 
       bind=SUPER,r,reload_config
       bind=SUPER,t,spawn,${getExe pkgs.${config.cfg.vars.terminal}}
-      bind=SUPER,a,spawn,${getExe pkgs.fuzzel}
+      bind=SUPER,a,spawn,${getExe quickshell} ipc call launcher toggle
       bind=SUPER,n,spawn,${getExe quickshell} ipc call notificationCenter toggle
       bind=SUPER,b,spawn,${config.cfg.vars.browser}
       bind=SUPER,x,spawn,${getExe quickshell} ipc call powerMenu toggle
       bind=SUPER,y,spawn,${getExe quickshell} ipc call wallpaperPicker toggle
       bind=SUPER,p,spawn,${getExe screenshot}
-      bind=SUPER,v,spawn,${getExe clipboard.fuzzel-clipboard}
-      bind=SUPER+SHIFT,v,spawn,${getExe clipboard.fuzzel-clipboard-clear}
+      bind=SUPER,v,spawn,${getExe quickshell} ipc call launcher openClipboard
+      bind=SUPER+SHIFT,v,spawn,${getExe quickshell} ipc call launcher clearClipboard
 
       bind=SUPER,q,killclient
       bind=SUPER,space,togglefloating
@@ -194,7 +194,7 @@ in
       bind=SUPER,c,setlayout,tile
       bind=SUPER,m,setlayout,monocle
       bind=SUPER,s,setlayout,scroller
-      bind=SUPER,y,switch_layout
+      bind=SUPER,Tab,switch_layout
       bind=SUPER,g,togglegaps
       bind=SUPER,o,toggleoverview
 
