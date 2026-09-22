@@ -11,6 +11,7 @@ let
 in
 /* qml */ ''
   //@ pragma ShellId stellar
+  //@ pragma IconTheme FairyWren_Dark
   import QtQuick
   import QtQuick.Layouts
   import QtQuick.Effects
@@ -43,6 +44,20 @@ in
       }
       property var notificationHistory: []
 
+      function resolveIcon(name) {
+          if (!name) return ""
+          var ic = String(name)
+          if (ic.startsWith("file://")) return ic
+          if (ic.startsWith("/")) {
+              if (ic.indexOf("/nix/store/") === 0) {
+                  var base = ic.split("/").pop().replace(/\.[^.]+$/, "")
+                  return Quickshell.iconPath(base, true)
+              }
+              return "file://" + ic
+          }
+          return Quickshell.iconPath(ic, true)
+      }
+
       NotificationServer {
           id: notificationServer
           actionsSupported: true
@@ -60,7 +75,7 @@ in
                   summary: notification.summary || "",
                   body: notification.body || "",
                   urgency: notification.urgency !== undefined ? notification.urgency : 1,
-                  appIcon: notification.appIcon || "",
+                  appIcon: root.resolveIcon(notification.appIcon || ""),
                   image: notification.image || "",
                   time: Date.now()
               }
@@ -305,6 +320,7 @@ in
           implicitHeight: 20
           color: "transparent"
           Process { id: pavuProcess; command: ["${getExe pkgs.pavucontrol}"] }
+          Process { id: calendarProcess; command: ["${getExe pkgs.thunderbird}", "-calendar"] }
           Rectangle {
               anchors.fill: parent
               color: theme.bg
@@ -478,6 +494,11 @@ in
                       running: true
                       repeat: true
                       onTriggered: clockText.text = Qt.formatDateTime(new Date(), "ddd HH:mm dd/MM")
+                  }
+                  MouseArea {
+                      anchors.fill: parent
+                      cursorShape: Qt.PointingHandCursor
+                      onClicked: calendarProcess.running = true
                   }
               }
           }

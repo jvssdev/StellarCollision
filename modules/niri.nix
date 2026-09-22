@@ -187,7 +187,7 @@ in
        // }
 
        window-rule {
-           match app-id=r#"(?i)(firefox|zen|zen-browser|zen-beta|chromium|helium)"#
+           match app-id=r#"(?i)(firefox|zen|zen-browser|zen-beta|chromium|helium|thunderbird)"#
            open-maximized true
             border {
                     off

@@ -15,6 +15,20 @@ _:
       property bool dndEnabled: false
       property int maxVisible: 5
 
+      function resolveIcon(name) {
+          if (!name) return ""
+          var ic = String(name)
+          if (ic.startsWith("file://")) return ic
+          if (ic.startsWith("/")) {
+              if (ic.indexOf("/nix/store/") === 0) {
+                  var base = ic.split("/").pop().replace(/\.[^.]+$/, "")
+                  return Quickshell.iconPath(base, true)
+              }
+              return "file://" + ic
+          }
+          return Quickshell.iconPath(ic, true)
+      }
+
       implicitWidth: 400
       implicitHeight: 900
       screen: Quickshell.screens[0]
@@ -238,7 +252,7 @@ _:
                                       id: appIconImg
                                       anchors.fill: parent
                                       anchors.margins: 4
-                                      source: modelData && modelData.appIcon ? modelData.appIcon : ""
+                                      source: modelData && modelData.appIcon ? popupsWindow.resolveIcon(modelData.appIcon) : ""
                                       fillMode: Image.PreserveAspectFit
                                       visible: status === Image.Ready && !appImage.visible
                                       layer.enabled: true
