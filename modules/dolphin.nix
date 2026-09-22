@@ -23,27 +23,37 @@ in
   };
 
   config = mkIf cfg.enable {
-    hj.packages = [
-      cfg.package
-      pkgs.kdePackages.dolphin-plugins
-      pkgs.kdePackages.ffmpegthumbs
-      pkgs.kdePackages.ark
-      pkgs.kdePackages.kservice
-      pkgs.kdePackages.filelight
-    ];
+    hj = {
+      packages = [
+        cfg.package
+        pkgs.kdePackages.dolphin-plugins
+        pkgs.kdePackages.ffmpegthumbs
+        pkgs.kdePackages.ark
+        pkgs.kdePackages.kservice
+        pkgs.kdePackages.filelight
+        pkgs.ghostty
+      ];
 
-    hj.xdg.data.files."kio/servicemenus/wezterm-open-here.desktop".text = ''
-      [Desktop Entry]
-      Type=Service
-      ServiceTypes=KonqPopupMenu/Plugin
-      MimeType=inode/directory;
-      Actions=openWeztermHere;
-      X-KDE-Priority=TopLevel
+      xdg.config.files."kdeglobals".text = ''
+        [General]
+        TerminalApplication=ghostty
+        TerminalService=com.mitchellh.ghostty.desktop
+      '';
 
-      [Desktop Action openWeztermHere]
-      Name=Open Terminal Here
-      Icon=org.wezfurlong.wezterm
-      Exec=${pkgs.wezterm}/bin/wezterm start --cwd %f
-    '';
+      xdg.data.files."kio/servicemenus/ghostty-open-here.desktop".text = ''
+        [Desktop Entry]
+        Type=Service
+        ServiceTypes=KonqPopupMenu/Plugin
+        MimeType=inode/directory;
+        Actions=openGhosttyHere;
+        X-KDE-Priority=TopLevel
+
+        [Desktop Action openGhosttyHere]
+        Name=Open Ghostty Here
+        Icon=com.mitchellh.ghostty
+        Exec=${pkgs.ghostty}/bin/ghostty --gtk-single-instance=false --working-directory=%f
+      '';
+    };
+
   };
 }

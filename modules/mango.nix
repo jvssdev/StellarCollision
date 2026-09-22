@@ -15,7 +15,6 @@ let
   cfg = config.cfg.mango;
   c = config.cfg.theme.colors;
 
-  screenshot = pkgs.callPackage ./_screenshot.nix { };
   clipboard = pkgs.callPackage ./_fuzzel-clipboard.nix { };
 
   strip = color: lib.substring 1 6 color;
@@ -38,12 +37,9 @@ in
     };
 
     hj.packages = [
-      screenshot
       clipboard.fuzzel-clipboard
       clipboard.fuzzel-clipboard-clear
       pkgs.xrdb
-      pkgs.grim
-      pkgs.slurp
     ];
 
     hj.xdg.config.files."mango/config.conf".text = ''
@@ -167,7 +163,7 @@ in
       bind=SUPER,b,spawn,${config.cfg.vars.browser}
       bind=SUPER,x,spawn,${getExe quickshell} ipc call powerMenu toggle
       bind=SUPER,y,spawn,${getExe quickshell} ipc call wallpaperPicker toggle
-      bind=SUPER,p,spawn,${getExe screenshot}
+      bind=SUPER,p,spawn,${getExe pkgs.flameshot} gui -p $HOME/Pictures/Screenshots -c
       bind=SUPER,v,spawn,${getExe quickshell} ipc call launcher openClipboard
       bind=SUPER+SHIFT,v,spawn,${getExe quickshell} ipc call launcher clearClipboard
 
