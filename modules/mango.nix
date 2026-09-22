@@ -243,12 +243,12 @@ in
       windowrule=appid:pavucontrol,isfloating:1
       windowrule=appid:blueman-manager,isfloating:1
       windowrule=appid:nm-connection-editor,isfloating:1
-      windowrule=appid:^[Tt]hunar$,isfloating:1
-      windowrule=appid:fuzzel
+      windowrule=isnamedscratchpad:1,width:1800,height:1000,appid:dolphin
+      windowrule=isnamedscratchpad:1,width:1800,height:1000,appid:thunderbird
 
       enable_hotarea = 0
 
-      windowrule=isnamedscratchpad:1,width:1900,height:1600,appid:wezterm-yazi-nvim
+      windowrule=isnamedscratchpad:1,width:1900,height:1600,appid:yazi
       windowrule=isnamedscratchpad:1,width:1900,height:1600,appid:filechooser
       layerrule=noblur:1,layer_name:selection
     '';
