@@ -230,11 +230,10 @@ in
            default-column-width { proportion 0.8; }
        }
 
-      window-rule {
-             match app-id=r#"^org\.wezfurlong\.wezterm$"#
-             draw-border-with-background false
-      }
-
+      // window-rule {
+      //        match app-id=r#"^org\.wezfurlong\.wezterm$"#
+      //        draw-border-with-background false
+      // }
 
        binds {
            Mod+Shift+Slash { show-hotkey-overlay; }
