@@ -69,6 +69,7 @@
     pkgs.hunspellDicts.pt_BR
     pkgs.ntfs3g
     pkgs.thunderbird
+    pkgs.rufin
   ];
 
   security = {

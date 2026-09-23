@@ -15,8 +15,6 @@ let
   cfg = config.cfg.mango;
   c = config.cfg.theme.colors;
 
-  clipboard = pkgs.callPackage ./_fuzzel-clipboard.nix { };
-
   strip = color: lib.substring 1 6 color;
   hexToMango = hex: "0x${hex}ff";
   colorToMango = color: hexToMango (strip color);
@@ -37,8 +35,6 @@ in
     };
 
     hj.packages = [
-      clipboard.fuzzel-clipboard
-      clipboard.fuzzel-clipboard-clear
       pkgs.xrdb
     ];
 
@@ -166,6 +162,7 @@ in
       bind=SUPER,p,spawn,${getExe pkgs.flameshot} gui -p $HOME/Pictures/Screenshots -c
       bind=SUPER,v,spawn,${getExe quickshell} ipc call launcher openClipboard
       bind=SUPER+SHIFT,v,spawn,${getExe quickshell} ipc call launcher clearClipboard
+      bind=SUPER,g,toggle_named_scratchpad,io.github.screwys.Rufin,none,rufin
 
       bind=SUPER,q,killclient
       bind=SUPER,space,togglefloating
@@ -191,7 +188,7 @@ in
       bind=SUPER,m,setlayout,monocle
       bind=SUPER,s,setlayout,scroller
       bind=SUPER,Tab,switch_layout
-      bind=SUPER,g,togglegaps
+      # bind=SUPER,g,togglegaps
       bind=SUPER,o,toggleoverview
 
       bind=SUPER,1,comboview,1
@@ -241,6 +238,7 @@ in
       windowrule=appid:nm-connection-editor,isfloating:1
       windowrule=isnamedscratchpad:1,width:1800,height:1000,appid:dolphin
       windowrule=isnamedscratchpad:1,width:1800,height:1000,appid:thunderbird
+      windowrule=isnamedscratchpad:1,width:1800,height:1000,appid:io.github.screwys.Rufin
 
       enable_hotarea = 0
 
