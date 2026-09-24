@@ -29,6 +29,7 @@ if isNiri || isMango then
         property var theme: null
         property var batteryObj: null
         property int brightnessLevel: 50
+        property int lastBrightness: 100
         property bool bluetoothPageVisible: false
         property bool wifiPageVisible: false
 
@@ -373,6 +374,23 @@ if isNiri || isMango then
             }
         }
 
+        function setBrightnessLevel(newVal) {
+            const pct = Math.max(0, Math.min(100, Math.round(newVal)))
+            root.brightnessLevel = pct
+            brightnessSetProc.running = false
+            brightnessSetProc.command = ["${getExe pkgs.brightnessctl}", "-n2", "set", pct + "%"]
+            brightnessSetProc.running = true
+        }
+
+        function toggleBrightness() {
+            if (root.brightnessLevel > 10) {
+                root.lastBrightness = root.brightnessLevel
+                setBrightnessLevel(5)
+            } else {
+                setBrightnessLevel(root.lastBrightness)
+            }
+        }
+
         function toggle() {
             shown = !shown
         }
@@ -591,98 +609,135 @@ if isNiri || isMango then
             }
         }
 
-        component SliderCard: Rectangle {
+        component SliderCard: Item {
             id: sliderCard
             property string icon: "󰕾"
-            property string label: "Slider"
-            property int value: 50
+            property real value: 50
+            property real from: 0
+            property real to: 100
+            property string suffix: "%"
+            property string metricsText: "100%"
             property color accentColor: controlTheme.blue
             property bool isMuted: false
             property var controlTheme: null
             property var valueChangedHandler: null
             property bool liveValue: false
 
-            height: 70
-            radius: 8
-            color: controlTheme.bgAlt
+            signal iconClicked()
 
-            ColumnLayout {
+            readonly property color fillColor: isMuted ? controlTheme.fgSubtle : accentColor
+            readonly property real visualPos: Math.max(0, Math.min(1, (value - from) / (to - from)))
+            readonly property int trackHeight: 28
+            readonly property int trackRadius: 10
+
+            function commit(percent) {
+                const p = Math.max(0, Math.min(1, percent))
+                const newVal = from + (to - from) * p
+                if (!liveValue) value = Math.round(newVal)
+                if (valueChangedHandler) valueChangedHandler(newVal)
+            }
+
+            implicitHeight: 36
+
+            RowLayout {
                 anchors.fill: parent
-                anchors.margins: 12
                 spacing: 8
 
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 8
+                Rectangle {
+                    id: iconBtn
+                    Layout.fillHeight: true
+                    Layout.preferredWidth: height
+                    radius: 15
+                    color: iconMouse.containsMouse ? sliderCard.controlTheme.fgSubtle : sliderCard.controlTheme.bgLighter
+
+                    Behavior on color { ColorAnimation { duration: 100 } }
 
                     Text {
+                        anchors.centerIn: parent
                         text: sliderCard.icon
                         font.family: sliderCard.controlTheme.fontFamily
                         font.pixelSize: 16
-                        color: sliderCard.isMuted ? (sliderCard.controlTheme.fgMuted) : sliderCard.accentColor
-                    }
-
-                    Text {
-                        text: sliderCard.label
-                        font.family: sliderCard.controlTheme.fontFamily
-                        font.pixelSize: 12
-                        color: sliderCard.controlTheme.fg
-                    }
-
-                    Item { Layout.fillWidth: true }
-
-                    Text {
-                        text: sliderCard.value + "%"
-                        font.family: sliderCard.controlTheme.fontFamily
-                        font.pixelSize: 12
                         font.bold: true
-                        color: sliderCard.controlTheme.fgMuted
+                        color: sliderCard.controlTheme.fg
+                        scale: iconMouse.pressed ? 0.8 : 1.0
+
+                        Behavior on scale { NumberAnimation { duration: 100 } }
+                    }
+
+                    MouseArea {
+                        id: iconMouse
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        hoverEnabled: true
+                        onClicked: sliderCard.iconClicked()
                     }
                 }
 
                 Item {
+                    id: sliderContainer
                     Layout.fillWidth: true
-                    height: 20
+                    Layout.preferredHeight: parent.height - 6
 
                     Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
                         width: parent.width
-                        height: 6
-                        radius: 3
-                        color: controlTheme.bg
+                        height: sliderCard.trackHeight
+                        radius: sliderCard.trackRadius
+                        color: sliderCard.controlTheme.bgLighter
+                        scale: sliderMouse.pressed ? 0.98 : 1.0
+
+                        Behavior on scale {
+                            NumberAnimation { duration: 100; easing.type: Easing.OutQuad }
+                        }
 
                         Rectangle {
-                            width: (sliderCard.value / 100) * parent.width
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: sliderCard.visualPos * parent.width
                             height: parent.height
                             radius: parent.radius
-                            color: sliderCard.isMuted ? (sliderCard.controlTheme.fgMuted) : sliderCard.accentColor
-                        }
-                    }
+                            color: sliderCard.fillColor
 
-                    Rectangle {
-                        x: (sliderCard.value / 100) * (parent.width - width)
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: 14
-                        height: 14
-                        radius: 7
-                        color: sliderCard.isMuted ? (sliderCard.controlTheme.fgMuted) : sliderCard.accentColor
+                            Behavior on width {
+                                NumberAnimation { duration: 100; easing.type: Easing.OutQuad }
+                            }
+                            Behavior on color { ColorAnimation { duration: 100 } }
+                        }
                     }
 
                     MouseArea {
+                        id: sliderMouse
                         anchors.fill: parent
+                        hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
+
+                        onPressed: (mouse) => sliderCard.commit(mouse.x / width)
                         onPositionChanged: (mouse) => {
-                            if (pressed) {
-                                var newVal = Math.max(0, Math.min(100, (mouse.x / width) * 100))
-                                if (!sliderCard.liveValue) sliderCard.value = Math.round(newVal)
-                                if (sliderCard.valueChangedHandler) sliderCard.valueChangedHandler(newVal)
-                            }
+                            if (pressed) sliderCard.commit(mouse.x / width)
                         }
-                        onClicked: (mouse) => {
-                            var newVal = Math.max(0, Math.min(100, (mouse.x / width) * 100))
-                            if (!sliderCard.liveValue) sliderCard.value = Math.round(newVal)
-                            if (sliderCard.valueChangedHandler) sliderCard.valueChangedHandler(newVal)
+                        onWheel: (wheel) => {
+                            const step = (sliderCard.to - sliderCard.from) * 0.05
+                            const next = sliderCard.value + (wheel.angleDelta.y > 0 ? step : -step)
+                            sliderCard.commit((next - sliderCard.from) / (sliderCard.to - sliderCard.from))
                         }
+                    }
+                }
+
+                Text {
+                    Layout.preferredWidth: valueMetrics.width
+                    horizontalAlignment: Text.AlignRight
+                    text: Math.round(sliderCard.value) + sliderCard.suffix
+                    font.family: sliderCard.controlTheme.fontFamily
+                    font.pixelSize: 12
+                    font.bold: true
+                    color: sliderCard.controlTheme.fgMuted
+
+                    TextMetrics {
+                        id: valueMetrics
+                        font.family: sliderCard.controlTheme.fontFamily
+                        font.pixelSize: 12
+                        font.bold: true
+                        text: sliderCard.metricsText
                     }
                 }
             }
@@ -1675,76 +1730,63 @@ if isNiri || isMango then
 
                         Rectangle {
                             Layout.fillWidth: true
-                            height: 60
+                            implicitHeight: 60
                             radius: 8
                             color: root.theme.bgAlt
                             visible: root.nightLightEnabled
 
+                            SliderCard {
+                                anchors.fill: parent
+                                anchors.margins: 12
+                                icon: "󰖨"
+                                from: 2500
+                                to: 6500
+                                suffix: "K"
+                                metricsText: "6500K"
+                                value: root.nightLightTemperature
+                                accentColor: root.theme.yellow
+                                controlTheme: root.theme
+                                liveValue: true
+                                valueChangedHandler: (newVal) => root.setNightLightTemp(newVal)
+                                onIconClicked: root.toggleNightLight()
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            implicitHeight: sliderColumn.implicitHeight + 24
+                            radius: 8
+                            color: root.theme.bgAlt
+
                             ColumnLayout {
+                                id: sliderColumn
                                 anchors.fill: parent
                                 anchors.margins: 12
                                 spacing: 8
 
-                                RowLayout {
-                                    Text {
-                                        text: "Night Light Temperature"
-                                        font.family: root.theme.fontFamily
-                                        font.pixelSize: 12
-                                        color: root.theme.fg
-                                    }
-                                    Item { Layout.fillWidth: true }
-                                    Text {
-                                        text: root.nightLightTemperature + "K"
-                                        font.family: root.theme.fontFamily
-                                        font.pixelSize: 12
-                                        font.bold: true
-                                        color: root.theme.yellow
-                                    }
+                                SliderCard {
+                                    Layout.fillWidth: true
+                                    icon: root.isMuted || root.volumeLevel <= 0 ? "󰖁" : root.volumeLevel < 33 ? "󰕿" : root.volumeLevel < 67 ? "󰖀" : "󰕾"
+                                    value: root.volumeLevel
+                                    accentColor: root.theme.blue
+                                    isMuted: root.isMuted
+                                    controlTheme: root.theme
+                                    liveValue: true
+                                    valueChangedHandler: (newVal) => root.setVolume(newVal)
+                                    onIconClicked: root.toggleMute()
                                 }
 
-                                RowLayout {
-                                    Text { text: "2500"; font.pixelSize: 9; color: root.theme.fgMuted }
-                                    Slider {
-                                        Layout.fillWidth: true
-                                        from: 2500
-                                        to: 6500
-                                        value: root.nightLightTemperature
-                                        // only apply when user moves — avoid restart loop when syncing from system
-                                        onMoved: root.setNightLightTemp(Math.round(value))
-                                    }
-                                    Text { text: "6500"; font.pixelSize: 9; color: root.theme.fgMuted }
+                                SliderCard {
+                                    Layout.fillWidth: true
+                                    icon: root.brightnessLevel <= 10 ? "󰃞" : root.brightnessLevel <= 30 ? "󰃟" : root.brightnessLevel <= 60 ? "󰃝" : "󰃠"
+                                    value: root.brightnessLevel
+                                    accentColor: root.theme.yellow
+                                    controlTheme: root.theme
+                                    liveValue: true
+                                    valueChangedHandler: (newVal) => root.setBrightnessLevel(newVal)
+                                    onIconClicked: root.toggleBrightness()
                                 }
                             }
-                        }
-
-                        SliderCard {
-                            Layout.fillWidth: true
-                            icon: root.isMuted ? "󰖁" : "󰕾"
-                            label: "Volume"
-                            value: root.volumeLevel
-                            accentColor: root.theme.blue
-                            isMuted: root.isMuted
-                            controlTheme: root.theme
-                            liveValue: true
-                            valueChangedHandler: (newVal) => root.setVolume(newVal)
-                        }
-
-                        SliderCard {
-                            Layout.fillWidth: true
-                            icon: "󰃟"
-                            label: "Brightness"
-                            value: root.brightnessLevel
-                            accentColor: root.theme.yellow
-                            controlTheme: root.theme
-                            valueChangedHandler: (newVal) => {
-                                const pct = Math.max(0, Math.min(100, Math.round(newVal)))
-                                root.brightnessLevel = pct
-                                brightnessSetProc.running = false
-                                // linear percentage — same scale as brightnessGetProc
-                                brightnessSetProc.command = ["${getExe pkgs.brightnessctl}", "-n2", "set", pct + "%"]
-                                brightnessSetProc.running = true
-                            }
-                            liveValue: true
                         }
 
                         Rectangle {
