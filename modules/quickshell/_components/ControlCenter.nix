@@ -1448,7 +1448,8 @@ if isNiri || isMango then
                                 Layout.fillHeight: true
                                 clip: true
                                 spacing: 6
-                                model: BluetoothService.devices
+                                // Same filter as awesome-setup: paired/connected always, others only while scanning
+                                model: BluetoothService.visibleDevices
 
                                 delegate: Rectangle {
                                     width: ListView.view.width
@@ -1481,17 +1482,26 @@ if isNiri || isMango then
                                         Text {
                                             text: BluetoothService.getDeviceIcon(modelData)
                                             font.pixelSize: 20
+                                            color: modelData.connected ? root.theme.green : root.theme.fgMuted
                                         }
 
                                         ColumnLayout {
+                                            spacing: 2
                                             Text {
                                                 text: modelData.deviceName || modelData.alias || modelData.name || "Unknown"
                                                 font.pixelSize: 13
                                                 font.bold: modelData.connected
                                                 color: root.theme.fg
+                                                elide: Text.ElideRight
+                                                Layout.maximumWidth: 180
                                             }
                                             Text {
-                                                text: modelData.connected ? "Connected" : "Tap to connect"
+                                                text: {
+                                                    if (modelData.connected) return "Connected";
+                                                    if (modelData.pairing) return "Pairing...";
+                                                    if (modelData.paired || modelData.trusted) return "Paired · Tap to connect";
+                                                    return "Tap to pair";
+                                                }
                                                 font.pixelSize: 10
                                                 color: modelData.connected ? root.theme.green : root.theme.fgMuted
                                             }
@@ -1499,8 +1509,26 @@ if isNiri || isMango then
 
                                         Item { Layout.fillWidth: true }
 
+                                        // Battery badge (like awesome-setup)
+                                        Rectangle {
+                                            visible: modelData.batteryAvailable === true
+                                            Layout.preferredWidth: batLabel.implicitWidth + 12
+                                            Layout.preferredHeight: 20
+                                            radius: 10
+                                            color: Qt.rgba(root.theme.green.r, root.theme.green.g, root.theme.green.b, 0.18)
+
+                                            Text {
+                                                id: batLabel
+                                                anchors.centerIn: parent
+                                                text: BluetoothService.getBatteryText(modelData)
+                                                font.pixelSize: 11
+                                                font.bold: true
+                                                color: root.theme.green
+                                            }
+                                        }
+
                                         Text {
-                                            text: modelData.connected ? "󰅙" : "󰂯"
+                                            text: modelData.connected ? "󰅙" : (modelData.paired || modelData.trusted ? "󰂯" : "󰂱")
                                             color: modelData.connected ? root.theme.red : root.theme.blue
                                             font.pixelSize: 18
                                         }
@@ -1509,7 +1537,7 @@ if isNiri || isMango then
                             }
 
                             Text {
-                                visible: BluetoothService.enabled && BluetoothService.available
+                                visible: BluetoothService.enabled && BluetoothService.available && BluetoothService.visibleDevices.length === 0
                                 text: BluetoothService.discovering ? "Searching for devices..." : "No devices found"
                                 color: root.theme.fgMuted
                                 Layout.alignment: Qt.AlignHCenter

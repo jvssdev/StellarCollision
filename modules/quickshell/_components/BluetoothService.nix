@@ -24,6 +24,17 @@ _:
       return root.adapter.devices.values || [];
     }
 
+    // Like awesome-setup: always show paired/connected; during scan show everything else too
+    readonly property var visibleDevices: {
+      var all = root.devices;
+      if (!all || all.length === 0) return [];
+      if (root.discovering) return all;
+      return all.filter(function(dev) {
+        if (!dev) return false;
+        return dev.connected || dev.paired || dev.trusted;
+      });
+    }
+
     readonly property var pairedDevices: {
       return root.devices.filter(dev => dev && (dev.paired || dev.trusted));
     }
@@ -92,23 +103,36 @@ _:
     }
 
     function getDeviceIcon(device) {
-      if (!device) return "bluetooth";
-      var name = (device.name || device.alias || "").toLowerCase();
+      if (!device) return "󰂯";
+      var name = (device.name || device.alias || device.deviceName || "").toLowerCase();
       var icon = (device.icon || "").toLowerCase();
 
+      // Prefer Nerd Font icons (same style as awesome-setup)
       if (icon.indexOf("headset") !== -1 || name.indexOf("headset") !== -1 ||
           icon.indexOf("airpod") !== -1 || name.indexOf("airpod") !== -1 ||
-          icon.indexOf("headphone") !== -1 || name.indexOf("headphone") !== -1) {
-        return "headset";
+          name.indexOf("buds") !== -1 || name.indexOf("xm") !== -1 ||
+          icon.indexOf("headphone") !== -1 || name.indexOf("headp") !== -1) {
+        return "󰋋";
       }
-      if (icon.indexOf("mouse") !== -1 || name.indexOf("mouse") !== -1) return "mouse";
-      if (icon.indexOf("keyboard") !== -1 || name.indexOf("keyboard") !== -1) return "keyboard";
-      if (icon.indexOf("phone") !== -1 || name.indexOf("iphone") !== -1) return "phone";
-      if (icon.indexOf("watch") !== -1 || name.indexOf("watch") !== -1) return "watch";
-      if (icon.indexOf("speaker") !== -1 || name.indexOf("speaker") !== -1) return "speaker";
-      if (icon.indexOf("display") !== -1 || icon.indexOf("tv") !== -1) return "tv";
+      if (icon.indexOf("mouse") !== -1 || name.indexOf("mouse") !== -1 ||
+          name.indexOf("master") !== -1 || name.indexOf("trackpad") !== -1) return "󰍽";
+      if (icon.indexOf("keyboard") !== -1 || name.indexOf("key") !== -1) return "󰌌";
+      if (icon.indexOf("phone") !== -1 || name.indexOf("iphone") !== -1) return "󰄜";
+      if (icon.indexOf("watch") !== -1 || name.indexOf("watch") !== -1) return "󰢐";
+      if (icon.indexOf("speaker") !== -1 || name.indexOf("speaker") !== -1) return "󰓃";
+      if (icon.indexOf("display") !== -1 || icon.indexOf("tv") !== -1) return "󰟴";
 
-      return "bluetooth";
+      return "󰂯";
+    }
+
+    function getBatteryPercent(device) {
+      if (!device || !device.batteryAvailable) return -1;
+      return Math.round(device.battery * 100);
+    }
+
+    function getBatteryText(device) {
+      var pct = root.getBatteryPercent(device);
+      return pct >= 0 ? (pct + "%") : "";
     }
 
     function canConnect(device) {
