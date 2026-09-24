@@ -1228,7 +1228,8 @@ if isNiri || isMango then
             implicitHeight: 600
 
             WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+            // Exclusive while open so Escape works even if another window had focus
+            WlrLayershell.keyboardFocus: root.shown ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
             exclusionMode: ExclusionMode.Ignore
 
             anchors {
@@ -1239,6 +1240,15 @@ if isNiri || isMango then
             margins {
                 top: 22
                 right: 5
+            }
+
+            onVisibleChanged: {
+                if (visible) {
+                    Qt.callLater(function() {
+                        if (ccWindow.contentItem)
+                            ccWindow.contentItem.forceActiveFocus()
+                    })
+                }
             }
 
             contentItem {
