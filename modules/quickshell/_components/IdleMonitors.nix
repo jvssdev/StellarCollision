@@ -1,7 +1,6 @@
 {
   pkgs,
   lib,
-  quickshellPackage,
   isNiri,
   ...
 }:
@@ -65,7 +64,7 @@ in
           }
       }
 
-      Process { id: lockProc; command: ["${quickshellPackage}/bin/quickshell", "ipc", "call", "lockScreen", "toggle"] }
+      Process { id: lockProc; command: ["/run/current-system/sw/bin/qylock-lock"] }
       Process { id: suspendProc; command: ["${getExe' pkgs.systemd "systemctl"}", "suspend"] }
 
       Process {

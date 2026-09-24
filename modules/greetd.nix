@@ -13,190 +13,200 @@ let
     mkEnableOption
     ;
   cfg = config.cfg.sddm;
-  c = config.cfg.theme.colors;
-  inherit (inputs) silentSDDM;
 
-  wallpaper = ../assets/Wallpapers/nord_valley.png;
+  gst = pkgs.gst_all_1;
 
-  background-derivation = pkgs.runCommand "bg.jpg" { } ''
-    cp ${wallpaper} $out
-  '';
+  qmlPath = lib.makeSearchPath "lib/qt-6/qml" [
+    pkgs.qt6.qt5compat
+    pkgs.qt6.qtdeclarative
+    pkgs.qt6.qtmultimedia
+    pkgs.qt6.qtsvg
+  ];
 
-  silentTheme = silentSDDM.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
-    extraBackgrounds = [ background-derivation ];
-    theme-overrides = {
-      General = {
-        enable-animations = true;
-      };
-      LoginScreen = {
-        background = "${background-derivation.name}";
-        blur = 0;
-      };
-      "LoginScreen.LoginArea" = {
-        position = "center";
-        margin = -1;
-      };
-      "LoginScreen.LoginArea.Avatar" = {
-        shape = "circle";
-        active-size = 140;
-        border-radius = 1;
-        active-border-size = 2;
-        active-border-color = c.base0D;
-      };
-      "LoginScreen.LoginArea.LoginButton" = {
-        font-size = 22;
-        icon-size = 30;
-        content-color = c.base05;
-        active-content-color = c.base06;
-        background-color = c.base00;
-        background-opacity = 0.7;
-        active-background-color = c.base0D;
-        active-background-opacity = 0.7;
-        border-size = 2;
-        border-color = c.base0D;
-      };
-      "LoginScreen.LoginArea.PasswordInput" = {
-        width = 460;
-        height = 60;
-        font-size = 22;
-        display-icon = true;
-        icon-size = 30;
-        content-color = c.base05;
-        background-color = c.base00;
-        background-opacity = 0.7;
-        border-size = 2;
-        border-color = c.base0D;
-        margin-top = 20;
-      };
-      "LoginScreen.LoginArea.Spinner" = {
-        text = "Logging in";
-        font-size = 36;
-        icon-size = 72;
-        color = c.base06;
-        spacing = 1;
-      };
-      "LoginScreen.LoginArea.Username" = {
-        font-size = 40;
-        color = c.base00;
-        margin = 5;
-      };
-      "LoginScreen.LoginArea.WarningMessage" = {
-        font-size = 22;
-        normal-color = c.base06;
-        warning-color = c.base0A;
-        error-color = c.base08;
-      };
-      "LoginScreen.MenuArea.Buttons" = {
-        size = 60;
-      };
-      "LoginScreen.MenuArea.Keyboard" = {
-        display = true;
-      };
-      "LoginScreen.MenuArea.Layout" = {
-        index = 2;
-        position = "bottom-center";
-        font-size = 20;
-        icon-size = 32;
-        content-color = c.base05;
-        active-content-color = c.base06;
-        background-color = c.base00;
-        background-opacity = 0.7;
-        border-size = 2;
-        border-color = c.base0D;
-      };
-      "LoginScreen.MenuArea.Popups" = {
-        max-height = 600;
-        item-height = 60;
-        item-spacing = 1;
-        padding = 2;
-        font-size = 22;
-        icon-size = 24;
-        content-color = c.base05;
-        active-content-color = c.base06;
-        background-color = c.base00;
-        background-opacity = 0.7;
-        active-option-background-color = c.base02;
-        active-option-background-opacity = 0.7;
-        border-size = 2;
-        border-color = c.base0D;
-        display-scrollbar = true;
-      };
-      "LoginScreen.MenuArea.Power" = {
-        index = 0;
-        popup-width = 200;
-        position = "bottom-center";
-        icon-size = 32;
-        content-color = c.base05;
-        active-content-color = c.base06;
-        background-color = c.base00;
-        background-opacity = 0.7;
-        border-size = 2;
-        border-color = c.base0D;
-      };
-      "LoginScreen.MenuArea.Session" = {
-        index = 1;
-        position = "bottom-center";
-        button-width = 300;
-        popup-width = 300;
-        font-size = 25;
-        icon-size = 32;
-        content-color = c.base05;
-        active-content-color = c.base06;
-        background-color = c.base00;
-        background-opacity = 0.7;
-        active-background-opacity = 0.7;
-        border-size = 2;
-        border-color = c.base0D;
-      };
-      LockScreen = {
-        background = "${background-derivation.name}";
-        blur = 50;
-      };
-      "LockScreen.Clock" = {
-        position = "center";
-        align = "center";
-        format = "hh:mm:ss";
-        color = c.base01;
-        font-size = 92;
-      };
-      "LockScreen.Date" = {
-        margin-top = 1;
-        format = "dd/MM/yyyy";
-        locale = "pt_BR";
-        color = c.base0D;
-        font-size = 32;
-      };
-      "LockScreen.Message" = {
-        text = "Press any key";
-        font-size = 32;
-        color = c.base0D;
-        icon-size = 44;
-        paint-icon = true;
-      };
-      Tooltips = {
-        enable = false;
-      };
-    };
+  pluginPath = lib.makeSearchPath "lib/qt-6/plugins" [
+    pkgs.qt6.qtmultimedia
+    pkgs.qt6.qtbase
+  ];
+
+  gstPath = lib.makeSearchPath "lib/gstreamer-1.0" [
+    gst.gstreamer
+    gst.gst-plugins-base
+    gst.gst-plugins-good
+    gst.gst-plugins-bad
+    gst.gst-plugins-ugly
+    gst.gst-libav
+  ];
+
+  qylockShare = pkgs.stdenvNoCC.mkDerivation {
+    pname = "qylock-quickshell-share";
+    version = "unstable";
+    src = inputs.qylock;
+    nativeBuildInputs = [ pkgs.python3 ];
+    dontBuild = true;
+
+    installPhase = ''
+      runHook preInstall
+
+      mkdir -p $out/share/qylock
+      cp -r quickshell-lockscreen/. $out/share/qylock/
+      cp -r themes $out/share/qylock/themes
+
+      python3 - "$out/share/qylock/shim/SddmShim.qml" "$out/share/qylock/lock_shell.qml" <<'PY'
+      import sys
+
+      shim_path = sys.argv[1]
+      shell_path = sys.argv[2]
+
+      text = open(shim_path).read()
+
+      marker = 'property string themePath: ""'
+      if marker in text and "property var keyboard:" not in text:
+          text = text.replace(
+              marker,
+              marker + """
+          property var keyboard: QtObject {
+              property bool numLock: false
+              property bool capsLock: false
+              property bool scrollLock: false
+          }""",
+              1,
+          )
+
+      needle = "property var sddm: QtObject {"
+      idx = text.find(needle)
+      if idx >= 0 and "property string hostName" not in text:
+          insert_at = text.find("signal loginFailed()", idx)
+          if insert_at < 0:
+              raise SystemExit("loginFailed not found")
+          extra = """
+          property string hostName: {
+              var xhr = new XMLHttpRequest();
+              try {
+                  xhr.open("GET", "file:///etc/hostname", false);
+                  xhr.send();
+                  if (xhr.status === 200 || xhr.status === 0)
+                      return (xhr.responseText || "").trim() || "localhost";
+              } catch (e) {}
+              return "localhost";
+          }
+          function suspend() { Quickshell.execDetached(["systemctl", "suspend"]); }
+          function hibernate() { Quickshell.execDetached(["systemctl", "hibernate"]); }
+      """
+          text = text[:insert_at] + extra + text[insert_at:]
+
+      open(shim_path, "w").write(text)
+
+      shell = open(shell_path).read()
+      hook = 'console.error("FAILED to load theme:", source)'
+      if hook not in shell:
+          raise SystemExit("theme error hook not found")
+      shell = shell.replace(
+          hook,
+          hook + "\n                    shellRoot.sessionLocked = false\n                    Qt.quit()",
+          1,
+      )
+      open(shell_path, "w").write(shell)
+      print("qylock patched")
+      PY
+
+      find $out/share/qylock/themes -name 'Main.qml' -print0 | xargs -0 -r sed -i \
+        -e 's/Component\.onCompleted:[[:space:]]*keyboard\.numLock[[:space:]]*=[[:space:]]*true/Component.onCompleted: { if (typeof keyboard !== "undefined") keyboard.numLock = true }/g' \
+        -e 's/keyboard\.numLock[[:space:]]*=[[:space:]]*true/if (typeof keyboard !== "undefined") keyboard.numLock = true/g'
+
+      test -f $out/share/qylock/imports/SddmComponents/qmldir
+      test -f $out/share/qylock/lock_shell.qml
+
+      runHook postInstall
+    '';
   };
+
+  qylockLock = pkgs.writeShellScriptBin "qylock-lock" ''
+    set -eu
+
+    share=${qylockShare}/share/qylock
+    theme="''${1:-''${QS_THEME:-${cfg.theme}}}"
+    testMode="''${QYLOCK_TEST:-0}"
+
+    if [ ! -f "$share/themes/$theme/Main.qml" ]; then
+      echo "qylock-lock: theme not found: $theme" >&2
+      exit 1
+    fi
+
+    export PATH=${
+      lib.makeBinPath [
+        pkgs.quickshell
+        pkgs.systemd
+        pkgs.coreutils
+        pkgs.bash
+        pkgs.procps
+      ]
+    }:$PATH
+
+    if [ "$testMode" != 1 ] && pgrep -f "$share/lock_shell.qml" >/dev/null 2>&1; then
+      exit 0
+    fi
+
+    if [ -z "''${XDG_SESSION_TYPE:-}" ]; then
+      if [ -n "''${WAYLAND_DISPLAY:-}" ]; then
+        export XDG_SESSION_TYPE=wayland
+      else
+        export XDG_SESSION_TYPE=x11
+      fi
+    fi
+
+    if [ "$testMode" = 1 ]; then
+      export XDG_SESSION_TYPE=x11
+      export QS_TESTING=1
+    fi
+
+    export QS_THEME="$theme"
+    export QYLOCK_THEMES_ROOT="$share/themes"
+    export QS_THEME_PATH="$share/themes/$theme"
+    export QT_MEDIA_BACKEND=gstreamer
+    export QML_XHR_ALLOW_FILE_READ=1
+    export QML2_IMPORT_PATH="$share/imports:${qmlPath}''${QML2_IMPORT_PATH:+:$QML2_IMPORT_PATH}"
+    export QML_IMPORT_PATH="$QML2_IMPORT_PATH"
+    export QT_PLUGIN_PATH="${pluginPath}''${QT_PLUGIN_PATH:+:$QT_PLUGIN_PATH}"
+    export GST_PLUGIN_SYSTEM_PATH_1_0="${gstPath}''${GST_PLUGIN_SYSTEM_PATH_1_0:+:$GST_PLUGIN_SYSTEM_PATH_1_0}"
+
+    exec quickshell -p "$share/lock_shell.qml"
+  '';
 in
 {
+  imports = [ inputs.qylock.nixosModules.default ];
+
   options.cfg.sddm = {
-    enable = mkEnableOption "Enable SDDM configuration.";
+    enable = mkEnableOption "Enable SDDM with qylock themes.";
     wayland.enable = mkOption {
       type = types.bool;
       default = true;
       description = "Enable Wayland for SDDM.";
     };
+    theme = mkOption {
+      type = types.str;
+      default = "winter";
+      description = "qylock theme folder name (flat Main.qml themes for SDDM).";
+    };
   };
 
   config = mkIf cfg.enable {
+    programs.qylock = {
+      enable = true;
+      inherit (cfg) theme;
+      sddm.enable = true;
+      quickshell.enable = false;
+    };
     environment = {
       systemPackages = with pkgs; [
-        silentTheme
-        silentTheme.test
+        qylockLock
+        gst_all_1.gstreamer
+        gst_all_1.gst-plugins-base
+        gst_all_1.gst-plugins-good
+        gst_all_1.gst-plugins-bad
+        gst_all_1.gst-plugins-ugly
+        gst_all_1.gst-libav
+        qt6.qtmultimedia
         kdePackages.qt6ct
-        libsForQt5.qtstyleplugin-kvantum
-        kdePackages.qtstyleplugin-kvantum
         kdePackages.qtwayland
         qt6.qtwayland
         config.cfg.gtk.cursorTheme.package
@@ -206,6 +216,11 @@ in
         [Theme]
         CursorTheme=${config.cfg.gtk.cursorTheme.name}
         CursorSize=${toString config.cfg.gtk.cursorTheme.size}
+      '';
+
+      etc."sddm.conf.d/virtualkeyboard.conf".text = ''
+        [General]
+        InputMethod=
       '';
     };
 
@@ -220,7 +235,6 @@ in
       [
         "L+ /usr/share/icons/default - - - - ${themePath}"
         "L+ /var/lib/sddm/.icons/default - - - - ${themePath}"
-
         "d /var/lib/sddm/.icons 0755 sddm sddm -"
       ];
 
@@ -228,28 +242,21 @@ in
       enable = true;
       wayland.enable = cfg.wayland.enable;
       package = pkgs.kdePackages.sddm;
-      theme = silentTheme.pname;
-
-      extraPackages = silentTheme.propagatedBuildInputs ++ [ config.cfg.gtk.cursorTheme.package ];
-
+      theme = lib.mkForce cfg.theme;
+      extraPackages = [
+        config.cfg.gtk.cursorTheme.package
+        pkgs.qt6.qtmultimedia
+        pkgs.qt6.qt5compat
+        pkgs.qt6.qtsvg
+      ];
       settings = {
-        General = {
-          GreeterEnvironment =
-            let
-              cursorTheme = config.cfg.gtk.cursorTheme.name;
-              cursorSize = toString config.cfg.gtk.cursorTheme.size;
-              themePath = "${config.cfg.gtk.cursorTheme.package}/share/icons";
-            in
-            "QML2_IMPORT_PATH=${silentTheme}/share/sddm/themes/${silentTheme.pname}/components/,"
-            + "QT_IM_MODULE=qtvirtualkeyboard,"
-            + "XCURSOR_THEME=${cursorTheme},"
-            + "XCURSOR_SIZE=${cursorSize},"
-            + "XCURSOR_PATH=/usr/share/icons:/var/lib/sddm/.icons:${themePath}";
-          InputMethod = "qtvirtualkeyboard";
-        };
         Theme = {
+          Current = cfg.theme;
           CursorTheme = config.cfg.gtk.cursorTheme.name;
           CursorSize = config.cfg.gtk.cursorTheme.size;
+        };
+        General = {
+          InputMethod = "";
         };
       };
     };

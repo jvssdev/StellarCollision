@@ -26,8 +26,6 @@ in
   import Quickshell.Services.Polkit
   import "BatteryMonitor.qml"
   import "Clipboard.qml"
-  import "LockContext.qml"
-  import "LockSurface.qml"
 
   ShellRoot {
       id: root
@@ -35,12 +33,6 @@ in
           target: "powerMenu"
           function toggle(): void {
               powerMenu.shown = !powerMenu.shown
-          }
-      }
-      IpcHandler {
-          target: "lockScreen"
-          function toggle(): void {
-              sessionLocked = true
           }
       }
       property var notificationHistory: []
@@ -148,26 +140,6 @@ in
           }
           function clear(): void {
               clipboard.clear()
-          }
-      }
-
-      property bool sessionLocked: false
-      LockContext {
-          id: lockContext
-          onUnlocked: {
-              sessionLocked = false
-          }
-          onFailed: {
-          }
-      }
-      WlSessionLock {
-          id: sessionLock
-          locked: sessionLocked
-          WlSessionLockSurface {
-              LockSurface {
-                  anchors.fill: parent
-                  context: lockContext
-              }
           }
       }
       QtObject {
@@ -515,7 +487,7 @@ in
       PowerMenu {
           id: powerMenu
           PowerButton {
-              command: "${getExe pkgs.quickshell} ipc call lockScreen toggle"
+              command: "qylock-lock"
               text: "Lock"
               icon: "lock"
           }

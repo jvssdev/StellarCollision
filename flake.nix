@@ -14,8 +14,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    silentSDDM = {
-      url = "github:uiriansan/SilentSDDM";
+    # SDDM + Quickshell lock themes (replaces SilentSDDM)
+    qylock = {
+      url = "github:Darkkal44/qylock";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
