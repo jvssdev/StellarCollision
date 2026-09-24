@@ -25,6 +25,7 @@ in
   import Quickshell.Services.Pipewire
   import Quickshell.Services.Polkit
   import "BatteryMonitor.qml"
+  import "Clipboard.qml"
   import "LockContext.qml"
   import "LockSurface.qml"
 
@@ -131,14 +132,22 @@ in
               }
           }
           function openClipboard(): void {
-              if (launcherLoader.item) {
-                  launcherLoader.item.openClipboard()
-              }
+              clipboard.open()
           }
           function clearClipboard(): void {
-              if (launcherLoader.item) {
-                  launcherLoader.item.clearClipboard()
-              }
+              clipboard.clear()
+          }
+      }
+      IpcHandler {
+          target: "clipboard"
+          function toggle(): void {
+              clipboard.toggle()
+          }
+          function open(): void {
+              clipboard.open()
+          }
+          function clear(): void {
+              clipboard.clear()
           }
       }
 
@@ -567,6 +576,10 @@ in
           id: launcherLoader
           source: "Launcher.qml"
           property var theme: theme
+      }
+
+      Clipboard {
+          id: clipboard
       }
   }
 ''

@@ -160,8 +160,7 @@ in
       bind=SUPER,x,spawn,${getExe quickshell} ipc call powerMenu toggle
       bind=SUPER,y,spawn,${getExe quickshell} ipc call wallpaperPicker toggle
       bind=SUPER,p,spawn,${getExe pkgs.flameshot} gui -p $HOME/Pictures/Screenshots -c
-      bind=SUPER,v,spawn,${getExe quickshell} ipc call launcher openClipboard
-      bind=SUPER+SHIFT,v,spawn,${getExe quickshell} ipc call launcher clearClipboard
+      bind=SUPER,v,spawn,${getExe quickshell} ipc call clipboard toggle
       bind=SUPER,g,toggle_named_scratchpad,io.github.screwys.Rufin,none,rufin
 
       bind=SUPER,q,killclient

@@ -92,6 +92,10 @@ let
     fontFamily = config.cfg.fonts.monospace.name;
     colors = c;
   };
+  Clipboard = import (componentsDir + "/Clipboard.nix") {
+    fontFamily = config.cfg.fonts.monospace.name;
+    colors = c;
+  };
 in
 {
   options.cfg.quickshell = {
@@ -115,7 +119,21 @@ in
       pkgs.libnotify
       pkgs.cliphist
       pkgs.wl-clipboard
+      pkgs.gawk
     ];
+
+    # Keep clipboard history populated (cliphist store)
+    systemd.user.services.cliphist-store = {
+      description = "cliphist store (wl-paste watcher)";
+      wantedBy = [ "graphical-session.target" ];
+      partOf = [ "graphical-session.target" ];
+      after = [ "graphical-session.target" ];
+      serviceConfig = {
+        ExecStart = "${pkgs.wl-clipboard}/bin/wl-paste --watch ${pkgs.cliphist}/bin/cliphist store";
+        Restart = "on-failure";
+        RestartSec = "2";
+      };
+    };
     environment.sessionVariables = {
       QML_IMPORT_PATH = lib.concatStringsSep ":" [
         "$HOME/.config/quickshell"
@@ -162,6 +180,11 @@ in
         clobber = true;
       };
       "quickshell/Launcher.qml".text = Launcher;
+      "quickshell/Clipboard.qml".text = Clipboard;
+      "quickshell/scripts/cliphist-visual.sh" = {
+        source = ./scripts/cliphist-visual.sh;
+        # executable
+      };
       "quickshell/PolkitDialog.qml" = {
         text = PolkitDialog;
         clobber = true;
