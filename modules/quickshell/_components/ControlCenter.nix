@@ -12,6 +12,7 @@ if isNiri || isMango then
   /* qml */ ''
     import QtQuick
     import QtQuick.Layouts
+    import QtQuick.Shapes
     import QtQuick.Controls
     import Quickshell
     import Quickshell.Wayland
@@ -29,7 +30,6 @@ if isNiri || isMango then
         property var theme: null
         property var batteryObj: null
         property int brightnessLevel: 50
-        property int lastBrightness: 100
         property bool bluetoothPageVisible: false
         property bool wifiPageVisible: false
 
@@ -382,15 +382,6 @@ if isNiri || isMango then
             brightnessSetProc.running = true
         }
 
-        function toggleBrightness() {
-            if (root.brightnessLevel > 10) {
-                root.lastBrightness = root.brightnessLevel
-                setBrightnessLevel(5)
-            } else {
-                setBrightnessLevel(root.lastBrightness)
-            }
-        }
-
         function toggle() {
             shown = !shown
         }
@@ -621,94 +612,130 @@ if isNiri || isMango then
             property bool isMuted: false
             property var controlTheme: null
             property var valueChangedHandler: null
-            property bool liveValue: false
-
-            signal iconClicked()
 
             readonly property color fillColor: isMuted ? controlTheme.fgSubtle : accentColor
             readonly property real visualPos: Math.max(0, Math.min(1, (value - from) / (to - from)))
-            readonly property int trackHeight: 28
-            readonly property int trackRadius: 10
+            readonly property int trackHeight: 30
+            readonly property int trackRadius: trackHeight / 2
+            property real shownPos: visualPos
+
+            Behavior on shownPos {
+                NumberAnimation { duration: 100; easing.type: Easing.OutQuad }
+            }
+
+            property color shownFill: fillColor
+
+            Behavior on shownFill {
+                ColorAnimation { duration: 100 }
+            }
 
             function commit(percent) {
                 const p = Math.max(0, Math.min(1, percent))
-                const newVal = from + (to - from) * p
-                if (!liveValue) value = Math.round(newVal)
-                if (valueChangedHandler) valueChangedHandler(newVal)
+                if (valueChangedHandler) valueChangedHandler(from + (to - from) * p)
             }
 
-            implicitHeight: 36
+            implicitHeight: trackHeight
 
             RowLayout {
                 anchors.fill: parent
                 spacing: 8
 
-                Rectangle {
-                    id: iconBtn
-                    Layout.fillHeight: true
-                    Layout.preferredWidth: height
-                    radius: 15
-                    color: iconMouse.containsMouse ? sliderCard.controlTheme.fgSubtle : sliderCard.controlTheme.bgLighter
-
-                    Behavior on color { ColorAnimation { duration: 100 } }
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: sliderCard.icon
-                        font.family: sliderCard.controlTheme.fontFamily
-                        font.pixelSize: 16
-                        font.bold: true
-                        color: sliderCard.controlTheme.fg
-                        scale: iconMouse.pressed ? 0.8 : 1.0
-
-                        Behavior on scale { NumberAnimation { duration: 100 } }
-                    }
-
-                    MouseArea {
-                        id: iconMouse
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        hoverEnabled: true
-                        onClicked: sliderCard.iconClicked()
-                    }
-                }
-
                 Item {
                     id: sliderContainer
                     Layout.fillWidth: true
-                    Layout.preferredHeight: parent.height - 6
+                    Layout.fillHeight: true
 
                     Rectangle {
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: parent.width
-                        height: sliderCard.trackHeight
+                        id: track
+                        anchors.fill: parent
                         radius: sliderCard.trackRadius
                         color: sliderCard.controlTheme.bgLighter
-                        scale: sliderMouse.pressed ? 0.98 : 1.0
 
-                        Behavior on scale {
-                            NumberAnimation { duration: 100; easing.type: Easing.OutQuad }
+                        Shape {
+                            id: fillShape
+                            anchors.fill: parent
+                            preferredRendererType: Shape.CurveRenderer
+
+                            readonly property real r: height / 2
+                            readonly property real w: sliderCard.shownPos * width
+                            readonly property real h: Math.sqrt(Math.max(0, r * w - w * w / 4))
+
+                            ShapePath {
+                                fillColor: fillShape.w >= 2 * fillShape.r ? sliderCard.shownFill : "transparent"
+                                strokeWidth: -1
+                                startX: fillShape.r
+                                startY: 0
+
+                                PathLine { x: fillShape.w - fillShape.r; y: 0 }
+                                PathArc {
+                                    x: fillShape.w - fillShape.r
+                                    y: fillShape.height
+                                    radiusX: fillShape.r
+                                    radiusY: fillShape.r
+                                    direction: PathArc.Clockwise
+                                }
+                                PathLine { x: fillShape.r; y: fillShape.height }
+                                PathArc {
+                                    x: fillShape.r
+                                    y: 0
+                                    radiusX: fillShape.r
+                                    radiusY: fillShape.r
+                                    direction: PathArc.Clockwise
+                                }
+                            }
+
+                            ShapePath {
+                                fillColor: fillShape.w > 0.5 && fillShape.w < 2 * fillShape.r ? sliderCard.shownFill : "transparent"
+                                strokeWidth: -1
+                                startX: fillShape.w / 2
+                                startY: fillShape.r - fillShape.h
+
+                                PathArc {
+                                    x: fillShape.w / 2
+                                    y: fillShape.r + fillShape.h
+                                    radiusX: fillShape.r
+                                    radiusY: fillShape.r
+                                    direction: PathArc.Clockwise
+                                }
+                                PathArc {
+                                    x: fillShape.w / 2
+                                    y: fillShape.r - fillShape.h
+                                    radiusX: fillShape.r
+                                    radiusY: fillShape.r
+                                    direction: PathArc.Clockwise
+                                }
+                            }
                         }
 
-                        Rectangle {
-                            anchors.left: parent.left
+                        Text {
+                            x: 10
                             anchors.verticalCenter: parent.verticalCenter
-                            width: sliderCard.visualPos * parent.width
-                            height: parent.height
-                            radius: parent.radius
-                            color: sliderCard.fillColor
+                            text: sliderCard.icon
+                            font.family: sliderCard.controlTheme.fontFamily
+                            font.pixelSize: 15
+                            color: sliderCard.controlTheme.fg
+                        }
 
-                            Behavior on width {
-                                NumberAnimation { duration: 100; easing.type: Easing.OutQuad }
+                        Item {
+                            anchors.left: parent.left
+                            anchors.top: parent.top
+                            anchors.bottom: parent.bottom
+                            width: sliderCard.shownPos * parent.width
+                            clip: true
+
+                            Text {
+                                x: 10
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: sliderCard.icon
+                                font.family: sliderCard.controlTheme.fontFamily
+                                font.pixelSize: 15
+                                color: sliderCard.controlTheme.bg
                             }
-                            Behavior on color { ColorAnimation { duration: 100 } }
                         }
                     }
 
                     MouseArea {
-                        id: sliderMouse
                         anchors.fill: parent
-                        hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
 
                         onPressed: (mouse) => sliderCard.commit(mouse.x / width)
@@ -716,9 +743,9 @@ if isNiri || isMango then
                             if (pressed) sliderCard.commit(mouse.x / width)
                         }
                         onWheel: (wheel) => {
-                            const step = (sliderCard.to - sliderCard.from) * 0.05
-                            const next = sliderCard.value + (wheel.angleDelta.y > 0 ? step : -step)
-                            sliderCard.commit((next - sliderCard.from) / (sliderCard.to - sliderCard.from))
+                            const range = sliderCard.to - sliderCard.from
+                            const next = sliderCard.value + (wheel.angleDelta.y > 0 ? range * 0.05 : -range * 0.05)
+                            sliderCard.commit((next - sliderCard.from) / range)
                         }
                     }
                 }
@@ -1730,7 +1757,7 @@ if isNiri || isMango then
 
                         Rectangle {
                             Layout.fillWidth: true
-                            implicitHeight: 60
+                            implicitHeight: 54
                             radius: 8
                             color: root.theme.bgAlt
                             visible: root.nightLightEnabled
@@ -1746,9 +1773,7 @@ if isNiri || isMango then
                                 value: root.nightLightTemperature
                                 accentColor: root.theme.yellow
                                 controlTheme: root.theme
-                                liveValue: true
                                 valueChangedHandler: (newVal) => root.setNightLightTemp(newVal)
-                                onIconClicked: root.toggleNightLight()
                             }
                         }
 
@@ -1771,9 +1796,7 @@ if isNiri || isMango then
                                     accentColor: root.theme.blue
                                     isMuted: root.isMuted
                                     controlTheme: root.theme
-                                    liveValue: true
                                     valueChangedHandler: (newVal) => root.setVolume(newVal)
-                                    onIconClicked: root.toggleMute()
                                 }
 
                                 SliderCard {
@@ -1782,9 +1805,7 @@ if isNiri || isMango then
                                     value: root.brightnessLevel
                                     accentColor: root.theme.yellow
                                     controlTheme: root.theme
-                                    liveValue: true
                                     valueChangedHandler: (newVal) => root.setBrightnessLevel(newVal)
-                                    onIconClicked: root.toggleBrightness()
                                 }
                             }
                         }
