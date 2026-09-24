@@ -99,18 +99,72 @@ _:
                       NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
                   }
 
-                  // auto-dismiss timer
-                  Timer {
-                      id: closeTimer
-                      interval: {
-                          if (!modelData) return 5000
-                          if (modelData.urgency === NotificationUrgency.Critical) return 8000
-                          if (modelData.expireTimeout > 0) return modelData.expireTimeout * 1000
-                          return 5500
+                  // Auto-dismiss countdown (octashell-style): progress 1→0 drives the ring.
+                  // expireTimeout from the protocol is already in milliseconds — do NOT * 1000.
+                  property int dismissMs: {
+                      if (!modelData) return 5500
+                      if (modelData.urgency === NotificationUrgency.Critical) return 8000
+                      var t = modelData.expireTimeout
+                      // 0 / negative → server default; clamp absurd values
+                      if (typeof t === "number" && t > 500 && t < 120000) return t
+                      return 5500
+                  }
+                  // 1.0 = full time remaining, 0.0 = expired (matches octashell lifeSpanProgress)
+                  property real lifeSpanProgress: 1.0
+                  // legacy alias used by the ring Canvas (0 = full time left, 1 = gone)
+                  property real dismissProgress: 1.0 - lifeSpanProgress
+                  property bool dismissPaused: false
+                  property bool expireCalled: false
+
+                  NumberAnimation {
+                      id: expiryAnim
+                      target: notifDelegate
+                      property: "lifeSpanProgress"
+                      from: 1.0
+                      to: 0.0
+                      duration: notifDelegate.dismissMs
+                      running: modelData && !modelData.resident
+                      easing.type: Easing.Linear
+
+                      onFinished: {
+                          // If paused mid-way, lifeSpanProgress may still be > 0
+                          if (notifDelegate.lifeSpanProgress > 0.01) return
+                          if (notifDelegate.expireCalled) return
+                          notifDelegate.expireCalled = true
+                          if (!modelData) return
+                          // dismiss removes from tracked list; expire alone can leave it stuck
+                          try { modelData.dismiss() } catch (e) {
+                              try { modelData.expire() } catch (e2) {}
+                          }
                       }
-                      running: modelData && !modelData.resident && !notifDelegate.expanded
-                      onTriggered: {
-                          if (modelData) modelData.expire()
+                  }
+
+                  // Pause / resume on hover (and when expanded)
+                  onDismissPausedChanged: {
+                      if (!expiryAnim.running && !notifDelegate.dismissPaused && notifDelegate.lifeSpanProgress > 0.01 && !notifDelegate.expireCalled) {
+                          // restart remaining time
+                          expiryAnim.duration = Math.max(50, notifDelegate.dismissMs * notifDelegate.lifeSpanProgress)
+                          expiryAnim.from = notifDelegate.lifeSpanProgress
+                          expiryAnim.to = 0
+                          expiryAnim.start()
+                          return
+                      }
+                      if (notifDelegate.dismissPaused || notifDelegate.expanded) {
+                          if (expiryAnim.running) expiryAnim.pause()
+                      } else {
+                          if (expiryAnim.paused) {
+                              expiryAnim.duration = Math.max(50, notifDelegate.dismissMs * notifDelegate.lifeSpanProgress)
+                              expiryAnim.resume()
+                          }
+                      }
+                  }
+
+                  onExpandedChanged: {
+                      if (notifDelegate.expanded) {
+                          if (expiryAnim.running) expiryAnim.pause()
+                      } else if (!notifDelegate.dismissPaused && expiryAnim.paused) {
+                          expiryAnim.duration = Math.max(50, notifDelegate.dismissMs * notifDelegate.lifeSpanProgress)
+                          expiryAnim.resume()
                       }
                   }
 
@@ -131,21 +185,6 @@ _:
                           return theme.darkBlue
                       }
 
-                      // subtle left accent bar for urgency
-                      Rectangle {
-                          width: 4
-                          height: parent.height - 8
-                          anchors.left: parent.left
-                          anchors.leftMargin: 4
-                          anchors.verticalCenter: parent.verticalCenter
-                          radius: 2
-                          color: {
-                              if (!modelData) return theme.darkBlue
-                              if (modelData.urgency === NotificationUrgency.Critical) return theme.red
-                              if (modelData.urgency === NotificationUrgency.Low) return theme.fgSubtle
-                              return theme.darkBlue
-                          }
-                      }
 
                       MouseArea {
                           id: cardMa
@@ -157,14 +196,14 @@ _:
                           property real startX: 0
                           property bool dragging: false
 
-                          onEntered: closeTimer.stop()
+                          onEntered: notifDelegate.dismissPaused = true
                           onExited: {
-                              if (!dragging && modelData && !modelData.resident && !notifDelegate.expanded)
-                                  closeTimer.restart()
+                              if (!dragging)
+                                  notifDelegate.dismissPaused = false
                           }
 
                           onPressed: (mouse) => {
-                              closeTimer.stop()
+                              notifDelegate.dismissPaused = true
                               if (mouse.button === Qt.MiddleButton) {
                                   if (modelData) modelData.dismiss()
                                   return
@@ -198,6 +237,8 @@ _:
                                   notifDelegate.expanded = !notifDelegate.expanded
                               }
                               dragging = false
+                              if (!cardMa.containsMouse)
+                                  notifDelegate.dismissPaused = false
                           }
 
                           onClicked: (mouse) => {
@@ -212,7 +253,7 @@ _:
                               right: parent.right
                               top: parent.top
                               margins: 14
-                              leftMargin: 18
+                              leftMargin: 14
                           }
                           spacing: 8
 
@@ -324,21 +365,81 @@ _:
                                   }
                               }
 
-                              // close button
-                              Text {
-                                  text: "✕"
-                                  color: closeMa.containsMouse ? theme.red : theme.fgMuted
-                                  font.pixelSize: 15
+                              // close button with countdown ring
+                              Item {
+                                  id: closeBtn
+                                  width: 24
+                                  height: 24
                                   anchors.verticalCenter: parent.verticalCenter
-                                  width: 22
-                                  horizontalAlignment: Text.AlignHCenter
+
+                                  // track (full circle)
+                                  Canvas {
+                                      id: ringTrack
+                                      anchors.fill: parent
+                                      onPaint: {
+                                          var ctx = getContext("2d")
+                                          ctx.reset()
+                                          var cx = width / 2
+                                          var cy = height / 2
+                                          var r = 9
+                                          ctx.beginPath()
+                                          ctx.arc(cx, cy, r, 0, Math.PI * 2)
+                                          ctx.strokeStyle = theme.fgSubtle
+                                          ctx.globalAlpha = 0.35
+                                          ctx.lineWidth = 2
+                                          ctx.stroke()
+                                      }
+                                      Component.onCompleted: requestPaint()
+                                  }
+
+                                  // remaining time arc (shrinks as dismissProgress → 1)
+                                  Canvas {
+                                      id: ringProgress
+                                      anchors.fill: parent
+                                      property real prog: notifDelegate.dismissProgress
+                                      onProgChanged: requestPaint()
+                                      onPaint: {
+                                          var ctx = getContext("2d")
+                                          ctx.reset()
+                                          var remaining = Math.max(0, 1 - prog)
+                                          if (remaining <= 0.001) return
+                                          var cx = width / 2
+                                          var cy = height / 2
+                                          var r = 9
+                                          // start at top (-PI/2), sweep clockwise for remaining time
+                                          var start = -Math.PI / 2
+                                          var end = start + remaining * Math.PI * 2
+                                          ctx.beginPath()
+                                          ctx.arc(cx, cy, r, start, end, false)
+                                          var accent = theme.darkBlue
+                                          if (modelData) {
+                                              if (modelData.urgency === NotificationUrgency.Critical)
+                                                  accent = theme.red
+                                              else if (modelData.urgency === NotificationUrgency.Low)
+                                                  accent = theme.fgMuted
+                                          }
+                                          ctx.strokeStyle = closeMa.containsMouse ? theme.red : accent
+                                          ctx.lineWidth = 2.2
+                                          ctx.lineCap = "round"
+                                          ctx.stroke()
+                                      }
+                                  }
+
+                                  Text {
+                                      anchors.centerIn: parent
+                                      text: "✕"
+                                      color: closeMa.containsMouse ? theme.red : theme.fgMuted
+                                      font.pixelSize: 11
+                                      font.bold: true
+                                  }
 
                                   MouseArea {
                                       id: closeMa
                                       anchors.fill: parent
-                                      anchors.margins: -6
+                                      anchors.margins: -4
                                       hoverEnabled: true
                                       cursorShape: Qt.PointingHandCursor
+                                      onContainsMouseChanged: ringProgress.requestPaint()
                                       onClicked: if (modelData) modelData.dismiss()
                                   }
                               }
