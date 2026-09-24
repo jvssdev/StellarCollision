@@ -251,11 +251,11 @@ in
 
             Mod+X { spawn "quickshell" "ipc" "call" "powerMenu" "toggle"; }
              Mod+N { spawn "quickshell" "ipc" "call" "notificationCenter" "toggle"; }
-             Mod+C { spawn "quickshell" "ipc" "call" "controlCenter" "toggle"; }
+             Mod+Shift+C { spawn "quickshell" "ipc" "call" "controlCenter" "toggle"; }
              Mod+Y { spawn "quickshell" "ipc" "call" "wallpaperPicker" "toggle"; }
              Mod+Q { close-window; }
            Mod+W { toggle-column-tabbed-display ; }
-           Mod+Shift+C { quit; }
+           // Mod+Shift+C { quit; }
            Mod+Space { toggle-window-floating; }
            Mod+F { maximize-column; }
            Mod+Shift+F { fullscreen-window; }
