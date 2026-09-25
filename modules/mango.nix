@@ -78,9 +78,10 @@ in
       gappiv=5
       gappoh=5
       gappov=5
-      borderpx=2
-      border_radius=10
+      borderpx=3
+      border_radius=12
       no_border_when_single=1
+      no_radius_when_single=1
       rootcolor=${colorToMango c.base00}
       bordercolor=${colorToMango c.base03}
       focuscolor=${colorToMango c.base0D}
