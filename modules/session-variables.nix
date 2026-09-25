@@ -25,6 +25,7 @@ in
       QT_QPA_PLATFORM = "wayland;xcb";
       QT_WAYLAND_FORCE_DPI = "140";
 
+      GTK_IM_MODULE = "fcitx";
       QT_IM_MODULE = "fcitx";
       SDL_IM_MODULE = "fcitx";
       XMODIFIERS = "@im=fcitx";

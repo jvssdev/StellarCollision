@@ -49,6 +49,7 @@ in
       exec-once = ${getExe' pkgs.wl-clipboard "wl-paste"} --type text --watch ${getExe pkgs.cliphist} store
       exec-once = ${getExe' pkgs.wl-clipboard "wl-paste"} --type image --watch ${getExe pkgs.cliphist} store
       exec-once = ${getExe pkgs.wl-clip-persist} --clipboard regular --reconnect-tries 0
+      exec-once = "${getExe pkgs.fcitx5} -d --replace"
 
       env=WLR_NO_HARDWARE_CURSORS,1
       env=QT_AUTO_SCREEN_SCALE_FACTOR,1
@@ -62,6 +63,7 @@ in
       env=XCURSOR_THEME,Bibata-Modern-Ice
       env=XCURSOR_SIZE,24
       env=DISPLAY,:0
+      env=GTK_IM_MODULE,fcitx
       env=QT_IM_MODULE,fcitx
       env=SDL_IM_MODULE,fcitx
       env=XMODIFIERS,@im=fcitx
@@ -72,6 +74,9 @@ in
 
       monitorrule=eDP-1,0.60,1,tile,0,1,0,0,1920,1080,60
       xkb_rules_layout=br
+      xkb_rules_variant=abnt2
+      # xkb_rules_model=pc105
+      # xkb_rules_options=lv3:ralt_switch
       cursor_size=24
       cursor_theme=Bibata-Modern-Ice
       gappih=5

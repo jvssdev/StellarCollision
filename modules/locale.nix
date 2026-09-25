@@ -20,6 +20,16 @@ in
   };
 
   config = mkIf cfg.enable {
+    services.xserver.xkb = {
+      layout = "br";
+      variant = "abnt2";
+    };
+
+    console = {
+      keyMap = "br-abnt2";
+      # useXkbConfig = true;
+    };
+
     i18n = {
       supportedLocales = [
         "en_US.UTF-8/UTF-8"
