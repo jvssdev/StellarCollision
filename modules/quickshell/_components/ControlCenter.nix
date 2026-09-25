@@ -524,29 +524,204 @@ if isNiri || isMango then
             }
         }
 
+        // ── MPRIS media (sticky metadata to avoid stale/prev-track flash) ──
+        // YouTube Music / Chromium often emit empty or previous-track metadata
+        // for a brief window on next/prev. Keep last good values until a real
+        // new track arrives (title+artist both non-empty and different).
         property var mprisPlayers: Mpris.players.values
-        property var activePlayer: Mpris.players.values.length > 0 ? Mpris.players.values[0] : null
+        property var activePlayer: null
         property bool hasMediaPlayer: activePlayer !== null
-        property string mediaTitle: activePlayer?.trackTitle || "No media playing"
-        property string mediaArtist: activePlayer?.trackArtist || ""
-        property string mediaAlbum: activePlayer?.trackAlbum || ""
-        property string mediaArtUrl: activePlayer?.trackArtUrl || ""
-        property bool mediaPlaying: activePlayer?.isPlaying || false
+        property string mediaTitle: "No media playing"
+        property string mediaArtist: ""
+        property string mediaAlbum: ""
+        property string mediaArtUrl: ""
+        property string _lastGoodArtUrl: ""
+        property string _artTrackKey: ""   // art sticky only valid for this track key
+        property string _boundPlayerId: "" // dbusName of player we last bound to
+        // Last player the user controlled via CC (next/prev/play). Prefer it so a
+        // background Twitch tab cannot steal focus/art after a tab switch.
+        property string _pinnedPlayerId: ""
+        property bool mediaPlaying: false
+        property string _trackKey: ""
+        // After next/prev, ignore transient metadata for a short window so the
+        // UI does not flash a much older track (YT Music / Chromium quirk).
+        property bool _mediaTransitioning: false
 
         function getActivePlayer() {
             var players = Mpris.players.values
-            if (players.length === 0) return null
+            if (!players || players.length === 0) return null
+
+            // Prefer the player the user last controlled, if still present
+            if (root._pinnedPlayerId !== "") {
+                for (var k = 0; k < players.length; k++) {
+                    if (players[k] && root._playerId(players[k]) === root._pinnedPlayerId)
+                        return players[k]
+                }
+            }
+
+            // Prefer currently playing
             for (var i = 0; i < players.length; i++) {
-                if (players[i].isPlaying) return players[i]
+                if (players[i] && players[i].isPlaying) return players[i]
+            }
+            // Prefer paused with real metadata (skip empty placeholders)
+            for (var j = 0; j < players.length; j++) {
+                var p = players[j]
+                if (!p) continue
+                if (p.playbackState === MprisPlaybackState.Stopped) continue
+                if ((p.trackTitle && p.trackTitle.length > 0) ||
+                    (p.trackArtist && p.trackArtist.length > 0))
+                    return p
             }
             return players[0]
         }
 
+        function pinActivePlayer() {
+            if (root.activePlayer)
+                root._pinnedPlayerId = root._playerId(root.activePlayer)
+        }
+
+        function _playerId(player) {
+            if (!player) return ""
+            return player.dbusName || player.identity || ""
+        }
+
+        function _clearStickyArt() {
+            root._lastGoodArtUrl = ""
+            root._artTrackKey = ""
+            root.mediaArtUrl = ""
+        }
+
+        function syncMediaMetadata() {
+            var player = root.activePlayer
+            if (!player) {
+                root.mediaTitle = "No media playing"
+                root.mediaArtist = ""
+                root.mediaAlbum = ""
+                root.mediaArtUrl = ""
+                root._lastGoodArtUrl = ""
+                root._artTrackKey = ""
+                root._trackKey = ""
+                root._boundPlayerId = ""
+                root.mediaPlaying = false
+                root._mediaTransitioning = false
+                return
+            }
+
+            // Different MPRIS player (e.g. Twitch tab → YT Music): drop sticky art
+            // so the previous site's cover cannot leak into the new one.
+            var pid = root._playerId(player)
+            if (pid !== root._boundPlayerId) {
+                root._boundPlayerId = pid
+                root._trackKey = ""
+                root._clearStickyArt()
+            }
+
+            root.mediaPlaying = !!player.isPlaying
+
+            var title = player.trackTitle || ""
+            var artist = player.trackArtist || ""
+            var album = player.trackAlbum || ""
+            var art = player.trackArtUrl || ""
+
+            var hasTitle = title.length > 0
+            var hasArtist = artist.length > 0
+            var key = title + "|" + artist + "|" + album
+
+            // During next/prev grace period: freeze UI on last good track.
+            // YT Music / Chromium often emit empty *or* a much older track
+            // for a few hundred ms — never commit those transients.
+            if (root._mediaTransitioning) {
+                return
+            }
+
+            // Normal path: ignore brief empty/partial updates
+            if (!hasTitle && !hasArtist) {
+                return
+            }
+
+            if (key !== root._trackKey) {
+                if (hasTitle) {
+                    root._trackKey = key
+                    root.mediaTitle = title
+                    root.mediaArtist = artist
+                    root.mediaAlbum = album
+                    // New track: only keep sticky art if it was for this same key
+                    // (shouldn't be). Otherwise clear so Twitch/other art cannot stick.
+                    if (root._artTrackKey !== key) {
+                        root._clearStickyArt()
+                    }
+                }
+            } else {
+                if (hasTitle) root.mediaTitle = title
+                if (hasArtist) root.mediaArtist = artist
+                if (album.length > 0) root.mediaAlbum = album
+            }
+
+            // Art: only sticky within the *same* track key of the *same* player
+            if (art.length > 0) {
+                root.mediaArtUrl = art
+                root._lastGoodArtUrl = art
+                root._artTrackKey = root._trackKey
+            } else if (root._lastGoodArtUrl.length > 0 && root._artTrackKey === root._trackKey) {
+                root.mediaArtUrl = root._lastGoodArtUrl
+            } else {
+                root.mediaArtUrl = ""
+            }
+        }
+
+        function beginMediaTransition() {
+            root._mediaTransitioning = true
+            mediaTransitionTimer.restart()
+        }
+
         Timer {
-            interval: 1000
+            id: mediaTransitionTimer
+            interval: 600
+            repeat: false
+            onTriggered: {
+                root._mediaTransitioning = false
+                // Force one sync after grace so late real metadata is applied
+                root.syncMediaMetadata()
+            }
+        }
+
+        function refreshActivePlayer() {
+            var next = root.getActivePlayer()
+            if (next !== root.activePlayer) {
+                // Player object changed — clear sticky before rebinding
+                if (root._playerId(next) !== root._boundPlayerId) {
+                    root._trackKey = ""
+                    root._clearStickyArt()
+                }
+                root.activePlayer = next
+            }
+            root.syncMediaMetadata()
+        }
+
+        // React immediately when the player list changes
+        Connections {
+            target: Mpris.players
+            function onValuesChanged() { root.refreshActivePlayer() }
+        }
+
+        // Bind to the active player's property changes (no 1s lag)
+        Connections {
+            target: root.activePlayer
+            function onIsPlayingChanged() { root.syncMediaMetadata() }
+            function onPlaybackStateChanged() { root.syncMediaMetadata() }
+            function onTrackTitleChanged() { root.syncMediaMetadata() }
+            function onTrackArtistChanged() { root.syncMediaMetadata() }
+            function onTrackAlbumChanged() { root.syncMediaMetadata() }
+            function onTrackArtUrlChanged() { root.syncMediaMetadata() }
+        }
+
+        // Lightweight fallback poll (handles players that don't emit all signals)
+        Timer {
+            interval: 1500
             running: true
             repeat: true
-            onTriggered: root.activePlayer = root.getActivePlayer()
+            triggeredOnStart: true
+            onTriggered: root.refreshActivePlayer()
         }
 
         component QuickToggle: Rectangle {
@@ -869,7 +1044,11 @@ if isNiri || isMango then
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: root.activePlayer?.previous()
+                            onClicked: {
+                                root.pinActivePlayer()
+                                root.beginMediaTransition()
+                                root.activePlayer?.previous()
+                            }
                         }
                     }
 
@@ -891,6 +1070,7 @@ if isNiri || isMango then
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
+                                root.pinActivePlayer()
                                 if (mediaCard.isPlaying) root.activePlayer?.pause()
                                 else root.activePlayer?.play()
                             }
@@ -916,7 +1096,11 @@ if isNiri || isMango then
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: root.activePlayer?.next()
+                            onClicked: {
+                                root.pinActivePlayer()
+                                root.beginMediaTransition()
+                                root.activePlayer?.next()
+                            }
                         }
                     }
                 }
