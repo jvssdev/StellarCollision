@@ -164,11 +164,11 @@ in
       bind=SUPER,n,spawn,${getExe quickshell} ipc call notificationCenter toggle
       bind=SUPER,b,spawn,${config.cfg.vars.browser}
       bind=SUPER,x,spawn,${getExe quickshell} ipc call powerMenu toggle
-      bind=SUPER+SHIFT,c,spawn,${getExe quickshell} ipc call controlCenter toggle
+      bind=SUPER,c,spawn,${getExe quickshell} ipc call controlCenter toggle
       bind=SUPER,y,spawn,${getExe quickshell} ipc call wallpaperPicker toggle
       bind=SUPER,p,spawn,${getExe pkgs.flameshot} gui -p $HOME/Pictures/Screenshots -c
       bind=SUPER,v,spawn,${getExe quickshell} ipc call clipboard toggle
-      bind=SUPER,g,toggle_named_scratchpad,io.github.screwys.Rufin,none,rufin
+      bind=SUPER,m,toggle_named_scratchpad,io.github.screwys.Rufin,none,rufin
 
       bind=SUPER,q,killclient
       bind=SUPER,space,togglefloating
@@ -190,12 +190,16 @@ in
       bind=SUPER+ALT,l,resizewin,+50,0
       bind=SUPER+ALT,k,resizewin,0,-50
       bind=SUPER+ALT,j,resizewin,0,+50
-      bind=SUPER,c,setlayout,tile
-      bind=SUPER,m,setlayout,monocle
-      bind=SUPER,s,setlayout,scroller
+
+      circle_layout=tile,scroller
       bind=SUPER,Tab,switch_layout
-      # bind=SUPER,g,togglegaps
       bind=SUPER,o,toggleoverview
+
+      # bind=SUPER,c,setlayout,tile
+      # bind=SUPER,m,setlayout,monocle
+      # bind=SUPER,s,setlayout,scroller
+
+      # bind=SUPER,g,togglegaps
 
       bind=SUPER,1,comboview,1
       bind=SUPER,2,comboview,2
@@ -242,9 +246,9 @@ in
       windowrule=appid:pavucontrol,isfloating:1
       windowrule=appid:blueman-manager,isfloating:1
       windowrule=appid:nm-connection-editor,isfloating:1
-      windowrule=isnamedscratchpad:1,width:1800,height:1000,appid:dolphin
-      windowrule=isnamedscratchpad:1,width:1800,height:1000,appid:thunderbird
       windowrule=isnamedscratchpad:1,width:1800,height:1000,appid:io.github.screwys.Rufin
+      windowrule=appid:thunderbird,isfloating:1
+      windowrule=appid:dolphin,isfloating:1
 
       enable_hotarea = 0
 
