@@ -37,7 +37,6 @@ in
         pkgs.atuin
         pkgs.bat
         pkgs.lsd
-        pkgs.zoxide
         pkgs.zsh-autosuggestions
         pkgs.zsh-completions
         pkgs.zsh-fast-syntax-highlighting
@@ -90,24 +89,24 @@ in
           source ${pkgs.zsh-autosuggestions}/share/zsh-autosuggestions/zsh-autosuggestions.zsh
           source ${pkgs.zsh-fast-syntax-highlighting}/share/zsh/plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh
 
-          export ZHM_STYLE_CURSOR_SELECT="fg:${c.base00},bg:${c.base08}"
-          export ZHM_STYLE_CURSOR_INSERT="fg:${c.base00},bg:${c.base0B}"
-          export ZHM_STYLE_OTHER_CURSOR_NORMAL="fg:${c.base00},bg:${c.base0C}"
-          export ZHM_STYLE_OTHER_CURSOR_SELECT="fg:${c.base00},bg:${c.base0E}"
-          export ZHM_STYLE_OTHER_CURSOR_INSERT="fg:${c.base00},bg:${c.base0D}"
-          export ZHM_STYLE_SELECTION="fg:${c.base07},bg:${c.base02}"
-          export ZHM_CURSOR_INSERT='\e[0m\e[6 q\e]12;${c.base0B}\a'
+          # export ZHM_STYLE_CURSOR_SELECT="fg:${c.base00},bg:${c.base08}"
+          # export ZHM_STYLE_CURSOR_INSERT="fg:${c.base00},bg:${c.base0B}"
+          # export ZHM_STYLE_OTHER_CURSOR_NORMAL="fg:${c.base00},bg:${c.base0C}"
+          # export ZHM_STYLE_OTHER_CURSOR_SELECT="fg:${c.base00},bg:${c.base0E}"
+          # export ZHM_STYLE_OTHER_CURSOR_INSERT="fg:${c.base00},bg:${c.base0D}"
+          # export ZHM_STYLE_SELECTION="fg:${c.base07},bg:${c.base02}"
+          # export ZHM_CURSOR_INSERT='\e[0m\e[6 q\e]12;${c.base0B}\a'
 
-          ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(
-            zhm_history_prev zhm_history_next zhm_prompt_accept
-            zhm_accept zhm_accept_or_insert_newline
-          )
-          ZSH_AUTOSUGGEST_ACCEPT_WIDGETS+=(
-            zhm_move_right zhm_clear_selection_move_right
-          )
-          ZSH_AUTOSUGGEST_PARTIAL_ACCEPT_WIDGETS+=(
-            zhm_move_next_word_start zhm_move_next_word_end
-          )
+          # ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(
+          #   zhm_history_prev zhm_history_next zhm_prompt_accept
+          #   zhm_accept zhm_accept_or_insert_newline
+          # )
+          # ZSH_AUTOSUGGEST_ACCEPT_WIDGETS+=(
+          #   zhm_move_right zhm_clear_selection_move_right
+          # )
+          # ZSH_AUTOSUGGEST_PARTIAL_ACCEPT_WIDGETS+=(
+          #   zhm_move_next_word_start zhm_move_next_word_end
+          # )
 
           eval "$(${pkgs.fzf}/bin/fzf --zsh)"
 
@@ -121,7 +120,6 @@ in
           # fi
 
           eval "$(${getExe pkgs.direnv} hook zsh)"
-          eval "$(${getExe pkgs.zoxide} init --cmd cd zsh)"
           eval "$(${getExe pkgs.nix-your-shell} zsh)"
           eval "$(${getExe pkgs.starship} init zsh)"
           eval "$(${getExe pkgs.atuin} init zsh)"
@@ -129,6 +127,8 @@ in
           alias ls="${getExe pkgs.lsd}"
           alias cat="${getExe pkgs.bat} --paging=never"
           alias grep="${getExe pkgs.ripgrep}"
+
+          bindkey -e
         '';
       };
 
