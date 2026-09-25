@@ -88,7 +88,7 @@ in
       no_border_when_single=1
       no_radius_when_single=1
       rootcolor=${colorToMango c.base00}
-      bordercolor=${colorToMango c.base03}
+      bordercolor=${colorToMango c.base04}
       focuscolor=${colorToMango c.base0D}
       urgentcolor=${colorToMango c.base08}
       repeat_rate=50
