@@ -21,12 +21,10 @@ in
       property bool inhibit: false
       property var window: null
 
-      // After a successful unlock, ignore new lock requests for a short window.
-      // Prevents the classic "unlock → lock again immediately" when IdleMonitor
-      // still reports isIdle=true (lock-screen input often does not fully reset
-      // ext-idle-notify) or when two lock starts race.
       property bool lockGrace: false
       property bool lockRequested: false
+      property int lockDimTimeout: 30000
+      property bool outputsOn: true
 
       IdleInhibitor {
           window: idleScope.window
@@ -53,13 +51,37 @@ in
           }
       }
 
+      Timer {
+          id: lockDimTimer
+          interval: idleScope.lockDimTimeout
+          repeat: false
+          onTriggered: {
+              if (lockProc.running) {
+                  dpmsOffProc.running = true
+                  idleScope.outputsOn = false
+              }
+          }
+      }
+
+      IdleMonitor {
+          timeout: 1
+          onIsIdleChanged: {
+              if (!lockProc.running) return
+              if (!isIdle) {
+                  dpmsOnProc.running = true
+                  idleScope.outputsOn = true
+                  lockDimTimer.restart()
+              }
+          }
+      }
+
       function requestLock(reason) {
-          // Already showing a lock, or just unlocked — do nothing
           if (lockProc.running || idleScope.lockGrace || idleScope.lockRequested)
               return
 
           idleScope.lockRequested = true
           lockProc.running = true
+          if (idleScope.outputsOn) lockDimTimer.restart()
       }
 
       function handleIdleAction(action, isIdle) {
@@ -69,8 +91,15 @@ in
               return
           }
           if (action === "suspend" && isIdle) suspendProc.running = true
-          if (action === "dpms off" && isIdle) dpmsOffProc.running = true
-          if (action === "dpms on" && !isIdle) dpmsOnProc.running = true
+          if (action === "dpms off" && isIdle) {
+              dpmsOffProc.running = true
+              idleScope.outputsOn = false
+          }
+          if (action === "dpms on" && !isIdle) {
+              dpmsOnProc.running = true
+              idleScope.outputsOn = true
+              if (lockProc.running) lockDimTimer.restart()
+          }
       }
 
       Process {
@@ -96,8 +125,6 @@ in
       Process {
           id: lockProc
           command: ["/run/current-system/sw/bin/qylock-lock"]
-          // When the lock exits (unlock or crash), start a grace period so the
-          // still-idle IdleMonitor cannot immediately spawn another lock.
           onExited: (exitCode, exitStatus) => {
               idleScope.lockRequested = false
               idleScope.lockGrace = true
@@ -132,8 +159,6 @@ in
           IdleMonitor {
               required property var modelData
               timeout: modelData.timeout
-              // Keep monitors always enabled so returnAction (dpms on) still works.
-              // Lock re-entry is gated inside requestLock().
               onIsIdleChanged: idleScope.handleIdleAction(
                   isIdle ? modelData.idleAction : modelData.returnAction,
                   isIdle
