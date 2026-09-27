@@ -56,6 +56,108 @@ let
       b = toHexInt (builtins.substring 4 2 hex);
     in
     "${toString r},${toString g},${toString b}";
+
+  colorsBlock = ''
+    [ColorEffects:Disabled]
+    Color=${toRGB c.base03}
+    ColorAmount=0
+    ColorEffect=0
+    ContrastAmount=0.65
+    ContrastEffect=2
+    IntensityAmount=0.1
+    IntensityEffect=1
+
+    [ColorEffects:Inactive]
+    Color=${toRGB c.base01}
+    ColorAmount=-0.2
+    ColorEffect=2
+    ContrastAmount=0.5
+    ContrastEffect=1
+    IntensityAmount=0
+    IntensityEffect=0
+
+    [Colors:Button]
+    BackgroundNormal=${toRGB c.base01}
+    BackgroundAlternate=${toRGB c.base00}
+    ForegroundNormal=${toRGB c.base06}
+    ForegroundInactive=${toRGB c.base03}
+    ForegroundActive=${toRGB c.base06}
+    ForegroundLink=${toRGB c.base0D}
+    ForegroundVisited=${toRGB c.base0E}
+    DecorationFocus=${toRGB c.base0D}
+    DecorationHover=${toRGB c.base0F}
+    DecorationInactive=${toRGB c.base03}
+
+    [Colors:Complementary]
+    BackgroundNormal=${toRGB c.base01}
+    BackgroundAlternate=${toRGB c.base00}
+    ForegroundNormal=${toRGB c.base06}
+    ForegroundInactive=${toRGB c.base03}
+    ForegroundActive=${toRGB c.base06}
+    ForegroundLink=${toRGB c.base0D}
+    ForegroundVisited=${toRGB c.base0E}
+    DecorationFocus=${toRGB c.base0D}
+    DecorationHover=${toRGB c.base0F}
+    DecorationInactive=${toRGB c.base03}
+
+    [Colors:Header]
+    BackgroundNormal=${toRGB c.base01}
+    BackgroundAlternate=${toRGB c.base00}
+    ForegroundNormal=${toRGB c.base06}
+    ForegroundInactive=${toRGB c.base03}
+    DecorationFocus=${toRGB c.base0D}
+    DecorationInactive=${toRGB c.base03}
+
+    [Colors:Header:Inactive]
+    BackgroundNormal=${toRGB c.base01}
+    BackgroundAlternate=${toRGB c.base00}
+    ForegroundNormal=${toRGB c.base03}
+    DecorationInactive=${toRGB c.base03}
+
+    [Colors:Selection]
+    BackgroundNormal=${toRGB c.base0D}
+    BackgroundAlternate=${toRGB c.base03}
+    ForegroundNormal=${toRGB c.base00}
+    ForegroundInactive=${toRGB c.base04}
+    ForegroundActive=${toRGB c.base00}
+    ForegroundLink=${toRGB c.base00}
+    ForegroundVisited=${toRGB c.base00}
+    DecorationFocus=${toRGB c.base0D}
+    DecorationHover=${toRGB c.base0F}
+    DecorationInactive=${toRGB c.base02}
+
+    [Colors:Tooltip]
+    BackgroundNormal=${toRGB c.base01}
+    BackgroundAlternate=${toRGB c.base00}
+    ForegroundNormal=${toRGB c.base06}
+    ForegroundInactive=${toRGB c.base03}
+    DecorationFocus=${toRGB c.base0D}
+    DecorationInactive=${toRGB c.base03}
+
+    [Colors:View]
+    BackgroundNormal=${toRGB c.base00}
+    BackgroundAlternate=${toRGB c.base01}
+    ForegroundNormal=${toRGB c.base06}
+    ForegroundInactive=${toRGB c.base03}
+    ForegroundActive=${toRGB c.base06}
+    ForegroundLink=${toRGB c.base0D}
+    ForegroundVisited=${toRGB c.base0E}
+    DecorationFocus=${toRGB c.base0D}
+    DecorationHover=${toRGB c.base0F}
+    DecorationInactive=${toRGB c.base03}
+
+    [Colors:Window]
+    BackgroundNormal=${toRGB c.base00}
+    BackgroundAlternate=${toRGB c.base01}
+    ForegroundNormal=${toRGB c.base06}
+    ForegroundInactive=${toRGB c.base03}
+    ForegroundActive=${toRGB c.base06}
+    ForegroundLink=${toRGB c.base0D}
+    ForegroundVisited=${toRGB c.base0E}
+    DecorationFocus=${toRGB c.base0D}
+    DecorationHover=${toRGB c.base0F}
+    DecorationInactive=${toRGB c.base03}
+  '';
 in
 {
 
@@ -71,7 +173,7 @@ in
     qt = {
       enable = true;
       platformTheme = "qt5ct";
-      style = "adwaita";
+      style = "kvantum";
     };
     hj = {
       packages = [
@@ -89,12 +191,21 @@ in
             [Appearance]
             icon_theme=FairyWren_Dark
             standard_dialogs=default
-            style=adwaita
+            style=kvantum
           '';
 
           "kdeglobals".text = ''
             [Icons]
             Theme=FairyWren_Dark
+
+            [General]
+            ColorScheme=Tsuki
+
+            [KDE]
+            LookAndFeelPackage=org.kde.breezedark.desktop
+            widgetStyle=kvantum
+
+            ${colorsBlock}
           '';
         };
 
@@ -850,105 +961,7 @@ in
         Name=Tsuki
         Description=Base16 Tsuki dark theme for KDE Plasma
 
-        [ColorEffects:Disabled]
-        Color=${toRGB c.base03}
-        ColorAmount=0
-        ColorEffect=0
-        ContrastAmount=0.65
-        ContrastEffect=2
-        IntensityAmount=0.1
-        IntensityEffect=1
-
-        [ColorEffects:Inactive]
-        Color=${toRGB c.base01}
-        ColorAmount=-0.2
-        ColorEffect=2
-        ContrastAmount=0.5
-        ContrastEffect=1
-        IntensityAmount=0
-        IntensityEffect=0
-
-        [Colors:Button]
-        BackgroundNormal=${toRGB c.base01}
-        BackgroundAlternate=${toRGB c.base00}
-        ForegroundNormal=${toRGB c.base06}
-        ForegroundInactive=${toRGB c.base03}
-        ForegroundActive=${toRGB c.base06}
-        ForegroundLink=${toRGB c.base0D}
-        ForegroundVisited=${toRGB c.base0E}
-        DecorationFocus=${toRGB c.base0D}
-        DecorationHover=${toRGB c.base0F}
-        DecorationInactive=${toRGB c.base03}
-
-        [Colors:Complementary]
-        BackgroundNormal=${toRGB c.base01}
-        BackgroundAlternate=${toRGB c.base00}
-        ForegroundNormal=${toRGB c.base06}
-        ForegroundInactive=${toRGB c.base03}
-        ForegroundActive=${toRGB c.base06}
-        ForegroundLink=${toRGB c.base0D}
-        ForegroundVisited=${toRGB c.base0E}
-        DecorationFocus=${toRGB c.base0D}
-        DecorationHover=${toRGB c.base0F}
-        DecorationInactive=${toRGB c.base03}
-
-        [Colors:Header]
-        BackgroundNormal=${toRGB c.base01}
-        BackgroundAlternate=${toRGB c.base00}
-        ForegroundNormal=${toRGB c.base06}
-        ForegroundInactive=${toRGB c.base03}
-        DecorationFocus=${toRGB c.base0D}
-        DecorationInactive=${toRGB c.base03}
-
-        [Colors:Header:Inactive]
-        BackgroundNormal=${toRGB c.base01}
-        BackgroundAlternate=${toRGB c.base00}
-        ForegroundNormal=${toRGB c.base03}
-        DecorationInactive=${toRGB c.base03}
-
-        [Colors:Selection]
-        BackgroundNormal=${toRGB c.base0D}
-        BackgroundAlternate=${toRGB c.base03}
-        ForegroundNormal=${toRGB c.base00}
-        ForegroundInactive=${toRGB c.base04}
-        ForegroundActive=${toRGB c.base00}
-        ForegroundLink=${toRGB c.base00}
-        ForegroundVisited=${toRGB c.base00}
-        DecorationFocus=${toRGB c.base0D}
-        DecorationHover=${toRGB c.base0F}
-        DecorationInactive=${toRGB c.base02}
-
-        [Colors:Tooltip]
-        BackgroundNormal=${toRGB c.base01}
-        BackgroundAlternate=${toRGB c.base00}
-        ForegroundNormal=${toRGB c.base06}
-        ForegroundInactive=${toRGB c.base03}
-        DecorationFocus=${toRGB c.base0D}
-        DecorationInactive=${toRGB c.base03}
-
-        [Colors:View]
-        BackgroundNormal=${toRGB c.base00}
-        BackgroundAlternate=${toRGB c.base01}
-        ForegroundNormal=${toRGB c.base06}
-        ForegroundInactive=${toRGB c.base03}
-        ForegroundActive=${toRGB c.base06}
-        ForegroundLink=${toRGB c.base0D}
-        ForegroundVisited=${toRGB c.base0E}
-        DecorationFocus=${toRGB c.base0D}
-        DecorationHover=${toRGB c.base0F}
-        DecorationInactive=${toRGB c.base03}
-
-        [Colors:Window]
-        BackgroundNormal=${toRGB c.base00}
-        BackgroundAlternate=${toRGB c.base01}
-        ForegroundNormal=${toRGB c.base06}
-        ForegroundInactive=${toRGB c.base03}
-        ForegroundActive=${toRGB c.base06}
-        ForegroundLink=${toRGB c.base0D}
-        ForegroundVisited=${toRGB c.base0E}
-        DecorationFocus=${toRGB c.base0D}
-        DecorationHover=${toRGB c.base0F}
-        DecorationInactive=${toRGB c.base03}
+        ${colorsBlock}
       '';
     };
   };
