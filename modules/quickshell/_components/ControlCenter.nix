@@ -559,19 +559,20 @@ if isNiri || isMango then
                 }
             }
 
-            // Prefer currently playing
+            // Whatever is actually playing always wins, even over the
+            // sticky selection below — this is what lets a real player
+            // (Rufin) take over from a stale paused ghost the instant it
+            // starts, instead of never letting go of that ghost.
             for (var i = 0; i < players.length; i++) {
                 if (players[i] && players[i].isPlaying) return players[i]
             }
-            // Prefer paused with real metadata (skip empty placeholders)
-            for (var j = 0; j < players.length; j++) {
-                var p = players[j]
-                if (!p) continue
-                if (p.playbackState === MprisPlaybackState.Stopped) continue
-                if ((p.trackTitle && p.trackTitle.length > 0) ||
-                    (p.trackArtist && p.trackArtist.length > 0))
-                    return p
-            }
+
+            // Nothing is playing: stay on the current selection if it's
+            // still present, rather than re-picking players[0] every time
+            // (that's what used to let a stale paused ghost flicker back in).
+            if (root.activePlayer && players.indexOf(root.activePlayer) !== -1)
+                return root.activePlayer
+
             return players[0]
         }
 
@@ -702,6 +703,26 @@ if isNiri || isMango then
         Connections {
             target: Mpris.players
             function onValuesChanged() { root.refreshActivePlayer() }
+        }
+
+        // React the instant any individual player's playback state actually
+        // changes, instead of waiting for the fallback poll below. This is
+        // what catches a player (like Rufin) that is slow to fire its first
+        // PropertiesChanged after it starts playing — the poll alone could
+        // leave a stale player selected for a few seconds in that window.
+        Instantiator {
+            model: Mpris.players.values
+
+            delegate: Connections {
+                required property MprisPlayer modelData
+                target: modelData
+
+                function onIsPlayingChanged() { root.refreshActivePlayer() }
+                function onPlaybackStateChanged() { root.refreshActivePlayer() }
+            }
+
+            onObjectAdded: root.refreshActivePlayer()
+            onObjectRemoved: root.refreshActivePlayer()
         }
 
         // Bind to the active player's property changes (no 1s lag)

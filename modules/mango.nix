@@ -190,7 +190,7 @@ in
       bind=SUPER+ALT,l,resizewin,+50,0
       bind=SUPER+ALT,k,resizewin,0,-50
       bind=SUPER+ALT,j,resizewin,0,+50
-      bind=SUPER,g,togglegaps
+      # bind=SUPER,g,togglegaps
 
       circle_layout=tile,scroller
       bind=SUPER,Tab,switch_layout
