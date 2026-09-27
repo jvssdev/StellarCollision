@@ -84,9 +84,9 @@ let
     violentmonkey = {
       id = "jinjaccalgkegednnccohejagnlnfdag";
     };
-    vimium = {
-      id = "dbepggeogbaibhgnhhndojpepiihcmeb";
-    };
+    # vimium = {
+    #   id = "dbepggeogbaibhgnhhndojpepiihcmeb";
+    # };
     seven-tv = {
       id = "ammjkodgmmoknidbanneddgankgfejfh";
     };
@@ -101,6 +101,9 @@ let
     };
     control-panel-for-youtube = {
       id = "lodcanccmfbpjjpnngindkkmiehimile";
+    };
+    shazam = {
+      id = "mmioliijnhnoblpgimnlajmefafdfilb";
     };
   };
 
