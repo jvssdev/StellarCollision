@@ -81,7 +81,8 @@ in
 
           idleScope.lockRequested = true
           lockProc.running = true
-          if (idleScope.outputsOn) lockDimTimer.restart()
+          if (idleScope.outputsOn)
+              lockDimTimer.restart()
       }
 
       function handleIdleAction(action, isIdle) {
@@ -152,8 +153,8 @@ in
 
       Variants {
           model: [
-              { timeout: 240, idleAction: "dpms off", returnAction: "dpms on" },
-              { timeout: 300, idleAction: "lock" },
+              { timeout: 100, idleAction: "lock" },
+              { timeout: 115, idleAction: "dpms off", returnAction: "dpms on" },
               { timeout: 600, idleAction: "suspend" }
           ]
           IdleMonitor {

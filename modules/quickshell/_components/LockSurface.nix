@@ -9,12 +9,22 @@ _:
   Rectangle {
       id: root
       required property LockContext context
+      property var theme: null
 
       color: theme.bg
+
       Image {
+          id: wall
           anchors.fill: parent
           source: "wallpaper.png"
-          fillMode: Image.PreserveAspectFit
+          fillMode: Image.PreserveAspectCrop
+          asynchronous: true
+          cache: true
+      }
+
+      Rectangle {
+          anchors.fill: parent
+          color: Qt.rgba(0, 0, 0, 0.35)
       }
 
       ColumnLayout {
@@ -74,25 +84,31 @@ _:
                   id: passwordBox
                   implicitWidth: 300
                   padding: 15
-                  focus: true
                   enabled: !root.context.unlockInProgress
                   echoMode: TextInput.Password
-                  inputMethodHints: Qt.ImhSensitiveData
+                  inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoPredictiveText
                   color: theme.fg
                   background: Rectangle {
-                      color: Qt.rgba(46/255, 52/255, 64/255, 0.85)
+                      color: Qt.rgba(46 / 255, 52 / 255, 64 / 255, 0.85)
                       border.color: theme.darkBlue
                       border.width: 2
                       radius: 12
                   }
-                  onTextChanged: root.context.currentText = this.text;
-                  onAccepted: root.context.tryUnlock();
+
+                  onTextChanged: root.context.currentText = text
+                  onAccepted: root.context.tryUnlock()
 
                   Connections {
                       target: root.context
                       function onCurrentTextChanged() {
-                          passwordBox.text = root.context.currentText;
+                          if (passwordBox.text !== root.context.currentText)
+                              passwordBox.text = root.context.currentText
                       }
+                  }
+
+                  Component.onCompleted: {
+                      text = ""
+                      root.context.currentText = ""
                   }
               }
 
@@ -101,7 +117,7 @@ _:
                   padding: 12
                   focusPolicy: Qt.NoFocus
                   enabled: !root.context.unlockInProgress && root.context.currentText !== ""
-                  onClicked: root.context.tryUnlock();
+                  onClicked: root.context.tryUnlock()
                   contentItem: Text {
                       text: parent.text
                       color: theme.bg
@@ -126,6 +142,14 @@ _:
               font.family: theme.fontFamily
               Layout.alignment: Qt.AlignHCenter
           }
+      }
+
+      Timer {
+          id: focusTimer
+          interval: 80
+          repeat: true
+          running: !passwordBox.activeFocus && !root.context.unlockInProgress
+          onTriggered: passwordBox.forceActiveFocus()
       }
   }
 ''

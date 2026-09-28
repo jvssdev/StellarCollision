@@ -50,7 +50,7 @@ in
       integrations.difftastic.enable = true;
     };
     mpd.enable = true;
-    rmpc.enable = true;
+    rmpc.enable = false;
     lutris = {
       enable = true;
     };
