@@ -51,8 +51,6 @@ let
             cp -r quickshell-lockscreen/. $out/share/qylock/
             cp -r themes $out/share/qylock/themes
 
-            # Single Python pass: shim/shell patches + password focus leak fix
-            # IMPORTANT: ENDOFPY must be at column 0 after Nix indent stripping
             python3 - "$out/share/qylock" <<'ENDOFPY'
       import os
       import re
@@ -63,7 +61,6 @@ let
       shell_path = os.path.join(root, "lock_shell.qml")
       themes_root = os.path.join(root, "themes")
 
-      # ----- 1) SddmShim + lock_shell patches -----
       text = open(shim_path).read()
 
       marker = 'property string themePath: ""'
@@ -113,10 +110,39 @@ let
           hook + "\n                    shellRoot.sessionLocked = false\n                    Qt.quit()",
           1,
       )
+
+      old_loaded = """onLoaded: {
+                item.forceActiveFocus()
+            }"""
+      new_loaded = """onLoaded: {
+                if (item && item.parent) {
+                    item.anchors.fill = item.parent
+                    item.width = item.parent.width
+                    item.height = item.parent.height
+                    item.forceActiveFocus()
+                } else if (item) {
+                    item.forceActiveFocus()
+                }
+            }"""
+      if old_loaded in shell:
+          shell = shell.replace(old_loaded, new_loaded, 1)
+      else:
+          shell = shell.replace(
+              "item.forceActiveFocus()",
+              """if (item && item.parent) {
+                        item.anchors.fill = item.parent
+                        item.width = item.parent.width
+                        item.height = item.parent.height
+                        item.forceActiveFocus()
+                    } else if (item) {
+                        item.forceActiveFocus()
+                    }""",
+              1,
+          )
+
       open(shell_path, "w").write(shell)
       print("qylock shim/shell patched")
 
-      # ----- 2) Password focus leak fix (idle/DPMS keystrokes) -----
       PASS_IDS = re.compile(
           r"\bid\s*:\s*(passInput|pwd|password|passwordBox|passwordField|passField|pass)\b"
       )
@@ -173,10 +199,9 @@ let
               pid = ids[0]
               inject = (
                   "\n"
-                  "    // StellarCollision: discard keystrokes queued during idle/DPMS\n"
                   "    Timer {\n"
                   "        id: passwordClearDelay\n"
-                  "        interval: 350\n"
+                  "        interval: 700\n"
                   "        running: true\n"
                   "        onTriggered: {\n"
                   "            if (typeof " + pid + ' !== "undefined") {\n'
@@ -198,6 +223,22 @@ let
                       r"\1" + inject,
                       src,
                       count=1,
+                  )
+
+          if "MediaPlayer" in src and "bg.mp4" in src:
+              src = src.replace(
+                  'source: "bg.mp4"',
+                  'source: Qt.resolvedUrl("bg.mp4")',
+              )
+              if "onErrorOccurred" not in src:
+                  src = src.replace(
+                      "Component.onCompleted: player.play()",
+                      """Component.onCompleted: player.play()
+        onErrorOccurred: Qt.callLater(function() { player.play() })
+        onPlaybackStateChanged: {
+            if (playbackState === MediaPlayer.StoppedState)
+                Qt.callLater(function() { player.play() })
+        }""",
                   )
 
           if src != orig:
@@ -263,10 +304,13 @@ let
     export QS_THEME_PATH="$share/themes/$theme"
     export QT_MEDIA_BACKEND=gstreamer
     export QML_XHR_ALLOW_FILE_READ=1
-    export QML2_IMPORT_PATH="$share/imports:${qmlPath}''${QML2_IMPORT_PATH:+:$QML2_IMPORT_PATH}"
+
+    export QML2_IMPORT_PATH="$share/imports:${qmlPath}"
     export QML_IMPORT_PATH="$QML2_IMPORT_PATH"
-    export QT_PLUGIN_PATH="${pluginPath}''${QT_PLUGIN_PATH:+:$QT_PLUGIN_PATH}"
+    export QT_PLUGIN_PATH="${pluginPath}"
+
     export GST_PLUGIN_SYSTEM_PATH_1_0="${gstPath}''${GST_PLUGIN_SYSTEM_PATH_1_0:+:$GST_PLUGIN_SYSTEM_PATH_1_0}"
+    export GST_PLUGIN_PATH="$GST_PLUGIN_SYSTEM_PATH_1_0"
 
     exec quickshell -p "$share/lock_shell.qml"
   '';

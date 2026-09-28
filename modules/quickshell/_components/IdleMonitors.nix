@@ -23,7 +23,6 @@ in
 
       property bool lockGrace: false
       property bool lockRequested: false
-      property int lockDimTimeout: 30000
       property bool outputsOn: true
 
       IdleInhibitor {
@@ -51,18 +50,6 @@ in
           }
       }
 
-      Timer {
-          id: lockDimTimer
-          interval: idleScope.lockDimTimeout
-          repeat: false
-          onTriggered: {
-              if (lockProc.running) {
-                  dpmsOffProc.running = true
-                  idleScope.outputsOn = false
-              }
-          }
-      }
-
       IdleMonitor {
           timeout: 1
           onIsIdleChanged: {
@@ -70,7 +57,6 @@ in
               if (!isIdle) {
                   dpmsOnProc.running = true
                   idleScope.outputsOn = true
-                  lockDimTimer.restart()
               }
           }
       }
@@ -81,8 +67,6 @@ in
 
           idleScope.lockRequested = true
           lockProc.running = true
-          if (idleScope.outputsOn)
-              lockDimTimer.restart()
       }
 
       function handleIdleAction(action, isIdle) {
@@ -99,7 +83,6 @@ in
           if (action === "dpms on" && !isIdle) {
               dpmsOnProc.running = true
               idleScope.outputsOn = true
-              if (lockProc.running) lockDimTimer.restart()
           }
       }
 
@@ -125,7 +108,19 @@ in
 
       Process {
           id: lockProc
+          clearEnvironment: false
+          workingDirectory: Quickshell.env("HOME") || "/tmp"
+          environment: ({
+              QML_IMPORT_PATH: null,
+              QML2_IMPORT_PATH: null
+          })
           command: ["/run/current-system/sw/bin/qylock-lock"]
+          stderr: StdioCollector {
+              onStreamFinished: {
+                  if (text && text.length > 0)
+                      console.warn("[qylock-lock stderr]", text)
+              }
+          }
           onExited: (exitCode, exitStatus) => {
               idleScope.lockRequested = false
               idleScope.lockGrace = true
@@ -153,8 +148,8 @@ in
 
       Variants {
           model: [
-              { timeout: 100, idleAction: "lock" },
-              { timeout: 115, idleAction: "dpms off", returnAction: "dpms on" },
+              { timeout: 100, idleAction: "dpms off", returnAction: "dpms on" },
+              { timeout: 160, idleAction: "lock" },
               { timeout: 600, idleAction: "suspend" }
           ]
           IdleMonitor {
