@@ -98,11 +98,11 @@ in
       smartgaps=1
       cursor_hide_timeout=5000
       trackpad_natural_scrolling=0
-      animation_duration_move=500
-      animation_duration_open=350
+      animation_duration_move=150
+      animation_duration_open=150
       animation_duration_tag=0
-      animation_duration_close=550
-      animation_duration_focus=400
+      animation_duration_close=150
+      animation_duration_focus=150
       animation_curve_open=0.22,1.0,0.36,1
       animation_curve_move=0.46,1.0,0.29,1
       animation_curve_tag=0.65,0,0.35,1
