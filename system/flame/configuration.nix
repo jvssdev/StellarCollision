@@ -51,9 +51,7 @@ in
     };
     mpd.enable = true;
     rmpc.enable = false;
-    lutris = {
-      enable = true;
-    };
+    gaming.enable = true;
 
     vars = {
       withGui = true;
