@@ -5,6 +5,21 @@
   pkgs,
   ...
 }:
+let
+  libreofficeSeedLocale = pkgs.writeShellScript "libreoffice-seed-locale" ''
+    f="''${XDG_CONFIG_HOME:-$HOME/.config}/libreoffice/4/user/registrymodifications.xcu"
+    mkdir -p "$(dirname "$f")"
+    if [ ! -f "$f" ]; then
+      printf '%s\n' \
+        '<?xml version="1.0" encoding="UTF-8"?>' \
+        '<oor:items xmlns:oor="http://openoffice.org/2001/registry" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">' \
+        '</oor:items>' > "$f"
+    fi
+    if ! grep -q 'oor:name="DefaultLocale"' "$f"; then
+      sed -i 's|</oor:items>|<item oor:path="/org.openoffice.Office.Linguistic/General"><prop oor:name="DefaultLocale" oor:op="fuse"><value>pt-BR</value></prop></item>\n</oor:items>|' "$f"
+    fi
+  '';
+in
 {
   nixpkgs.config.allowUnfree = true;
   hardware.enableRedistributableFirmware = lib.mkDefault true;
@@ -61,12 +76,26 @@
     pkgs.imv
     pkgs.rustdesk-flutter
     pkgs.haruna
-    pkgs.libreoffice
+
+    (pkgs.symlinkJoin {
+      name = "libreoffice-pt-br";
+      paths = [ pkgs.libreoffice ];
+      buildInputs = [ pkgs.makeWrapper ];
+      postBuild = ''
+        for bin in libreoffice soffice; do
+          wrapProgram $out/bin/$bin --run ${libreofficeSeedLocale}
+        done
+      '';
+    })
+
+    (pkgs.hunspell.withDicts (dicts: [
+      dicts.en_US
+      dicts.en_GB-ize
+      dicts.pt_BR
+    ]))
+
     pkgs.azahar
     pkgs.melonds
-    pkgs.hunspellDicts.en_US
-    pkgs.hunspellDicts.en_GB-ize
-    pkgs.hunspellDicts.pt_BR
     pkgs.ntfs3g
     pkgs.thunderbird
     pkgs.rufin
