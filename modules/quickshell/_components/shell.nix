@@ -61,6 +61,9 @@ in
           keepOnReload: true
 
           onNotification: notification => {
+              var isFlameshot = (notification.appName || "").toLowerCase() === "flameshot"
+              if (isFlameshot && !(notification.body || "").startsWith("Capture saved as"))
+                  return
               notification.tracked = true
               var entry = {
                   id: notification.id,
