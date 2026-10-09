@@ -107,8 +107,8 @@ in
         edenFixed
         pkgs.azahar
         pkgs.melonds
-        lutrisPackage
-        pkgs.winetricks
+        # lutrisPackage
+        # pkgs.winetricks
       ];
 
       xdg.config.files = {

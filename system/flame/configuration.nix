@@ -66,7 +66,17 @@ in
   programs = {
     dconf.enable = true;
     xwayland.enable = true;
-    kdeconnect.enable = true;
+    kdeconnect = {
+      enable = true;
+      package = pkgs.symlinkJoin {
+        name = "kdeconnect-kde-trimmed";
+        paths = [ pkgs.kdePackages.kdeconnect-kde ];
+        postBuild = ''
+          rm -f $out/share/applications/org.kde.kdeconnect.nonplasma.desktop
+          rm -f $out/share/applications/org.kde.kdeconnect.sms.desktop
+        '';
+      };
+    };
     nix-ld.enable = true;
   };
 
