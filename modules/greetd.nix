@@ -14,8 +14,6 @@ let
     ;
   cfg = config.cfg.sddm;
 
-  gst = pkgs.gst_all_1;
-
   qmlPath = lib.makeSearchPath "lib/qt-6/qml" [
     pkgs.qt6.qt5compat
     pkgs.qt6.qtdeclarative
@@ -26,15 +24,6 @@ let
   pluginPath = lib.makeSearchPath "lib/qt-6/plugins" [
     pkgs.qt6.qtmultimedia
     pkgs.qt6.qtbase
-  ];
-
-  gstPath = lib.makeSearchPath "lib/gstreamer-1.0" [
-    gst.gstreamer
-    gst.gst-plugins-base
-    gst.gst-plugins-good
-    gst.gst-plugins-bad
-    gst.gst-plugins-ugly
-    gst.gst-libav
   ];
 
   qylockShare = pkgs.stdenvNoCC.mkDerivation {
@@ -302,15 +291,11 @@ let
     export QS_THEME="$theme"
     export QYLOCK_THEMES_ROOT="$share/themes"
     export QS_THEME_PATH="$share/themes/$theme"
-    export QT_MEDIA_BACKEND=gstreamer
     export QML_XHR_ALLOW_FILE_READ=1
 
     export QML2_IMPORT_PATH="$share/imports:${qmlPath}"
     export QML_IMPORT_PATH="$QML2_IMPORT_PATH"
     export QT_PLUGIN_PATH="${pluginPath}"
-
-    export GST_PLUGIN_SYSTEM_PATH_1_0="${gstPath}''${GST_PLUGIN_SYSTEM_PATH_1_0:+:$GST_PLUGIN_SYSTEM_PATH_1_0}"
-    export GST_PLUGIN_PATH="$GST_PLUGIN_SYSTEM_PATH_1_0"
 
     exec quickshell -p "$share/lock_shell.qml"
   '';
@@ -342,12 +327,6 @@ in
     environment = {
       systemPackages = with pkgs; [
         qylockLock
-        gst_all_1.gstreamer
-        gst_all_1.gst-plugins-base
-        gst_all_1.gst-plugins-good
-        gst_all_1.gst-plugins-bad
-        gst_all_1.gst-plugins-ugly
-        gst_all_1.gst-libav
         qt6.qtmultimedia
         kdePackages.qt6ct
         kdePackages.qtwayland
