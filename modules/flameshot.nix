@@ -13,6 +13,8 @@ let
   cfg = config.cfg.flameshot;
 
   c = config.cfg.theme.colors;
+
+  isMango = config.cfg.mango.enable or false;
 in
 {
   options.cfg.flameshot = {
@@ -21,14 +23,21 @@ in
       default = false;
       description = "Enable Flameshot configuration.";
     };
+
+    package = mkOption {
+      type = types.package;
+      default = pkgs.flameshot.override { enableWlrSupport = isMango; };
+      description = "The Flameshot package to install.";
+    };
   };
 
   config = mkIf cfg.enable {
     hj = {
-      services.flameshot = {
-        enable = true;
-        package = pkgs.flameshot.override { enableWlrSupport = true; };
-        settings = {
+      packages = [ cfg.package ];
+
+      xdg.config.files."flameshot/flameshot.ini" = {
+        generator = lib.generators.toINI { };
+        value = {
           General = {
             showStartupLaunchMessage = false;
             showAbortNotification = false;
@@ -37,6 +46,8 @@ in
             drawColor = "${c.base08}";
             contrastOpacity = 188;
             userColors = "picker, ${c.base08}, ${c.base09}, ${c.base0A}, ${c.base0B}, ${c.base0D}, ${c.base0E}";
+            savePath = "${config.cfg.vars.homeDirectory}/Pictures/Screenshots";
+            savePathFixed = true;
           };
         };
       };

@@ -245,9 +245,9 @@ in
             Mod+v repeat=false { spawn "quickshell" "ipc" "call" "launcher" "openClipboard"; }
             Mod+Shift+v repeat=false { spawn "quickshell" "ipc" "call" "launcher" "clearClipboard"; }
            Mod+O { toggle-overview; }
-           Print { screenshot-screen; }
-           Mod+P { screenshot; }
-           Alt+Print { screenshot-window; }
+           Mod+P { spawn-sh "flameshot gui -p $HOME/Pictures/Screenshots -c"; }
+           // Print { screenshot-screen; }
+           // Alt+Print { screenshot-window; }
 
             Mod+X { spawn "quickshell" "ipc" "call" "powerMenu" "toggle"; }
              Mod+N { spawn "quickshell" "ipc" "call" "notificationCenter" "toggle"; }
