@@ -37,6 +37,7 @@ in
     dunst.enable = false;
     btop.enable = true;
     zathura.enable = true;
+    flameshot.enable = true;
     keepassxc.enable = true;
     gammastep.enable = true;
     wpaperd.enable = false;

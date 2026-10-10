@@ -24,9 +24,9 @@ let
     '';
   };
 
-  lutrisPackage = pkgs.lutris.override {
-    extraLibraries = _: [ pkgs.wineWow64Packages.staging ];
-  };
+  # lutrisPackage = pkgs.lutris.override {
+  #   extraLibraries = _: [ pkgs.wineWow64Packages.staging ];
+  # };
 
   shareCfg = cfg.waydroidEdenShare;
   hostUser = config.cfg.vars.username;

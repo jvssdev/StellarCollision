@@ -54,7 +54,6 @@ in
     pkgs.wl-clip-persist
     pkgs.cliphist
     pkgs.wl-clipboard
-    pkgs.flameshot
 
     pkgs.glib
     pkgs.libgcc
