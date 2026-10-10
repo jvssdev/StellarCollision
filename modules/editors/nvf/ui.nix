@@ -22,6 +22,7 @@ in
         globalstatus = true;
       };
       integrations.breadcrumbs = {
+        location = "winbar";
         nvim-navic.enable = true;
         navbuddy.enable = true;
       };
