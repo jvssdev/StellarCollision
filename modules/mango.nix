@@ -83,7 +83,7 @@ in
       border_px=3
       border_radius=12
       no_border_when_single=1
-      no_radius_when_single=1
+      no_radius_when_single=0
       root_color=${colorToMango c.base00}
       border_color=${colorToMango c.base04}
       focus_color=${colorToMango c.base0D}

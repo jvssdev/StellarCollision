@@ -24,11 +24,11 @@ in
     zsh.enable = true;
     nvf.enable = true;
     dolphin.enable = true;
-    opencode.enable = true;
+    opencode.enable = false;
     zen-browser.enable = false;
     helium.enable = true;
     firefox.enable = true;
-    zed.enable = true;
+    zed.enable = false;
     keyring.enable = true;
     git.enable = true;
     fonts.enable = true;
@@ -47,7 +47,7 @@ in
     sddm.enable = true;
     virtualisation.enable = true;
     jujutsu = {
-      enable = true;
+      enable = false;
       integrations.difftastic.enable = true;
     };
     mpd.enable = true;
