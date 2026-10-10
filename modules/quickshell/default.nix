@@ -46,6 +46,7 @@ let
     quickshellPackage = cfg.package;
   };
   LockContext = import (componentsDir + "/LockContext.nix") { };
+  ScreenCorner = import (componentsDir + "/ScreenCorner.nix") { };
   LockSurface = import (componentsDir + "/LockSurface.nix") { };
   BluetoothService = import (componentsDir + "/BluetoothService.nix") { };
   BatteryMonitor = import (componentsDir + "/BatteryMonitor.nix") { inherit pkgs lib; };
@@ -154,6 +155,7 @@ in
         clobber = true;
       };
       "quickshell/PowerButton.qml".text = PowerButton;
+      "quickshell/ScreenCorner.qml".text = ScreenCorner;
       "quickshell/PowerMenu.qml".text = PowerMenu;
       "quickshell/WorkspaceModule.qml".text = WorkspaceModule;
       "quickshell/IdleMonitors.qml" = {

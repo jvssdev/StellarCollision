@@ -29,6 +29,8 @@ in
 
   ShellRoot {
       id: root
+      property int windowCornerRadius: 12
+      property bool fillBottomCorners: false
       IpcHandler {
           target: "powerMenu"
           function toggle(): void {
@@ -486,6 +488,34 @@ in
                   }
               }
           }
+      }
+      ScreenCorner {
+          atTop: true
+          atLeft: true
+          radius: root.windowCornerRadius
+          edgeOffset: barWindow.height
+          fillColor: theme.bg
+      }
+      ScreenCorner {
+          atTop: true
+          atLeft: false
+          radius: root.windowCornerRadius
+          edgeOffset: barWindow.height
+          fillColor: theme.bg
+      }
+      ScreenCorner {
+          visible: root.fillBottomCorners
+          atTop: false
+          atLeft: true
+          radius: root.windowCornerRadius
+          fillColor: theme.bg
+      }
+      ScreenCorner {
+          visible: root.fillBottomCorners
+          atTop: false
+          atLeft: false
+          radius: root.windowCornerRadius
+          fillColor: theme.bg
       }
       PowerMenu {
           id: powerMenu
