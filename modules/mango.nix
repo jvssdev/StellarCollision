@@ -39,17 +39,17 @@ in
     ];
 
     hj.xdg.config.files."mango/config.conf".text = ''
-      exec-once="${getExe' pkgs.dbus "dbus-update-activation-environment"} --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=wlroots"
-      exec-once=systemctl --user reset-failed
-      exec-once=systemctl --user start mango-session.target
-      exec-once = "${getExe pkgs.xwayland-satellite}"
-      exec-once = "sh -c 'sleep 1; echo \"Xft.dpi: 140\" | ${getExe' pkgs.xrdb "xrdb"} -merge'"
-      exec-once = "${getExe' pkgs.networkmanagerapplet "nm-applet"} --indicator"
-      exec-once = "${getExe quickshell}"
-      exec-once = ${getExe' pkgs.wl-clipboard "wl-paste"} --type text --watch ${getExe pkgs.cliphist} store
-      exec-once = ${getExe' pkgs.wl-clipboard "wl-paste"} --type image --watch ${getExe pkgs.cliphist} store
-      exec-once = ${getExe pkgs.wl-clip-persist} --clipboard regular --reconnect-tries 0
-      exec-once = "${getExe pkgs.fcitx5} -d --replace"
+      exec_once="${getExe' pkgs.dbus "dbus-update-activation-environment"} --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=wlroots"
+      exec_once=systemctl --user reset-failed
+      exec_once=systemctl --user start mango-session.target
+      exec_once = "${getExe pkgs.xwayland-satellite}"
+      exec_once = "sh -c 'sleep 1; echo \"Xft.dpi: 140\" | ${getExe' pkgs.xrdb "xrdb"} -merge'"
+      exec_once = "${getExe' pkgs.networkmanagerapplet "nm-applet"} --indicator"
+      exec_once = "${getExe quickshell}"
+      exec_once = ${getExe' pkgs.wl-clipboard "wl-paste"} --type text --watch ${getExe pkgs.cliphist} store
+      exec_once = ${getExe' pkgs.wl-clipboard "wl-paste"} --type image --watch ${getExe pkgs.cliphist} store
+      exec_once = ${getExe pkgs.wl-clip-persist} --clipboard regular --reconnect-tries 0
+      exec_once = "${getExe pkgs.fcitx5} -d --replace"
 
       env=WLR_NO_HARDWARE_CURSORS,1
       env=QT_AUTO_SCREEN_SCALE_FACTOR,1
@@ -63,7 +63,6 @@ in
       env=XCURSOR_THEME,Bibata-Modern-Ice
       env=XCURSOR_SIZE,24
       env=DISPLAY,:0
-      env=GTK_IM_MODULE,fcitx
       env=QT_IM_MODULE,fcitx
       env=SDL_IM_MODULE,fcitx
       env=XMODIFIERS,@im=fcitx
@@ -72,30 +71,28 @@ in
       env=QT_WAYLAND_FORCE_DPI,140
       env=GDK_DPI_SCALE,1.45
 
-      monitorrule=eDP-1,0.60,1,tile,0,1,0,0,1920,1080,60
+      monitor_rule=name:^eDP-1$,width:1920,height:1080,refresh:60,x:0,y:0,scale:1,rr:0
       xkb_rules_layout=br
       xkb_rules_variant=abnt2
-      # xkb_rules_model=pc105
-      # xkb_rules_options=lv3:ralt_switch
       cursor_size=24
       cursor_theme=Bibata-Modern-Ice
-      gappih=5
-      gappiv=5
-      gappoh=5
-      gappov=5
-      borderpx=3
+      gap_inner_horizontal=5
+      gap_inner_vertical=5
+      gap_outer_horizontal=5
+      gap_outer_vertical=5
+      border_px=3
       border_radius=12
       no_border_when_single=1
       no_radius_when_single=1
-      rootcolor=${colorToMango c.base00}
-      bordercolor=${colorToMango c.base04}
-      focuscolor=${colorToMango c.base0D}
-      urgentcolor=${colorToMango c.base08}
+      root_color=${colorToMango c.base00}
+      border_color=${colorToMango c.base04}
+      focus_color=${colorToMango c.base0D}
+      urgent_color=${colorToMango c.base08}
       repeat_rate=50
       repeat_delay=300
-      warpcursor=1
+      warp_cursor=1
       new_is_master=0
-      smartgaps=1
+      smart_gaps=1
       cursor_hide_timeout=5000
       trackpad_natural_scrolling=0
       animation_duration_move=150
@@ -120,8 +117,8 @@ in
       layer_animation_type_close=slide
       zoom_initial_ratio=0.3
       zoom_end_ratio=0.7
-      fadein_begin_opacity=0.5
-      fadeout_begin_opacity=0.8
+      fade_in_begin_opacity=0.5
+      fade_out_begin_opacity=0.8
       blur=1
       blur_layer=1
       blur_optimized=1
@@ -138,25 +135,14 @@ in
       shadows_blur=15
       shadows_position_x = 0
       shadows_position_y = 0
-      shadowscolor=${colorToMango c.base00}
+      shadows_color=${colorToMango c.base00}
       scroller_structs=0
       scroller_default_proportion=1.0
       scroller_focus_center=0
       scroller_prefer_center=1
       scroller_default_proportion_single=1.0
 
-      default_mfact=0.5
-      default_nmaster=1
-
-      tagrule=id:1,layout_name:tile
-      tagrule=id:2,layout_name:tile
-      tagrule=id:3,layout_name:tile
-      tagrule=id:4,layout_name:tile
-      tagrule=id:5,layout_name:tile
-      tagrule=id:6,layout_name:tile
-      tagrule=id:7,layout_name:tile
-      tagrule=id:8,layout_name:tile
-      tagrule=id:9,layout_name:tile
+      tag_rule=id:*,layout_name:tile,master_count:1,master_factor:0.5
 
       bind=SUPER,r,reload_config
       bind=SUPER,t,spawn,${getExe pkgs.${config.cfg.vars.terminal}}
@@ -190,15 +176,10 @@ in
       bind=SUPER+ALT,l,resizewin,+50,0
       bind=SUPER+ALT,k,resizewin,0,-50
       bind=SUPER+ALT,j,resizewin,0,+50
-      # bind=SUPER,g,togglegaps
 
       circle_layout=tile,scroller
       bind=SUPER,Tab,switch_layout
       bind=SUPER,o,toggleoverview
-
-      # bind=SUPER,c,setlayout,tile
-      # bind=SUPER,m,setlayout,monocle
-      # bind=SUPER,s,setlayout,scroller
 
       bind=SUPER,1,comboview,1
       bind=SUPER,2,comboview,2
@@ -229,31 +210,30 @@ in
       bind=NONE,XF86AudioNext,spawn,${getExe pkgs.playerctl} next
       bind=NONE,XF86AudioPrev,spawn,${getExe pkgs.playerctl} previous
       bind=NONE,XF86AudioPlay,spawn,${getExe pkgs.playerctl} play-pause
-      bind=NONE,XF86AudioPause,spawn,${getExe pkgs.playerctl} play-pause
 
       mousebind=SUPER,btn_left,moveresize,curmove
       mousebind=SUPER,btn_right,moveresize,curresize
 
-      windowrule=title:Authentication required,isfloating:1
-      windowrule=title:Keybindings,isfloating:1
-      windowrule=title:Rename*,isfloating:1
-      windowrule=title:Compressing*,isfloating:1
-      windowrule=title:File Already Exists*,isfloating:1
-      windowrule=title:Extracting Files*,isfloating:1
-      windowrule=title:File Operation Progress*,isfloating:1
-      windowrule=title:Confirm to replace files*,isfloating:1
-      windowrule=appid:pavucontrol,isfloating:1
-      windowrule=appid:blueman-manager,isfloating:1
-      windowrule=appid:nm-connection-editor,isfloating:1
-      windowrule=isnamedscratchpad:1,width:1800,height:1000,appid:io.github.screwys.Rufin
-      windowrule=appid:thunderbird,isfloating:1
-      windowrule=appid:dolphin,isfloating:1
+      window_rule=title:Authentication required,is_floating:1
+      window_rule=title:Keybindings,is_floating:1
+      window_rule=title:Rename*,is_floating:1
+      window_rule=title:Compressing*,is_floating:1
+      window_rule=title:File Already Exists*,is_floating:1
+      window_rule=title:Extracting Files*,is_floating:1
+      window_rule=title:File Operation Progress*,is_floating:1
+      window_rule=title:Confirm to replace files*,is_floating:1
+      window_rule=app_id:pavucontrol,is_floating:1
+      window_rule=app_id:blueman-manager,is_floating:1
+      window_rule=app_id:nm-connection-editor,is_floating:1
+      window_rule=is_named_scratchpad:1,width:1800,height:1000,app_id:io.github.screwys.Rufin
+      window_rule=app_id:thunderbird,is_floating:1
+      window_rule=app_id:dolphin,is_floating:1
 
       enable_hotarea = 0
 
-      windowrule=isnamedscratchpad:1,width:1900,height:1600,appid:yazi
-      windowrule=isnamedscratchpad:1,width:1900,height:1600,appid:filechooser
-      layerrule=noblur:1,layer_name:selection
+      window_rule=is_named_scratchpad:1,width:1900,height:1600,app_id:yazi
+      window_rule=is_named_scratchpad:1,width:1900,height:1600,app_id:filechooser
+      layer_rule=no_blur:1,layer_name:selection
     '';
 
     systemd.user.targets.mango-session = {
