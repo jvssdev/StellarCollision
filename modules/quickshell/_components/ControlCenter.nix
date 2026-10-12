@@ -17,6 +17,7 @@ if isNiri || isMango then
     import Quickshell
     import Quickshell.Wayland
     import Quickshell.Io
+    import Quickshell.Widgets
     import QtCore
     import Quickshell.Services.Mpris
     import Quickshell.Services.Pipewire
@@ -986,10 +987,10 @@ if isNiri || isMango then
                 anchors.margins: 12
                 spacing: 12
 
-                Rectangle {
+                ClippingRectangle {
                     width: 56
                     height: 56
-                    radius: 6
+                    radius: 12
                     color: controlTheme.bg
 
                     Image {
