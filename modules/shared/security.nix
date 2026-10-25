@@ -11,7 +11,6 @@
       "kernel.sysrq" = 0;
       "kernel.kptr_restrict" = 2;
       "net.core.bpf_jit_enable" = false;
-      "kernel.ftrace_enabled" = false;
       "kernel.dmesg_restrict" = 1;
       "fs.protected_fifos" = 2;
       "fs.protected_regular" = 2;
@@ -33,7 +32,6 @@
       "randomize_kstack_offset=on"
       "vsyscall=none"
       "slab_nomerge"
-      "module.sig_enforce=1"
       "page_poison=1"
       "page_alloc.shuffle=1"
       "sysrq_always_enabled=0"
