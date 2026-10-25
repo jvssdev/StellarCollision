@@ -42,7 +42,7 @@ in
     systemd.services.libvirt-guests.enable = false;
     virtualisation = {
       docker = {
-        enable = true;
+        enable = false;
       };
       libvirtd = {
         enable = true;

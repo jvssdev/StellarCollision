@@ -7,7 +7,6 @@
 
   boot = {
     consoleLogLevel = 0;
-    initrd.verbose = false;
     kernel.sysctl = {
       "kernel.sysrq" = 0;
       "kernel.kptr_restrict" = 2;
