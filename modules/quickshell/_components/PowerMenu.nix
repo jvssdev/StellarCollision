@@ -47,6 +47,14 @@
                       if (root.focusedIndex + 1 < buttons.length) root.focusedIndex++;
                       event.accepted = true;
                   }
+                  else if (event.key == Qt.Key_Tab) {
+                      if (buttons.length > 0) root.focusedIndex = (root.focusedIndex + 1) % buttons.length;
+                      event.accepted = true;
+                  }
+                  else if (event.key == Qt.Key_Backtab) {
+                      if (buttons.length > 0) root.focusedIndex = (root.focusedIndex - 1 + buttons.length) % buttons.length;
+                      event.accepted = true;
+                  }
                   else if (event.key == Qt.Key_Return || event.key == Qt.Key_Space) {
                       if (root.focusedIndex >= 0 && root.focusedIndex < buttons.length) {
                           buttons[root.focusedIndex].exec();
