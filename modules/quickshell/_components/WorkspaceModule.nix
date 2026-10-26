@@ -14,6 +14,7 @@ if isNiri then
         id: workspaceModule
         spacing: 4
 
+        readonly property int measureScale: 8
         property var workspaces: []
 
         RowLayout {
@@ -49,12 +50,21 @@ if isNiri then
                             color: isActive ? theme.darkBlue : (isOccupied ? theme.fgSubtle : "transparent")
                             radius: 12
                             Text {
+                                id: numeral
+                                x: parent.width / 2 - (metrics.tightBoundingRect.x + metrics.tightBoundingRect.width / 2) / workspaceModule.measureScale
+                                y: parent.height / 2 - baselineOffset - (metrics.tightBoundingRect.y + metrics.tightBoundingRect.height / 2) / workspaceModule.measureScale
                                 text: wsNum.toString()
                                 color: isActive ? theme.bg : theme.fgMuted
                                 font.pixelSize: 11
                                 font.family: theme.fontFamily
                                 font.bold: isActive
-                                anchors.centerIn: parent
+                                TextMetrics {
+                                    id: metrics
+                                    font.family: numeral.font.family
+                                    font.bold: numeral.font.bold
+                                    font.pixelSize: numeral.font.pixelSize * workspaceModule.measureScale
+                                    text: numeral.text
+                                }
                             }
                         }
                     }
@@ -115,6 +125,8 @@ else if isMango then
     RowLayout {
         id: workspaceModule
         spacing: 4
+
+        readonly property int measureScale: 8
 
         // New mmsg IPC is JSON-only:
         //   mmsg get all-tags  → { "all_tags": [ { "monitor": "...", "tags": [ { index, is_active, is_urgent, layout, client_count }, ... ] }, ... ] }
@@ -196,12 +208,21 @@ else if isMango then
                             color: model.isUrgent ? theme.darkBlue : (model.isActive ? theme.darkBlue : (model.isOccupied ? theme.fgSubtle : "transparent"))
                             radius: 10
                             Text {
+                                id: numeral
+                                x: parent.width / 2 - (metrics.tightBoundingRect.x + metrics.tightBoundingRect.width / 2) / workspaceModule.measureScale
+                                y: parent.height / 2 - baselineOffset - (metrics.tightBoundingRect.y + metrics.tightBoundingRect.height / 2) / workspaceModule.measureScale
                                 text: model.tagId
                                 color: (model.isActive || model.isUrgent) ? theme.bg : theme.fgMuted
                                 font.pixelSize: 11
                                 font.family: theme.fontFamily
                                 font.bold: model.isActive
-                                anchors.centerIn: parent
+                                TextMetrics {
+                                    id: metrics
+                                    font.family: numeral.font.family
+                                    font.bold: numeral.font.bold
+                                    font.pixelSize: numeral.font.pixelSize * workspaceModule.measureScale
+                                    text: numeral.text
+                                }
                             }
                         }
                     }
