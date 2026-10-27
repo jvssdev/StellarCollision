@@ -160,6 +160,7 @@ in
       bind=SUPER,space,togglefloating
       bind=SUPER,f,togglefullscreen
       bind=SUPER+SHIFT,f,togglefakefullscreen
+      bind=SUPER,g,togglegaps
       bind=SUPER,j,focusstack,next
       bind=SUPER,k,focusstack,prev
       bind=SUPER,h,focusdir,left
