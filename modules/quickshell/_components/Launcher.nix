@@ -436,6 +436,7 @@ in
 
                   ListView {
                       id: appListView
+                      property bool fromHover: false
                       width: parent.width
                       height: parent.height - 58
                       model: launcherWindow.results
@@ -445,7 +446,7 @@ in
                       keyNavigationEnabled: false
 
                       onCurrentIndexChanged: {
-                          positionViewAtIndex(currentIndex, ListView.Contain);
+                          if (!fromHover) positionViewAtIndex(currentIndex, ListView.Contain);
                       }
 
                       delegate: Rectangle {
@@ -534,7 +535,16 @@ in
 
                           MouseArea {
                               anchors.fill: parent
+                              hoverEnabled: true
                               cursorShape: Qt.PointingHandCursor
+                              onPositionChanged: function() {
+                                  var item = launcherWindow.results[index];
+                                  if (!item || item.isLoading || item.isEmpty) return;
+                                  if (launcherWindow.selectedIndex === index) return;
+                                  appListView.fromHover = true;
+                                  launcherWindow.selectedIndex = index;
+                                  appListView.fromHover = false;
+                              }
                               onClicked: function() {
                                   launcherWindow.selectedIndex = index;
                                   var item = launcherWindow.results[index];
