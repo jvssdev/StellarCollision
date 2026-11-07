@@ -88,6 +88,7 @@ in
       border_color=${colorToMango c.base02}
       focus_color=${colorToMango c.base0D}
       urgent_color=${colorToMango c.base08}
+      scratchpad_color=${colorToMango c.base0D}
       repeat_rate=50
       repeat_delay=300
       warp_cursor=1
@@ -155,6 +156,7 @@ in
       bind=SUPER,p,spawn,${getExe pkgs.flameshot} gui -p $HOME/Pictures/Screenshots -c
       bind=SUPER,v,spawn,${getExe quickshell} ipc call clipboard toggle
       bind=SUPER,m,toggle_named_scratchpad,io.github.screwys.Rufin,none,rufin
+      bind=SUPER,e,toggle_named_scratchpad,dolphin,none,dolphin
 
       bind=SUPER,q,killclient
       bind=SUPER,space,togglefloating
