@@ -1,10 +1,26 @@
 {
+  pkgs,
+  lib,
   fontFamily,
   colors,
+  translateSource ? "auto",
+  translateTargets ? [
+    "pt"
+    "en"
+  ],
   ...
 }:
 let
   c = colors;
+
+  launcherTools = pkgs.writeShellScript "stellar-launcher-tools" ''
+    export QALC=${pkgs.libqalculate}/bin/qalc
+    export PYTHONTZPATH=${pkgs.tzdata}/share/zoneinfo
+    export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
+    exec ${lib.getExe pkgs.python3} ${../scripts/launcher-tools.py} "$@"
+  '';
+
+  wlCopy = lib.getExe' pkgs.wl-clipboard "wl-copy";
 in
 /* qml */ ''
   import QtQuick
@@ -55,6 +71,9 @@ in
           property bool appsLoaded: false
           property bool isClipboardMode: false
           property var clipboardEntries: []
+          property var appResults: []
+          property var toolRows: []
+          property bool toolsRerun: false
 
           function loadApps() {
               if (appsLoaded) return;
@@ -113,6 +132,31 @@ in
                   launcherWindow.appsLoaded = false;
                   launcherWindow.appsCache = [];
                   launcherWindow.loadApps();
+              }
+          }
+
+          Timer {
+              id: toolsTimer
+              interval: 150
+              repeat: false
+              onTriggered: launcherWindow.runTools()
+          }
+
+          Process {
+              id: toolsProc
+              property string forQuery: ""
+              property bool isTranslate: false
+              running: false
+              stdout: StdioCollector {
+                  onStreamFinished: function() {
+                      launcherWindow.handleToolsResult(text);
+                  }
+              }
+              onExited: function(code) {
+                  if (launcherWindow.toolsRerun) {
+                      launcherWindow.toolsRerun = false;
+                      launcherWindow.runTools();
+                  }
               }
           }
 
@@ -217,6 +261,9 @@ in
                   clipboardSelectProc.running = true;
               } else if (item.type === "app") {
                   launchApp(item.app);
+              } else if (item.type === "calc" || item.type === "time" || item.type === "translate") {
+                  launcherWindow.visible = false;
+                  Quickshell.execDetached(["${wlCopy}", "--", item.copy]);
               }
           }
 
@@ -266,6 +313,78 @@ in
               return qi < q.length ? -1 : score;
           }
 
+          function parseTranslateQuery(q) {
+              var m = /^tr(?::([A-Za-z,-]+))?\s+(\S[\s\S]*)$/i.exec(q);
+              if (!m) return null;
+              return { targets: m[1] || "${lib.concatStringsSep "," translateTargets}", text: m[2] };
+          }
+
+          function scheduleTools() {
+              var q = query.trim();
+              toolsTimer.stop();
+              toolRows = [];
+              if (parseTranslateQuery(q) !== null) {
+                  toolRows = [{ name: "Translating...", type: "translate", isLoading: true }];
+                  toolsTimer.interval = 350;
+                  toolsTimer.restart();
+                  rebuildResults();
+                  return;
+              }
+              if (/\d/.test(q) || /^(now|time|hora|agora)\s/i.test(q)) {
+                  toolsTimer.interval = 150;
+                  toolsTimer.restart();
+              }
+          }
+
+          function runTools() {
+              if (isClipboardMode) return;
+              if (toolsProc.running) {
+                  toolsRerun = true;
+                  return;
+              }
+              var q = query.trim();
+              var tr = parseTranslateQuery(q);
+              toolsProc.forQuery = query;
+              toolsProc.isTranslate = tr !== null;
+              if (tr) {
+                  toolsProc.command = ["${launcherTools}", "translate", tr.targets, "${translateSource}", tr.text];
+              } else {
+                  toolsProc.command = ["${launcherTools}", "calc", q];
+              }
+              toolsProc.running = true;
+          }
+
+          function handleToolsResult(text) {
+              if (isClipboardMode) return;
+              if (toolsProc.forQuery !== query) return;
+              var data = null;
+              try {
+                  data = JSON.parse(text);
+              } catch (e) {
+                  data = null;
+              }
+              var rows = [];
+              if (data && data.rows) {
+                  for (var i = 0; i < data.rows.length; i++) {
+                      var r = data.rows[i];
+                      rows.push({ type: r.type, name: r.name, subtitle: r.subtitle || "", copy: r.copy || r.name });
+                  }
+              }
+              if (rows.length === 0 && toolsProc.isTranslate) {
+                  var message = data && data.error ? data.error : "No translation";
+                  rows = [{ name: message, type: "translate", isEmpty: true }];
+              }
+              toolRows = rows;
+              rebuildResults();
+          }
+
+          function rebuildResults() {
+              if (isClipboardMode) return;
+              var merged = parseTranslateQuery(query.trim()) !== null ? toolRows : toolRows.concat(appResults);
+              results = merged;
+              if (selectedIndex >= merged.length) selectedIndex = 0;
+          }
+
           function doSearch() {
               selectedIndex = 0;
 
@@ -274,15 +393,20 @@ in
                   return;
               }
 
+              scheduleTools();
+              if (parseTranslateQuery(query.trim()) !== null) return;
+
               if (!appsLoaded || appsCache.length === 0) {
-                  results = [];
+                  appResults = [];
+                  rebuildResults();
                   return;
               }
 
               if (query === "") {
-                  results = appsCache.slice(0, 50).map(function(app) {
+                  appResults = appsCache.slice(0, 50).map(function(app) {
                       return { type: "app", app: app, name: app.name, icon: app.icon };
                   });
+                  rebuildResults();
                   return;
               }
 
@@ -319,9 +443,10 @@ in
 
               scored.sort(function(a, b) { return b.score - a.score; });
 
-              results = scored.slice(0, 20).map(function(s) {
+              appResults = scored.slice(0, 20).map(function(s) {
                   return { type: "app", app: s.app, name: s.app.name, icon: s.app.icon };
               });
+              rebuildResults();
           }
 
           function selectNext() {
@@ -501,12 +626,20 @@ in
                               Text {
                                   text: {
                                       if (modelData.type === "clipboard") return modelData.isImage ? "󰋩" : "󱉥";
+                                      if (modelData.type === "calc") return "󰃬";
+                                      if (modelData.type === "time") return "󰅐";
+                                      if (modelData.type === "translate") return "󰗊";
                                       return "";
                                   }
                                   font.family: "${fontFamily}"
                                   font.pixelSize: 16
-                                  color: modelData.isImage ? "${c.base0E}" : "${c.base0A}"
-                                  visible: modelData.type === "clipboard"
+                                  color: {
+                                      if (modelData.type === "calc") return "${c.base0B}";
+                                      if (modelData.type === "time") return "${c.base0C}";
+                                      if (modelData.type === "translate") return "${c.base0D}";
+                                      return modelData.isImage ? "${c.base0E}" : "${c.base0A}";
+                                  }
+                                  visible: modelData.type === "clipboard" || modelData.type === "calc" || modelData.type === "time" || modelData.type === "translate"
                               }
 
                               Text {
@@ -519,11 +652,22 @@ in
                               }
 
                               Text {
+                                  Layout.maximumWidth: 150
+                                  text: modelData.subtitle || ""
+                                  font.family: "${fontFamily}"
+                                  font.pixelSize: 10
+                                  color: "${c.base03}"
+                                  elide: Text.ElideRight
+                                  visible: text !== ""
+                              }
+
+                              Text {
                                   Layout.preferredWidth: 60
                                   horizontalAlignment: Text.AlignRight
                                   text: {
                                       if (modelData.isLoading || modelData.isEmpty) return "";
                                       if (modelData.type === "clipboard") return "Paste";
+                                      if (modelData.type === "calc" || modelData.type === "time" || modelData.type === "translate") return "Copy";
                                       return "Enter";
                                   }
                                   font.family: "${fontFamily}"
@@ -574,6 +718,7 @@ in
 
           onVisibleChanged: {
               if (visible) {
+                  toolRows = [];
                   if (isClipboardMode) {
                       query = "";
                       searchInput.text = "";
