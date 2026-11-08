@@ -4,6 +4,8 @@
   fontFamily,
   colors,
   translateSource ? "auto",
+  translateAutoCorrect ? true,
+  translateAlternatives ? 6,
   translateTargets ? [
     "pt"
     "en"
@@ -74,6 +76,7 @@ in
           property var appResults: []
           property var toolRows: []
           property bool toolsRerun: false
+          property string keepQuery: ""
 
           function loadApps() {
               if (appsLoaded) return;
@@ -264,6 +267,11 @@ in
               } else if (item.type === "calc" || item.type === "time" || item.type === "translate") {
                   launcherWindow.visible = false;
                   Quickshell.execDetached(["${wlCopy}", "--", item.copy]);
+              } else if (item.type === "spelling") {
+                  applyCorrection(item.copy);
+              } else if (item.type === "keep") {
+                  keepQuery = query;
+                  scheduleTools();
               }
           }
 
@@ -347,7 +355,8 @@ in
               toolsProc.forQuery = query;
               toolsProc.isTranslate = tr !== null;
               if (tr) {
-                  toolsProc.command = ["${launcherTools}", "translate", tr.targets, "${translateSource}", tr.text];
+                  var autoCorrect = keepQuery === query ? "0" : "${if translateAutoCorrect then "1" else "0"}";
+                  toolsProc.command = ["${launcherTools}", "translate", tr.targets, "${translateSource}", autoCorrect, "${toString translateAlternatives}", tr.text];
               } else {
                   toolsProc.command = ["${launcherTools}", "calc", q];
               }
@@ -367,7 +376,7 @@ in
               if (data && data.rows) {
                   for (var i = 0; i < data.rows.length; i++) {
                       var r = data.rows[i];
-                      rows.push({ type: r.type, name: r.name, subtitle: r.subtitle || "", copy: r.copy || r.name });
+                      rows.push({ type: r.type, name: r.name, subtitle: r.subtitle || "", copy: r.copy || r.name, alt: r.alt === true });
                   }
               }
               if (rows.length === 0 && toolsProc.isTranslate) {
@@ -376,6 +385,14 @@ in
               }
               toolRows = rows;
               rebuildResults();
+          }
+
+          function applyCorrection(corrected) {
+              var m = /^(tr(?::[A-Za-z,-]+)?)\s+/i.exec(query.trim());
+              if (!m) return;
+              searchInput.text = m[1] + " " + corrected;
+              searchInput.cursorPosition = searchInput.text.length;
+              searchInput.forceActiveFocus();
           }
 
           function rebuildResults() {
@@ -629,6 +646,8 @@ in
                                       if (modelData.type === "calc") return "󰃬";
                                       if (modelData.type === "time") return "󰅐";
                                       if (modelData.type === "translate") return "󰗊";
+                                      if (modelData.type === "spelling") return "󰓆";
+                                      if (modelData.type === "keep") return "󰏫";
                                       return "";
                                   }
                                   font.family: "${fontFamily}"
@@ -636,10 +655,12 @@ in
                                   color: {
                                       if (modelData.type === "calc") return "${c.base0B}";
                                       if (modelData.type === "time") return "${c.base0C}";
-                                      if (modelData.type === "translate") return "${c.base0D}";
+                                      if (modelData.type === "translate") return modelData.alt ? "${c.base03}" : "${c.base0D}";
+                                      if (modelData.type === "spelling") return "${c.base09}";
+                                      if (modelData.type === "keep") return "${c.base03}";
                                       return modelData.isImage ? "${c.base0E}" : "${c.base0A}";
                                   }
-                                  visible: modelData.type === "clipboard" || modelData.type === "calc" || modelData.type === "time" || modelData.type === "translate"
+                                  visible: modelData.type === "clipboard" || modelData.type === "calc" || modelData.type === "time" || modelData.type === "translate" || modelData.type === "spelling" || modelData.type === "keep"
                               }
 
                               Text {
@@ -652,7 +673,7 @@ in
                               }
 
                               Text {
-                                  Layout.maximumWidth: 150
+                                  Layout.maximumWidth: 210
                                   text: modelData.subtitle || ""
                                   font.family: "${fontFamily}"
                                   font.pixelSize: 10
@@ -667,6 +688,8 @@ in
                                   text: {
                                       if (modelData.isLoading || modelData.isEmpty) return "";
                                       if (modelData.type === "clipboard") return "Paste";
+                                      if (modelData.type === "spelling") return "Apply";
+                                      if (modelData.type === "keep") return "Keep";
                                       if (modelData.type === "calc" || modelData.type === "time" || modelData.type === "translate") return "Copy";
                                       return "Enter";
                                   }
@@ -719,6 +742,7 @@ in
           onVisibleChanged: {
               if (visible) {
                   toolRows = [];
+                  keepQuery = "";
                   if (isClipboardMode) {
                       query = "";
                       searchInput.text = "";

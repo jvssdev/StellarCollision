@@ -1,3 +1,4 @@
+import html
 import json
 import os
 import re
@@ -65,6 +66,7 @@ LANGUAGE_ALIASES = {
     "iw": "he",
 }
 
+CORRECTION_TAGS_RE = re.compile(r"</?(?:b|i)>")
 OFFSET_RE = re.compile(r"^(?:utc|gmt)?\s*([+-])\s*(\d{1,2})(?::?(\d{2}))?$")
 CLOCK_RE = re.compile(r"^(\d{1,2})(?:(:|h)(\d{2})?)?\s*(am|pm)?$")
 DATE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}|today|tomorrow|yesterday|hoje|amanha|ontem)\s+(.+)$")
@@ -355,18 +357,92 @@ def parse_translation(body):
     return translated, detected, pronunciation
 
 
+def parse_alternatives(body):
+    entries = body[1] if len(body) > 1 and isinstance(body[1], list) else []
+    found = []
+    for entry in entries:
+        if not isinstance(entry, list) or len(entry) < 2:
+            continue
+        pos = entry[0] if isinstance(entry[0], str) else ""
+        detailed = entry[2] if len(entry) > 2 and isinstance(entry[2], list) else []
+        if detailed:
+            for item in detailed:
+                if isinstance(item, list) and item and isinstance(item[0], str):
+                    reverse = item[1] if len(item) > 1 and isinstance(item[1], list) else []
+                    found.append((pos, item[0], [term for term in reverse if isinstance(term, str)]))
+        elif isinstance(entry[1], list):
+            found.extend((pos, term, []) for term in entry[1] if isinstance(term, str))
+    return found
+
+
+def parse_correction(body):
+    block = body[7] if len(body) > 7 else None
+    if not isinstance(block, list) or not block or not isinstance(block[0], str):
+        return None, False
+    corrected = html.unescape(CORRECTION_TAGS_RE.sub("", block[0])).strip()
+    if not corrected:
+        return None, False
+    applied = len(block) > 5 and block[5] is True
+    return corrected, applied
+
+
 def translate_one(text, source, target):
     with urllib.request.urlopen(build_request(text, source, target), timeout=8) as response:
         body = json.loads(response.read().decode("utf-8"))
     translated, detected, pronunciation = parse_translation(body)
-    return {"target": target, "text": translated, "detected": detected, "pronunciation": pronunciation}
+    correction, applied = parse_correction(body)
+    return {
+        "alternatives": parse_alternatives(body),
+        "target": target,
+        "text": translated,
+        "detected": detected,
+        "pronunciation": pronunciation,
+        "correction": correction,
+        "applied": applied,
+    }
 
 
-def translate_rows(text, source, targets):
+def run_translations(text, source, targets):
     with ThreadPoolExecutor(max_workers=max(1, len(targets))) as pool:
-        results = list(pool.map(lambda target: translate_one(text, source, target), targets))
-    rows = []
+        return list(pool.map(lambda target: translate_one(text, source, target), targets))
+
+
+def find_correction(text, results):
     for item in results:
+        if item["correction"] and fold(item["correction"]) != fold(text):
+            return item["correction"]
+    return None
+
+
+def alternative_rows(main_name, alternatives, limit):
+    if limit <= 0:
+        return []
+    seen = {fold(main_name)}
+    rows = []
+    for pos, term, reverse in alternatives:
+        key = fold(term)
+        if key in seen:
+            continue
+        seen.add(key)
+        subtitle = " \u00b7 ".join(part for part in (pos, ", ".join(reverse[:3])) if part)
+        rows.append({"type": "translate", "name": term, "subtitle": subtitle, "copy": term, "alt": True})
+        if len(rows) >= limit:
+            break
+    return rows
+
+
+def translate_rows(text, source, targets, autocorrect=True, alternatives=6):
+    results = run_translations(text, source, targets)
+    corrected = find_correction(text, results) if autocorrect else None
+    if corrected:
+        return [
+            {"type": "spelling", "name": 'Did you mean "%s"?' % corrected, "subtitle": "was: %s" % text, "copy": corrected},
+            {"type": "keep", "name": 'Translate "%s" as typed' % text, "subtitle": "", "copy": text},
+        ]
+    groups = []
+    for item in results:
+        if not item["text"]:
+            continue
         detected = item["detected"] or (source if source != "auto" else "")
         origin = detected.upper() if detected else "AUTO"
         subtitle = "%s \u2192 %s" % (origin, item["target"].upper())
@@ -374,11 +450,12 @@ def translate_rows(text, source, targets):
         if pronunciation and fold(pronunciation) not in (fold(item["text"]), fold(text)):
             subtitle += " \u00b7 %s" % pronunciation
         same = bool(detected) and base_language(detected) == base_language(item["target"])
-        rows.append({"type": "translate", "name": item["text"], "subtitle": subtitle, "copy": item["text"], "same": same})
-    rows.sort(key=lambda row: row["same"])
-    for row in rows:
-        del row["same"]
-    return [row for row in rows if row["name"]]
+        rows = [{"type": "translate", "name": item["text"], "subtitle": subtitle, "copy": item["text"], "alt": False}]
+        if not same:
+            rows += alternative_rows(item["text"], item["alternatives"], alternatives)
+        groups.append((same, rows))
+    groups.sort(key=lambda group: group[0])
+    return [row for _, rows in groups for row in rows]
 
 
 def command_calc(args):
@@ -388,12 +465,14 @@ def command_calc(args):
 
 
 def command_translate(args):
-    targets_arg, source, text = args[0], args[1], " ".join(args[2:]).strip()
+    targets_arg, source, autocorrect = args[0], args[1], args[2] != "0"
+    limit = int(args[3]) if args[3].isdigit() else 6
+    text = " ".join(args[4:]).strip()
     targets = [normalize_language(code) for code in targets_arg.split(",") if code.strip()]
     if not text or not targets:
         return {"rows": []}
     try:
-        return {"rows": translate_rows(text, normalize_language(source), targets)}
+        return {"rows": translate_rows(text, normalize_language(source), targets, autocorrect, limit)}
     except Exception as error:
         return {"rows": [], "error": "Translation failed: %s" % error}
 
@@ -403,7 +482,7 @@ def main():
     args = sys.argv[2:]
     if command == "calc":
         output = command_calc(args)
-    elif command == "translate" and len(args) >= 3:
+    elif command == "translate" and len(args) >= 5:
         output = command_translate(args)
     else:
         output = {"rows": []}
