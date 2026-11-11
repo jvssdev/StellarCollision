@@ -547,10 +547,33 @@ if isNiri || isMango then
         // After next/prev, ignore transient metadata for a short window so the
         // UI does not flash a much older track (YT Music / Chromium quirk).
         property bool _mediaTransitioning: false
+        property var playerList: []
+        property string _playerListKey: ""
+        property int mediaTotalPlayers: 0
+        readonly property bool mediaListVisible: mediaTotalPlayers > 1
+        readonly property real ccScreenMax: (Quickshell.screens[0] ? Quickshell.screens[0].height : 720) - 34
+        readonly property real ccChrome: 53 + ccHeader.implicitHeight
+        readonly property real mediaListBudget: ccScreenMax - ccChrome - mainTop.implicitHeight - 12
+        readonly property real mediaListNatural: 46 + playerList.length * 46
+        readonly property real mediaListHeight: mediaListVisible ? Math.max(92, Math.min(mediaListNatural, mediaListBudget)) : 0
+
+        function usablePlayers() {
+            var players = Mpris.players.values
+            var list = []
+            if (!players) return list
+            for (var i = 0; i < players.length; i++) {
+                var p = players[i]
+                if (!p) continue
+                var proxy = String(p.dbusName || "").indexOf("playerctld") >= 0 || p.identity === "playerctld"
+                var idle = p.playbackState === MprisPlaybackState.Stopped && (p.trackTitle || "") === ""
+                if (!proxy && !idle) list.push(p)
+            }
+            return list
+        }
 
         function getActivePlayer() {
-            var players = Mpris.players.values
-            if (!players || players.length === 0) return null
+            var players = root.usablePlayers()
+            if (players.length === 0) return null
 
             // Prefer the player the user last controlled, if still present
             if (root._pinnedPlayerId !== "") {
@@ -575,6 +598,44 @@ if isNiri || isMango then
                 return root.activePlayer
 
             return players[0]
+        }
+
+        function buildPlayerList() {
+            var list = root.usablePlayers()
+            list.sort(function(a, b) {
+                return root._playerId(a) < root._playerId(b) ? -1 : 1
+            })
+            return list
+        }
+
+        function refreshPlayerList() {
+            var list = root.buildPlayerList()
+            root.mediaTotalPlayers = list.length
+            var key = list.map(function(p) { return root._playerId(p) }).join("|")
+            if (key !== root._playerListKey) {
+                root._playerListKey = key
+                root.playerList = list
+            }
+        }
+
+        function selectPlayer(player) {
+            if (!player) return
+            root._pinnedPlayerId = root._playerId(player)
+            root.refreshActivePlayer()
+        }
+
+        function togglePlayer(player) {
+            if (!player) return
+            root.selectPlayer(player)
+            if (player.isPlaying) player.pause()
+            else player.play()
+        }
+
+        function pauseAllPlayers() {
+            var players = root.usablePlayers()
+            for (var i = 0; i < players.length; i++) {
+                if (players[i].isPlaying) players[i].pause()
+            }
         }
 
         function pinActivePlayer() {
@@ -698,6 +759,7 @@ if isNiri || isMango then
                 root.activePlayer = next
             }
             root.syncMediaMetadata()
+            root.refreshPlayerList()
         }
 
         // React immediately when the player list changes
@@ -975,6 +1037,10 @@ if isNiri || isMango then
             property string artUrl: root.mediaArtUrl
             property bool isPlaying: root.mediaPlaying
             property bool hasPlayer: root.hasMediaPlayer
+            property string source: root.activePlayer ? (root.activePlayer.identity || "") : ""
+            property bool canPrevious: root.activePlayer ? root.activePlayer.canGoPrevious : false
+            property bool canNext: root.activePlayer ? root.activePlayer.canGoNext : false
+            property bool canToggle: root.activePlayer ? root.activePlayer.canTogglePlaying : false
             property var controlTheme: null
 
             visible: hasPlayer
@@ -1034,13 +1100,13 @@ if isNiri || isMango then
                     }
 
                     Text {
-                        text: mediaCard.album || ""
+                        text: (mediaCard.album ? mediaCard.album + " \u00b7 " : "") + mediaCard.source
                         font.family: mediaCard.controlTheme.fontFamily
                         font.pixelSize: 9
                         color: mediaCard.controlTheme.fgMuted
                         elide: Text.ElideRight
                         Layout.fillWidth: true
-                        visible: mediaCard.album !== ""
+                        visible: text !== ""
                     }
                 }
 
@@ -1052,6 +1118,7 @@ if isNiri || isMango then
                         height: 32
                         radius: 16
                         color: prevMouse.containsMouse ? (mediaCard.controlTheme.bg) : "transparent"
+                        opacity: mediaCard.canPrevious ? 1 : 0.35
 
                         Text {
                             anchors.centerIn: parent
@@ -1064,6 +1131,7 @@ if isNiri || isMango then
                         MouseArea {
                             id: prevMouse
                             anchors.fill: parent
+                            enabled: mediaCard.canPrevious
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
@@ -1079,6 +1147,7 @@ if isNiri || isMango then
                         height: 36
                         radius: 18
                         color: mediaCard.controlTheme.darkBlue
+                        opacity: mediaCard.canToggle ? 1 : 0.35
 
                         Text {
                             anchors.centerIn: parent
@@ -1090,6 +1159,7 @@ if isNiri || isMango then
 
                         MouseArea {
                             anchors.fill: parent
+                            enabled: mediaCard.canToggle
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
                                 root.pinActivePlayer()
@@ -1104,6 +1174,7 @@ if isNiri || isMango then
                         height: 32
                         radius: 16
                         color: nextMouse.containsMouse ? (mediaCard.controlTheme.bg) : "transparent"
+                        opacity: mediaCard.canNext ? 1 : 0.35
 
                         Text {
                             anchors.centerIn: parent
@@ -1116,6 +1187,7 @@ if isNiri || isMango then
                         MouseArea {
                             id: nextMouse
                             anchors.fill: parent
+                            enabled: mediaCard.canNext
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
@@ -1124,6 +1196,247 @@ if isNiri || isMango then
                                 root.activePlayer?.next()
                             }
                         }
+                    }
+                }
+            }
+        }
+
+        component MediaPlayerRow: Rectangle {
+            id: playerRow
+            property var player: null
+            property var controlTheme: null
+            property bool selected: false
+            readonly property bool playing: player ? player.isPlaying : false
+            readonly property bool paused: player ? player.playbackState === MprisPlaybackState.Paused : false
+            readonly property string identity: player ? (player.identity || "") : ""
+            readonly property string title: player ? (player.trackTitle || "") : ""
+            readonly property string artist: player ? (player.trackArtist || "") : ""
+            readonly property string iconSource: {
+                if (!player) return ""
+                var name = player.desktopEntry || player.identity || ""
+                return name !== "" ? Quickshell.iconPath(name.toLowerCase(), true) : ""
+            }
+
+            height: 42
+            radius: 8
+            color: (selected || rowMouse.containsMouse) ? controlTheme.bg : "transparent"
+
+            MouseArea {
+                id: rowMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.selectPlayer(playerRow.player)
+            }
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 6
+                anchors.rightMargin: 6
+                spacing: 8
+
+                Item {
+                    Layout.preferredWidth: 24
+                    Layout.preferredHeight: 24
+
+                    Image {
+                        anchors.fill: parent
+                        source: playerRow.iconSource
+                        sourceSize.width: 48
+                        sourceSize.height: 48
+                        fillMode: Image.PreserveAspectFit
+                        visible: playerRow.iconSource !== ""
+                    }
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "󰝚"
+                        font.family: playerRow.controlTheme.fontFamily
+                        font.pixelSize: 16
+                        color: playerRow.controlTheme.fgMuted
+                        visible: playerRow.iconSource === ""
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 0
+
+                    Text {
+                        text: playerRow.title !== "" ? playerRow.title : playerRow.identity
+                        font.family: playerRow.controlTheme.fontFamily
+                        font.pixelSize: 11
+                        font.bold: true
+                        color: playerRow.controlTheme.fg
+                        elide: Text.ElideRight
+                        Layout.fillWidth: true
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 6
+
+                        Text {
+                            text: playerRow.playing ? "Playing" : (playerRow.paused ? "Paused" : "Stopped")
+                            font.family: playerRow.controlTheme.fontFamily
+                            font.pixelSize: 9
+                            color: playerRow.playing ? playerRow.controlTheme.green : playerRow.controlTheme.fgMuted
+                        }
+
+                        Text {
+                            text: playerRow.title !== "" ? (playerRow.artist !== "" ? playerRow.artist + " \u00b7 " + playerRow.identity : playerRow.identity) : ""
+                            font.family: playerRow.controlTheme.fontFamily
+                            font.pixelSize: 9
+                            color: playerRow.controlTheme.fgMuted
+                            elide: Text.ElideRight
+                            Layout.fillWidth: true
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.preferredWidth: 24
+                    Layout.preferredHeight: 24
+                    radius: 12
+                    color: prevRowMouse.containsMouse ? playerRow.controlTheme.bgAlt : "transparent"
+                    opacity: playerRow.player && playerRow.player.canGoPrevious ? 1 : 0.35
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "󰒮"
+                        font.family: playerRow.controlTheme.fontFamily
+                        font.pixelSize: 12
+                        color: playerRow.controlTheme.fg
+                    }
+
+                    MouseArea {
+                        id: prevRowMouse
+                        anchors.fill: parent
+                        enabled: playerRow.player ? playerRow.player.canGoPrevious : false
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            root.selectPlayer(playerRow.player)
+                            if (playerRow.selected) root.beginMediaTransition()
+                            playerRow.player.previous()
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.preferredWidth: 28
+                    Layout.preferredHeight: 28
+                    radius: 14
+                    color: playerRow.controlTheme.darkBlue
+                    opacity: playerRow.player && playerRow.player.canTogglePlaying ? 1 : 0.35
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: playerRow.playing ? "󰏤" : "󰐊"
+                        font.family: playerRow.controlTheme.fontFamily
+                        font.pixelSize: 13
+                        color: playerRow.controlTheme.bg
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        enabled: playerRow.player ? playerRow.player.canTogglePlaying : false
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.togglePlayer(playerRow.player)
+                    }
+                }
+
+                Rectangle {
+                    Layout.preferredWidth: 24
+                    Layout.preferredHeight: 24
+                    radius: 12
+                    color: nextRowMouse.containsMouse ? playerRow.controlTheme.bgAlt : "transparent"
+                    opacity: playerRow.player && playerRow.player.canGoNext ? 1 : 0.35
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "󰒭"
+                        font.family: playerRow.controlTheme.fontFamily
+                        font.pixelSize: 12
+                        color: playerRow.controlTheme.fg
+                    }
+
+                    MouseArea {
+                        id: nextRowMouse
+                        anchors.fill: parent
+                        enabled: playerRow.player ? playerRow.player.canGoNext : false
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            root.selectPlayer(playerRow.player)
+                            if (playerRow.selected) root.beginMediaTransition()
+                            playerRow.player.next()
+                        }
+                    }
+                }
+            }
+        }
+
+        component MediaPlayersCard: Rectangle {
+            id: playersCard
+            property var controlTheme: null
+
+            visible: root.mediaListVisible
+            implicitHeight: root.mediaListHeight
+            radius: 8
+            color: controlTheme.bgAlt
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 12
+                spacing: 4
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 22
+
+                    Text {
+                        text: "Players (" + root.mediaTotalPlayers + ")"
+                        font.family: playersCard.controlTheme.fontFamily
+                        font.pixelSize: 11
+                        font.bold: true
+                        color: playersCard.controlTheme.fgMuted
+                    }
+
+                    Item { Layout.fillWidth: true }
+
+                    Text {
+                        text: "Pause all"
+                        font.family: playersCard.controlTheme.fontFamily
+                        font.pixelSize: 10
+                        color: pauseAllMouse.containsMouse ? playersCard.controlTheme.darkBlue : playersCard.controlTheme.fgMuted
+
+                        MouseArea {
+                            id: pauseAllMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.pauseAllPlayers()
+                        }
+                    }
+                }
+
+                ListView {
+                    id: playerListView
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    spacing: 4
+                    model: root.playerList
+                    boundsBehavior: Flickable.StopAtBounds
+                    ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+
+                    delegate: MediaPlayerRow {
+                        required property var modelData
+                        width: playerListView.width
+                        player: modelData
+                        controlTheme: playersCard.controlTheme
+                        selected: modelData === root.activePlayer
                     }
                 }
             }
@@ -1513,7 +1826,7 @@ if isNiri || isMango then
             color: "transparent"
 
             implicitWidth: 380
-            implicitHeight: 600
+            implicitHeight: (mainPage.visible && root.mediaListVisible) ? Math.min(Math.max(600, root.ccChrome + mainTop.implicitHeight + 12 + root.mediaListHeight), root.ccScreenMax) : 600
 
             WlrLayershell.layer: WlrLayer.Overlay
             // Exclusive while open so Escape works even if another window had focus
@@ -1574,6 +1887,7 @@ if isNiri || isMango then
                     spacing: 12
 
                     RowLayout {
+                        id: ccHeader
                         Layout.fillWidth: true
 
                         Text {
@@ -1894,7 +2208,15 @@ if isNiri || isMango then
                     }
 
                     ColumnLayout {
+                        id: mainPage
                         visible: !root.bluetoothPageVisible && !root.wifiPageVisible && !root.wifiPasswordPageVisible
+                        Layout.fillWidth: true
+                        Layout.fillHeight: root.mediaListVisible
+                        spacing: 12
+
+                        ColumnLayout {
+                        id: mainTop
+                        Layout.fillWidth: true
                         spacing: 12
 
                         GridLayout {
@@ -2024,6 +2346,15 @@ if isNiri || isMango then
 
                         MediaCard {
                             Layout.fillWidth: true
+                            controlTheme: root.theme
+                        }
+                        }
+
+                        MediaPlayersCard {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            Layout.preferredHeight: root.mediaListHeight
+                            Layout.minimumHeight: root.mediaListVisible ? 92 : 0
                             controlTheme: root.theme
                         }
                     }

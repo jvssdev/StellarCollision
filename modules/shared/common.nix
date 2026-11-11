@@ -48,7 +48,6 @@ in
     pkgs.pavucontrol
     pkgs.wireplumber
 
-    pkgs.appimage-run
     pkgs.nh
 
     pkgs.wl-clip-persist
@@ -73,8 +72,20 @@ in
     pkgs.networkmanagerapplet
     pkgs.qbittorrent
     pkgs.imv
-    pkgs.rustdesk-flutter
+    # pkgs.rustdesk-flutter
+    pkgs.libgpg-error
+    # pkgs.rustdesk
+
+    (pkgs.symlinkJoin {
+      name = "rustdesk-xwayland";
+      paths = [ pkgs.rustdesk ];
+      nativeBuildInputs = [ pkgs.makeWrapper ];
+      postBuild = ''
+        wrapProgram $out/bin/rustdesk --set GDK_BACKEND x11
+      '';
+    })
     pkgs.haruna
+    # pkgs.mangayomi
 
     (pkgs.symlinkJoin {
       name = "libreoffice-pt-br";

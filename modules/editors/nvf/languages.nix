@@ -1,6 +1,6 @@
 {
   programs.nvf.settings.vim.languages = {
-    enableDAP = true;
+    # enableDAP = true;
     enableExtraDiagnostics = true;
     enableFormat = true;
     go.enable = true;
