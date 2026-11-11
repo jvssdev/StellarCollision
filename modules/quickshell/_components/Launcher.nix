@@ -6,6 +6,7 @@
   translateSource ? "auto",
   translateAutoCorrect ? true,
   translateAlternatives ? 6,
+  isNiri ? false,
   translateTargets ? [
     "pt"
     "en"
@@ -23,6 +24,18 @@ let
   '';
 
   wlCopy = lib.getExe' pkgs.wl-clipboard "wl-copy";
+
+  dpmsOffCommand =
+    if isNiri then
+      ''["niri", "msg", "action", "power-off-monitors"]''
+    else
+      ''["${lib.getExe pkgs.wlopm}", "--off", "*"]'';
+
+  dpmsOnCommand =
+    if isNiri then
+      ''["niri", "msg", "action", "power-on-monitors"]''
+    else
+      ''["${lib.getExe pkgs.wlopm}", "--on", "*"]'';
 in
 /* qml */ ''
   import QtQuick
@@ -77,6 +90,16 @@ in
           property var toolRows: []
           property bool toolsRerun: false
           property string keepQuery: ""
+          property bool monitorsOff: false
+          property var actionList: [
+              {
+                  type: "action",
+                  id: "monitors-off",
+                  name: "Turn Off Monitors",
+                  subtitle: "Power off all displays",
+                  keywords: ["monitor", "monitors", "display", "displays", "screen", "screens", "dpms", "off", "desligar", "tela", "apagar"]
+              }
+          ]
 
           function loadApps() {
               if (appsLoaded) return;
@@ -135,6 +158,38 @@ in
                   launcherWindow.appsLoaded = false;
                   launcherWindow.appsCache = [];
                   launcherWindow.loadApps();
+              }
+          }
+
+          Timer {
+              id: monitorsOffTimer
+              interval: 500
+              repeat: false
+              onTriggered: {
+                  launcherWindow.monitorsOff = true;
+                  monitorsOffProc.running = true;
+              }
+          }
+
+          Process {
+              id: monitorsOffProc
+              command: ${dpmsOffCommand}
+          }
+
+          Process {
+              id: monitorsOnProc
+              command: ${dpmsOnCommand}
+          }
+
+          IdleMonitor {
+              enabled: launcherWindow.monitorsOff
+              timeout: 1
+              respectInhibitors: false
+              onIsIdleChanged: {
+                  if (!isIdle && launcherWindow.monitorsOff) {
+                      launcherWindow.monitorsOff = false;
+                      monitorsOnProc.running = true;
+                  }
               }
           }
 
@@ -272,6 +327,8 @@ in
               } else if (item.type === "keep") {
                   keepQuery = query;
                   scheduleTools();
+              } else if (item.type === "action") {
+                  runAction(item.id);
               }
           }
 
@@ -387,6 +444,28 @@ in
               rebuildResults();
           }
 
+          function runAction(id) {
+              if (id === "monitors-off") {
+                  launcherWindow.visible = false;
+                  monitorsOffTimer.restart();
+              }
+          }
+
+          function scoreAction(act, q) {
+              var words = q.split(/\s+/).filter(function(w) { return w.length > 0; });
+              if (words.length === 0 || q.length < 2) return -1;
+              var name = act.name.toLowerCase();
+              for (var i = 0; i < words.length; i++) {
+                  var w = words[i];
+                  var hit = name.indexOf(w) >= 0;
+                  for (var k = 0; k < act.keywords.length && !hit; k++) {
+                      if (act.keywords[k].indexOf(w) === 0) hit = true;
+                  }
+                  if (!hit) return -1;
+              }
+              return 60 + (name.startsWith(q) ? 100 : 0);
+          }
+
           function applyCorrection(corrected) {
               var m = /^(tr(?::[A-Za-z,-]+)?)\s+/i.exec(query.trim());
               if (!m) return;
@@ -458,9 +537,16 @@ in
                   scored.push({ app: app, score: best });
               }
 
+              var trimmed = query.trim().toLowerCase();
+              for (var a = 0; a < actionList.length; a++) {
+                  var actionScore = scoreAction(actionList[a], trimmed);
+                  if (actionScore >= 0) scored.push({ entry: actionList[a], score: actionScore });
+              }
+
               scored.sort(function(a, b) { return b.score - a.score; });
 
               appResults = scored.slice(0, 20).map(function(s) {
+                  if (s.entry) return s.entry;
                   return { type: "app", app: s.app, name: s.app.name, icon: s.app.icon };
               });
               rebuildResults();
@@ -648,6 +734,7 @@ in
                                       if (modelData.type === "translate") return "󰗊";
                                       if (modelData.type === "spelling") return "󰓆";
                                       if (modelData.type === "keep") return "󰏫";
+                                      if (modelData.type === "action") return "󰐥";
                                       return "";
                                   }
                                   font.family: "${fontFamily}"
@@ -658,9 +745,10 @@ in
                                       if (modelData.type === "translate") return modelData.alt ? "${c.base03}" : "${c.base0D}";
                                       if (modelData.type === "spelling") return "${c.base09}";
                                       if (modelData.type === "keep") return "${c.base03}";
+                                      if (modelData.type === "action") return "${c.base08}";
                                       return modelData.isImage ? "${c.base0E}" : "${c.base0A}";
                                   }
-                                  visible: modelData.type === "clipboard" || modelData.type === "calc" || modelData.type === "time" || modelData.type === "translate" || modelData.type === "spelling" || modelData.type === "keep"
+                                  visible: modelData.type === "clipboard" || modelData.type === "calc" || modelData.type === "time" || modelData.type === "translate" || modelData.type === "spelling" || modelData.type === "keep" || modelData.type === "action"
                               }
 
                               Text {
@@ -690,6 +778,7 @@ in
                                       if (modelData.type === "clipboard") return "Paste";
                                       if (modelData.type === "spelling") return "Apply";
                                       if (modelData.type === "keep") return "Keep";
+                                      if (modelData.type === "action") return "Run";
                                       if (modelData.type === "calc" || modelData.type === "time" || modelData.type === "translate") return "Copy";
                                       return "Enter";
                                   }

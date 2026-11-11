@@ -89,7 +89,7 @@ let
   };
 
   Launcher = import (componentsDir + "/Launcher.nix") {
-    inherit pkgs lib;
+    inherit pkgs lib isNiri;
     fontFamily = config.cfg.fonts.monospace.name;
     colors = c;
   };
