@@ -105,8 +105,8 @@ in
     hj = {
       packages = [
         edenFixed
-        pkgs.azahar
-        pkgs.melonds
+        # pkgs.azahar
+        # pkgs.melonds
         lutrisPackage
         pkgs.winetricks
         pkgs.hydralauncher

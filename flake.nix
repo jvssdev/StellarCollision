@@ -34,29 +34,31 @@
       url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    wezterm = {
-      url = "github:wezterm/wezterm?dir=nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+
     nvf = {
       url = "github:notashelf/nvf";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    helium-browser = {
-      url = "github:amaanq/helium-flake";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # wezterm = {
+    #   url = "github:wezterm/wezterm?dir=nix";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    # };
 
-    ublock = {
-      url = "github:gorhill/ublock";
-      flake = false;
-    };
+    # helium-browser = {
+    #   url = "github:amaanq/helium-flake";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    # };
 
-    zen-browser = {
-      url = "github:0xc000022070/zen-browser-flake";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # ublock = {
+    #   url = "github:gorhill/ublock";
+    #   flake = false;
+    # };
+
+    # zen-browser = {
+    #   url = "github:0xc000022070/zen-browser-flake";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    # };
 
     nur = {
       url = "github:nix-community/NUR";

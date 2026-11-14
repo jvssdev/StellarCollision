@@ -26,7 +26,7 @@ in
       pkgs.pylyzer
       pkgs.pyright
       pkgs.ruff
-      pkgs.clang-tools
+      # pkgs.clang-tools
       pkgs.lua-language-server
       pkgs.yaml-language-server
       pkgs.taplo
@@ -41,7 +41,7 @@ in
       pkgs.cmake-language-server
       pkgs.docker-compose-language-service
       pkgs.dockerfile-language-server
-      pkgs.zls
+      # pkgs.zls
       pkgs.delve
       pkgs.lldb
       pkgs.stylua
@@ -50,16 +50,16 @@ in
       pkgs.cmake-format
       pkgs.gotools
       pkgs.black
-      pkgs.rustfmt
+      # pkgs.rustfmt
       pkgs.biome
       pkgs.python314
-      pkgs.gcc
-      pkgs.gnumake
-      pkgs.cargo
-      pkgs.rustc
+      # pkgs.gcc
+      # pkgs.gnumake
+      # pkgs.cargo
+      # pkgs.rustc
       pkgs.tree-sitter
       pkgs.nodejs_22
-      pkgs.zig
+      # pkgs.zig
       pkgs.go
     ];
   };

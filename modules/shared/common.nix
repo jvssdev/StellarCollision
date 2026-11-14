@@ -87,6 +87,7 @@ in
       '';
     })
     pkgs.haruna
+    pkgs.obs-studio
     # pkgs.mangayomi
 
     (pkgs.symlinkJoin {
