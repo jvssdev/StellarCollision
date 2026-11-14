@@ -77,11 +77,13 @@ in
     # pkgs.rustdesk
 
     (pkgs.symlinkJoin {
-      name = "rustdesk-xwayland";
+      name = "rustdesk-x11";
       paths = [ pkgs.rustdesk ];
       nativeBuildInputs = [ pkgs.makeWrapper ];
       postBuild = ''
-        wrapProgram $out/bin/rustdesk --set GDK_BACKEND x11
+        wrapProgram $out/bin/rustdesk \
+        --set GDK_BACKEND x11 \
+        --set QT_QPA_PLATFORM xcb \
       '';
     })
     pkgs.haruna

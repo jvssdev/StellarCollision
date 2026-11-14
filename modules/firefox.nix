@@ -163,10 +163,17 @@ let
     "devtools.debugger.remote-enabled" = true;
     "devtools.chrome.enabled" = true;
     "browser.display.os-zoom-behavior" = 0;
+    "sidebar.verticalTabs" = true;
+    "sidebar.visibility" = "hide-sidebar";
+    "browser.tabs.inTitlebar" = 0; # use system title bar
+    "browser.tabs.insertAfterCurrent" = true;
+    "browser.link.open_newwindow.override.external" = 7;
+    "media.eme.enabled" = true;
     "browser.startup.page" = 3;
     "devtools.theme" = "dark";
     "layout.css.prefers-color-scheme.content-override" = 0;
     "layout.css.devPixelsPerPx" = "1.0";
+    "browser.uidensity" = 1;
     "browser.search.defaultenginename" = "DuckDuckGo";
     "browser.search.defaultenginename.private" = "DuckDuckGo";
     "browser.ai.control.default" = "blocked";
@@ -175,6 +182,11 @@ let
     "browser.ai.control.smartTabGroups" = "blocked";
     "browser.ai.control.translations" = "blocked";
     "browser.ai.control.pdfjsAltText" = "blocked";
+    "privacy.trackingprotection.enabled" = true;
+    "privacy.trackingprotection.socialtracking.enabled" = true;
+    "privacy.globalprivacycontrol.enabled" = true; # Tell websites not to sell or share my data
+    "privacy.globalprivacycontrol.was_ever_enabled" = true;
+    "privacy.donottrackheader.enabled" = true;
   };
 
   userJsContent = lib.concatStringsSep "\n" (
@@ -227,6 +239,15 @@ in
         ".mozilla/firefox/default/user.js" = {
           text = userJsContent;
           clobber = true;
+        };
+
+        ".mozilla/firefox/default/customKeys.json" = {
+          text = builtins.toJSON {
+            toggleSidebarKb = {
+              modifiers = "accel";
+              key = "E";
+            };
+          };
         };
       };
     };
