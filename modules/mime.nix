@@ -20,16 +20,16 @@ in
     xdg.mime = {
       enable = true;
       defaultApplications = {
-        "x-scheme-handler/http" = "helium.desktop";
-        "x-scheme-handler/https" = "helium.desktop";
-        "x-scheme-handler/chrome" = "helium.desktop";
-        "text/html" = "helium.desktop";
-        "application/x-extension-htm" = "helium.desktop";
-        "application/x-extension-html" = "helium.desktop";
-        "application/x-extension-shtml" = "helium.desktop";
-        "application/xhtml+xml" = "helium.desktop";
-        "application/x-extension-xhtml" = "helium.desktop";
-        "application/x-extension-xht" = "helium.desktop";
+        "x-scheme-handler/http" = "firefox.desktop";
+        "x-scheme-handler/https" = "firefox.desktop";
+        "x-scheme-handler/chrome" = "firefox.desktop";
+        "text/html" = "firefox.desktop";
+        "application/x-extension-htm" = "firefox.desktop";
+        "application/x-extension-html" = "firefox.desktop";
+        "application/x-extension-shtml" = "firefox.desktop";
+        "application/xhtml+xml" = "firefox.desktop";
+        "application/x-extension-xhtml" = "firefox.desktop";
+        "application/x-extension-xht" = "firefox.desktop";
 
         "text/markdown" = "nvim.desktop";
         "text/x-nix" = "nvim.desktop";

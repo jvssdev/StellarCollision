@@ -122,6 +122,10 @@ let
       "*" = {
         installation_mode = "allowed";
       };
+      "firefox-oled@oled.firefox" = {
+        installation_mode = "normal_installed";
+        install_url = "https://addons.mozilla.org/firefox/downloads/latest/firefox-oled/latest.xpi";
+      };
     }
     //
       lib.mapAttrs'
@@ -139,11 +143,8 @@ let
           "sponsorblocker@ajay.app" = "sponsorblock";
           "seventv-next@7tv.app" = "7tv-new";
           "{c2c003ee-bd69-42a2-b0e9-6f34222cb046}" = "auto-tab-discard";
+          "control-panel-for-youtube@jbscript.dev" = "control-panel-for-youtube";
         };
-  };
-
-  firefox-wrapped = pkgs.wrapFirefox pkgs.firefox-unwrapped {
-    extraPolicies = customPolicies;
   };
 
   settings = {
@@ -165,7 +166,7 @@ let
     "browser.display.os-zoom-behavior" = 0;
     "sidebar.verticalTabs" = true;
     "sidebar.visibility" = "hide-sidebar";
-    "browser.tabs.inTitlebar" = 0; # use system title bar
+    "browser.tabs.inTitlebar" = 0;
     "browser.tabs.insertAfterCurrent" = true;
     "browser.link.open_newwindow.override.external" = 7;
     "media.eme.enabled" = true;
@@ -184,26 +185,69 @@ let
     "browser.ai.control.pdfjsAltText" = "blocked";
     "privacy.trackingprotection.enabled" = true;
     "privacy.trackingprotection.socialtracking.enabled" = true;
-    "privacy.globalprivacycontrol.enabled" = true; # Tell websites not to sell or share my data
+    "privacy.globalprivacycontrol.enabled" = true;
     "privacy.globalprivacycontrol.was_ever_enabled" = true;
     "privacy.donottrackheader.enabled" = true;
   };
 
-  userJsContent = lib.concatStringsSep "\n" (
-    lib.mapAttrsToList (
-      name: value:
-      let
-        valStr =
-          if builtins.isBool value then
-            (if value then "true" else "false")
-          else if builtins.isInt value then
-            builtins.toString value
-          else
-            ''"${value}"'';
-      in
-      ''user_pref("${name}", ${valStr});''
-    ) settings
+  prefsContent = lib.concatStringsSep "\n" (
+    lib.mapAttrsToList (name: value: "pref(${builtins.toJSON name}, ${builtins.toJSON value});") settings
   );
+
+  firefox-wrapped = pkgs.wrapFirefox pkgs.firefox-unwrapped {
+    extraPolicies = customPolicies;
+    extraPrefs = prefsContent;
+  };
+
+  profilesIni = pkgs.writeText "profiles.ini" ''
+    [General]
+    StartWithLastProfile=1
+    Version=2
+
+    [Profile0]
+    Name=default
+    IsRelative=1
+    Path=default
+    Default=1
+  '';
+
+  customKeysFile = pkgs.writeText "customKeys.json" (
+    builtins.toJSON {
+      toggleSidebarKb = {
+        modifiers = "accel";
+        key = "E";
+      };
+    }
+  );
+
+  syncScript = ''
+    root="$HOME/.mozilla/firefox"
+    ini="$root/profiles.ini"
+    mkdir -p "$root"
+    if [ -L "$ini" ] || [ ! -e "$ini" ]; then
+      rm -f "$ini"
+      install -m 0644 ${profilesIni} "$ini"
+    fi
+    awk -v root="$root" '
+      /^\[/ {
+        if (path != "") print (rel == "0" ? path : root "/" path)
+        path = ""
+        rel = "1"
+        next
+      }
+      /^IsRelative=/ { sub(/^IsRelative=/, ""); rel = $0 }
+      /^Path=/ { sub(/^Path=/, ""); path = $0 }
+      END { if (path != "") print (rel == "0" ? path : root "/" path) }
+    ' "$ini" | while IFS= read -r dir; do
+      mkdir -p "$dir"
+      install -m 0644 ${customKeysFile} "$dir/customKeys.json"
+    done
+    for dir in "$root"/*/; do
+      if [ -f "$dir/prefs.js" ]; then
+        install -m 0644 ${customKeysFile} "$dir/customKeys.json"
+      fi
+    done
+  '';
 in
 {
   options.cfg.firefox = {
@@ -223,32 +267,24 @@ in
     hj = {
       packages = [ cfg.package ];
 
-      files = {
-        ".mozilla/firefox/profiles.ini".text = ''
-          [General]
-          StartWithLastProfile=1
-          Version=2
+      systemd.services.firefox-profiles = {
+        description = "Seed profiles.ini and copy customKeys.json into every Firefox profile";
+        wantedBy = [ "default.target" ];
+        path = [
+          pkgs.gawk
+          pkgs.coreutils
+        ];
+        serviceConfig.Type = "oneshot";
+        script = syncScript;
+      };
 
-          [Profile0]
-          Name=default
-          IsRelative=1
-          Path=default
-          Default=1
-        '';
-
-        ".mozilla/firefox/default/user.js" = {
-          text = userJsContent;
-          clobber = true;
-        };
-
-        ".mozilla/firefox/default/customKeys.json" = {
-          text = builtins.toJSON {
-            toggleSidebarKb = {
-              modifiers = "accel";
-              key = "E";
-            };
-          };
-        };
+      systemd.paths.firefox-profiles = {
+        description = "Watch Firefox profiles.ini for changes";
+        wantedBy = [ "default.target" ];
+        pathConfig.PathChanged = [
+          "%h/.mozilla/firefox/profiles.ini"
+          "%h/.mozilla/firefox"
+        ];
       };
     };
   };
