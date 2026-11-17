@@ -108,8 +108,10 @@ in
         # pkgs.azahar
         # pkgs.melonds
         lutrisPackage
+        pkgs.wineWow64Packages.staging
         pkgs.winetricks
         pkgs.hydralauncher
+        pkgs.pcsx2
       ];
 
       xdg.config.files = {

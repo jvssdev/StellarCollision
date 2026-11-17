@@ -34,7 +34,6 @@ in
     pkgs.git
     pkgs.gh
     pkgs.jq
-    pkgs.tealdeer
     pkgs.neovim-unwrapped
     pkgs.unzip
     pkgs.p7zip
@@ -72,22 +71,21 @@ in
     pkgs.networkmanagerapplet
     pkgs.qbittorrent
     pkgs.imv
-    # pkgs.rustdesk-flutter
+    pkgs.rustdesk-flutter
     pkgs.libgpg-error
     # pkgs.rustdesk
 
-    (pkgs.symlinkJoin {
-      name = "rustdesk-x11";
-      paths = [ pkgs.rustdesk ];
-      nativeBuildInputs = [ pkgs.makeWrapper ];
-      postBuild = ''
-        wrapProgram $out/bin/rustdesk \
-        --set GDK_BACKEND x11 \
-        --set QT_QPA_PLATFORM xcb \
-      '';
-    })
+    # (pkgs.symlinkJoin {
+    #   name = "rustdesk-x11";
+    #   paths = [ pkgs.rustdesk ];
+    #   nativeBuildInputs = [ pkgs.makeWrapper ];
+    #   postBuild = ''
+    #     wrapProgram $out/bin/rustdesk \
+    #     --set GDK_BACKEND x11 \
+    #     --set QT_QPA_PLATFORM xcb \
+    #   '';
+    # })
     pkgs.haruna
-    pkgs.obs-studio
     # pkgs.mangayomi
 
     (pkgs.symlinkJoin {
@@ -107,8 +105,6 @@ in
       dicts.pt_BR
     ]))
 
-    pkgs.azahar
-    pkgs.melonds
     pkgs.ntfs3g
     pkgs.thunderbird
     pkgs.rufin
