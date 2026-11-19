@@ -114,11 +114,11 @@ in
               QML_IMPORT_PATH: null,
               QML2_IMPORT_PATH: null
           })
-          command: ["/run/current-system/sw/bin/qylock-lock"]
+          command: ["/run/current-system/sw/bin/stellar-lock"]
           stderr: StdioCollector {
               onStreamFinished: {
                   if (text && text.length > 0)
-                      console.warn("[qylock-lock stderr]", text)
+                      console.warn("[stellar-lock stderr]", text)
               }
           }
           onExited: (exitCode, exitStatus) => {

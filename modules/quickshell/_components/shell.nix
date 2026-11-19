@@ -520,7 +520,7 @@ in
       PowerMenu {
           id: powerMenu
           PowerButton {
-              command: "qylock-lock"
+              command: "stellar-lock"
               text: "Lock"
               icon: "lock"
           }

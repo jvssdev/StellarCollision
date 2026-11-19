@@ -9,12 +9,18 @@
       id: root
       property bool shown: false
       property int focusedIndex: -1
+      property real lastMouseX: -1
+      property real lastMouseY: -1
       property color backgroundColor: "${backgroundColor}"
       property color buttonColor: "transparent"
       property color buttonHoverColor: theme.darkBlue
       default property list<PowerButton> buttons
       model: Quickshell.screens
-      onShownChanged: if (shown) focusedIndex = 0; else focusedIndex = -1;
+      onShownChanged: {
+          lastMouseX = -1;
+          lastMouseY = -1;
+          focusedIndex = shown ? 0 : -1;
+      }
       PanelWindow {
           id: w
           visible: root.shown
@@ -86,7 +92,7 @@
                               required property int index;
                               Layout.preferredWidth: 180
                               Layout.preferredHeight: 180
-                              color: ma.containsMouse || (index == root.focusedIndex) ? root.buttonHoverColor : root.buttonColor
+                              color: index == root.focusedIndex ? root.buttonHoverColor : root.buttonColor
                               radius: 12
                               border.color: theme.darkBlue
                               border.width: 2
@@ -94,6 +100,18 @@
                                   id: ma
                                   anchors.fill: parent
                                   hoverEnabled: true
+                                  onPositionChanged: mouse => {
+                                      var p = mapToItem(null, mouse.x, mouse.y);
+                                      if (root.lastMouseX < 0) {
+                                          root.lastMouseX = p.x;
+                                          root.lastMouseY = p.y;
+                                          return;
+                                      }
+                                      if (Math.abs(p.x - root.lastMouseX) < 2 && Math.abs(p.y - root.lastMouseY) < 2) return;
+                                      root.lastMouseX = p.x;
+                                      root.lastMouseY = p.y;
+                                      root.focusedIndex = index;
+                                  }
                                   onClicked: {
                                       modelData.exec();
                                       root.shown = false;
@@ -103,7 +121,7 @@
                                   anchors.centerIn: parent
                                   spacing: 10
                                   Image {
-                                      source: ma.containsMouse || (index == root.focusedIndex) ? "icons/" + modelData.icon + "-hover.png" : "icons/" + modelData.icon + ".png"
+                                      source: index == root.focusedIndex ? "icons/" + modelData.icon + "-hover.png" : "icons/" + modelData.icon + ".png"
                                       Layout.preferredWidth: 114
                                       Layout.preferredHeight: 114
                                       fillMode: Image.PreserveAspectFit

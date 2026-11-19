@@ -1,0 +1,9 @@
+The QML in this directory is derived from the "Winter" SDDM theme of
+qylock (https://github.com/Darkkal44/qylock), which is licensed under
+GPL-3.0. This directory therefore stays under GPL-3.0 as well.
+
+Changes from upstream: the video background was replaced by a static
+wallpaper, the layout was split into a shared scene (LoginScene.qml)
+used by both the SDDM greeter (Main.qml) and a native Quickshell
+lockscreen (lock.qml), and the Qt5Compat and QtMultimedia dependencies
+were dropped.
