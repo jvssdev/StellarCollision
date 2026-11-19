@@ -131,6 +131,26 @@
         "type": "github"
       }
     },
+    "helium-browser": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1794834261,
+        "narHash": "sha256-lBogPqME3iTOahGSsxiu2BZn0bkGTDTry/khh4322Hs=",
+        "owner": "amaanq",
+        "repo": "helium-flake",
+        "rev": "e043ae9c2685fb6799535c2e84c0ab72e0bae0c1",
+        "type": "github"
+      },
+      "original": {
+        "owner": "amaanq",
+        "repo": "helium-flake",
+        "type": "github"
+      }
+    },
     "hjem": {
       "inputs": {
         "nixpkgs": [
@@ -381,6 +401,7 @@
     "root": {
       "inputs": {
         "flake-parts": "flake-parts",
+        "helium-browser": "helium-browser",
         "hjem": "hjem",
         "mango": "mango",
         "niri": "niri",
@@ -388,7 +409,8 @@
         "nur": "nur",
         "nvf": "nvf",
         "quickshell": "quickshell",
-        "qylock": "qylock"
+        "qylock": "qylock",
+        "ublock": "ublock"
       }
     },
     "scenefx": {
@@ -441,6 +463,22 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "ublock": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1795016322,
+        "narHash": "sha256-7yXN7qAMS0r0KGXlvYnrKss/m4JpGOHPL42k2u3Dt5c=",
+        "owner": "gorhill",
+        "repo": "ublock",
+        "rev": "c34a31e7bd3728f47fa37d37fa13871312d5e7c5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "gorhill",
+        "repo": "ublock",
         "type": "github"
       }
     },

@@ -91,6 +91,9 @@ in
           property bool toolsRerun: false
           property string keepQuery: ""
           property bool monitorsOff: false
+          property real lastMouseX: -1
+          property real lastMouseY: -1
+          property bool wheelActive: false
           property var actionList: [
               {
                   type: "action",
@@ -570,6 +573,13 @@ in
               }
           }
 
+          Timer {
+              id: wheelTimer
+              interval: 150
+              repeat: false
+              onTriggered: launcherWindow.wheelActive = false
+          }
+
           Component.onCompleted: {
               loadAppsTimer.start();
           }
@@ -793,7 +803,19 @@ in
                               anchors.fill: parent
                               hoverEnabled: true
                               cursorShape: Qt.PointingHandCursor
-                              onPositionChanged: function() {
+                              onWheel: function(wheel) {
+                                  launcherWindow.wheelActive = true;
+                                  wheelTimer.restart();
+                                  wheel.accepted = false;
+                              }
+                              onPositionChanged: function(mouse) {
+                                  var p = mapToItem(null, mouse.x, mouse.y);
+                                  var moved = launcherWindow.lastMouseX >= 0 && (Math.abs(p.x - launcherWindow.lastMouseX) >= 2 || Math.abs(p.y - launcherWindow.lastMouseY) >= 2);
+                                  if (launcherWindow.lastMouseX < 0 || moved) {
+                                      launcherWindow.lastMouseX = p.x;
+                                      launcherWindow.lastMouseY = p.y;
+                                  }
+                                  if (!moved && !launcherWindow.wheelActive) return;
                                   var item = launcherWindow.results[index];
                                   if (!item || item.isLoading || item.isEmpty) return;
                                   if (launcherWindow.selectedIndex === index) return;
@@ -829,6 +851,9 @@ in
           }
 
           onVisibleChanged: {
+              lastMouseX = -1;
+              lastMouseY = -1;
+              wheelActive = false;
               if (visible) {
                   toolRows = [];
                   keepQuery = "";

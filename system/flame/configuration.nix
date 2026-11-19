@@ -26,7 +26,7 @@ in
     dolphin.enable = true;
     opencode.enable = false;
     zen-browser.enable = false;
-    helium.enable = false;
+    helium.enable = true;
     firefox.enable = true;
     zed.enable = false;
     keyring.enable = true;

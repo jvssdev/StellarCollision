@@ -144,6 +144,7 @@ let
           "seventv-next@7tv.app" = "7tv-new";
           "{c2c003ee-bd69-42a2-b0e9-6f34222cb046}" = "auto-tab-discard";
           "control-panel-for-youtube@jbscript.dev" = "control-panel-for-youtube";
+          "{aecec67f-0d10-4fa7-b7c7-609a2db280cf}" = "violentmonkey";
         };
   };
 

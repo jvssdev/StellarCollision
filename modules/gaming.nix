@@ -104,7 +104,7 @@ in
   config = mkIf cfg.enable {
     hj = {
       packages = [
-        edenFixed
+        # edenFixed
         # pkgs.azahar
         # pkgs.melonds
         lutrisPackage
