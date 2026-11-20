@@ -105,6 +105,9 @@ let
     shazam = {
       id = "mmioliijnhnoblpgimnlajmefafdfilb";
     };
+    keepassxc = {
+      id = "oboonakemofpalcgghocfoadofidjkkk";
+    };
   };
 
   forcelist = mapAttrsToList (_: ext: ext.id) (
