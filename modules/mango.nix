@@ -232,6 +232,8 @@ in
       window_rule=app_id:thunderbird,is_floating:1
       window_rule=app_id:dolphin,is_floating:1
 
+      window_rule=app_id:hydralauncher,is_floating:1
+
       enable_hotarea = 0
 
       window_rule=is_named_scratchpad:1,width:1900,height:1600,app_id:yazi
